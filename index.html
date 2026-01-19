@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paden | Student Housing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="#" class="logo">Paden.</a>
+            <nav>
+                <ul>
+                    <li><a href="#" class="active" onclick="switchTab('student')">Student</a></li>
+                    <li><a href="#" onclick="switchTab('landlord')">Landlord</a></li>
+                </ul>
+            </nav>
+            <div class="user-actions">
+                <button class="btn btn-primary">Sign In</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="app" class="container" style="padding-top: 32px;">
+        <!-- Content will be injected here via JavaScript -->
+        <h1>Welcome to Paden</h1>
+        <p>Loading dashboard...</p>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
