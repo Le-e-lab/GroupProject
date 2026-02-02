@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Classes - UPath Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <style>
+        .sidebar {
+            width: 260px;
+            background: var(--color-black);
+            border-right: 1px solid var(--color-gray-200);
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            color: white;
+        }
+        .main-content { margin-left: 260px; padding: var(--space-8); }
+        .nav-item { display: flex; align-items: center; padding: var(--space-4); color: rgba(255,255,255,0.7); border-radius: var(--radius-md); margin-bottom: 4px; }
+        .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-item.active { background: var(--color-primary); color: white; }
+    </style>
+</head>
+<body>
+
+<div style="display: flex;">
+    <aside class="sidebar">
+        <div style="margin-bottom: 40px;">
+            <a href="#" class="text-primary font-bold" style="font-size: var(--text-xl); color: white;">📍 UPath <span class="badge badge-primary" style="font-size: 10px; vertical-align: middle;">Staff</span></a>
+        </div>
+        <nav style="flex: 1;">
+            <a href="/lecturer_dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+            <a href="/pages/lecturer_schedule.html" class="nav-item"><span class="nav-icon">📅</span> Schedule</a>
+            <a href="/pages/my_classes.html" class="nav-item active"><span class="nav-icon">👥</span> My Classes</a>
+            <a href="/pages/manual_attendance.html" class="nav-item"><span class="nav-icon">📝</span> Manual Entry</a>
+            <a href="/pages/lecturer_reports.html" class="nav-item"><span class="nav-icon">📊</span> Reports</a>
+        </nav>
+    </aside>
+
+    <main class="main-content" style="flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1 class="font-bold text-3xl">My Classes</h1>
+            <button class="btn btn-primary" onclick="alert('Feature coming in next update')">+ Create New Class</button>
+        </div>
+        
+        <div class="card">
+            <div id="classList">
+                <p>Loading classes...</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+    async function loadClasses() {
+        const classes = await API.getClasses(); // In real app, pass Lecturer ID
+        const container = document.getElementById('classList');
+        
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; border-bottom: 1px solid #eee; padding: 10px; font-weight: bold; color: gray;">
+                <div>Class Name</div>
+                <div>Code</div>
+                <div>Room</div>
+                <div>Students</div>
+                <div>Action</div>
+            </div>
+        ` + classes.map(c => `
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; border-bottom: 1px solid #eee; padding: 15px 10px; align-items: center;">
+                <div class="font-bold">${c.name}</div>
+                <div><span class="badge badge-neutral">${c.code}</span></div>
+                <div>${c.room}</div>
+                <div>45</div> <!-- Mock student count -->
+                <a href="/pages/qr_code.html?id=${c.id}&name=${encodeURIComponent(c.name)}&code=${c.code}" target="_blank" class="btn btn-sm btn-outline" style="text-decoration: none;">
+                    🔳 Show QR
+                </a>
+            </div>
+        `).join('');
+    }
+    loadClasses();
+</script>
+
+</body>
+</html>

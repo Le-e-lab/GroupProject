@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        /* Dashboard Specific Layout */
+        .dashboard-layout { display: flex; min-height: 100vh; }
+        
+        .sidebar {
+            width: 260px;
+            background: var(--color-gray-100);
+            border-right: 1px solid var(--color-gray-200);
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: var(--space-8);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-4);
+            color: var(--color-gray-500);
+            border-radius: var(--radius-md);
+            margin-bottom: 4px;
+            font-weight: var(--font-medium);
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: rgba(0,0,0,0.05); color: var(--color-black); }
+        .nav-item.active { background: var(--color-white); color: var(--color-primary); box-shadow: var(--shadow-sm); }
+        .nav-icon { margin-right: 12px; font-size: 1.2em; }
+
+        /* Timeline */
+        .timeline-item {
+            display: flex;
+            gap: var(--space-4);
+            padding-bottom: var(--space-6);
+            border-left: 2px solid var(--color-gray-200);
+            padding-left: var(--space-6);
+            position: relative;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        .timeline-past::before { background: var(--color-gray-200); }
+        .timeline-item:last-child { border-left: none; }
+
+        @media(max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-card {
+            animation: fadeInUp 0.5s ease-out forwards;
+            opacity: 0; /* Star invisible */
+        }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+        .animate-delay-4 { animation-delay: 0.4s; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div style="margin-bottom: 40px;">
+                <a href="#" class="text-primary font-bold" style="font-size: var(--text-xl);">📍 UPath</a>
+            </div>
+            
+            <nav style="flex: 1;">
+                <a href="/dashboard.html" class="nav-item active"><span class="nav-icon">🏠</span> Dashboard</a>
+                <a href="/pages/schedule.html" class="nav-item"><span class="nav-icon">📅</span> Schedule</a>
+                <a href="/pages/reports.html" class="nav-item"><span class="nav-icon">📊</span> Reports</a>
+                <a href="/pages/navigation.html" class="nav-item"><span class="nav-icon">🧭</span> Navigation</a>
+                <a href="/pages/profile.html" class="nav-item"><span class="nav-icon">👤</span> Profile</a>
+            </nav>
+
+            <div style="border-top: 1px solid var(--color-gray-200); pt-4;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <div style="width: 40px; height: 40px; background: var(--color-primary-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--color-primary); font-weight: bold;">
+                        <span id="userInitials">--</span>
+                    </div>
+                    <div>
+                        <div class="font-bold" style="font-size: var(--text-sm);" id="userName">Student</div>
+                        <div class="text-secondary" style="font-size: var(--text-xs);" id="userId">ID: --</div>
+                    </div>
+                </div>
+                <button onclick="logout()" class="btn btn-outline btn-full" style="font-size: var(--text-sm);">Log Out</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="font-bold" style="font-size: var(--text-3xl);">Dashboard</h1>
+                    <p class="text-secondary">Welcome back to your student portal.</p>
+                </div>
+                <button onclick="openQRModal()" class="btn btn-primary">
+                    <span style="font-size: 1.2em; margin-right: 8px;">📷</span> Mark Attendance
+                </button>
+            </header>
+
+            <!-- Stats Row -->
+            <div class="grid-3" style="margin-bottom: 40px;">
+                <div class="card animate-card animate-delay-1">
+                    <div class="text-secondary" style="font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 1px;">Attendance</div>
+                    <div class="font-bold text-primary" style="font-size: var(--text-4xl); margin: 10px 0;">85%</div>
+                    <div class="text-secondary" style="font-size: var(--text-sm);">Keep it up!</div>
+                </div>
+                <div class="card animate-card animate-delay-2">
+                    <div class="text-secondary" style="font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 1px;">Upcoming Classes</div>
+                    <div class="font-bold" style="font-size: var(--text-4xl); margin: 10px 0;">3</div>
+                    <div class="text-secondary" style="font-size: var(--text-sm);">Next: CS101 @ 14:00</div>
+                </div>
+                <div class="card animate-card animate-delay-3">
+                    <div class="text-secondary" style="font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 1px;">Assignments</div>
+                    <div class="font-bold" style="font-size: var(--text-4xl); margin: 10px 0;">2</div>
+                    <div class="text-secondary" style="font-size: var(--text-sm);">Due this week</div>
+                </div>
+            </div>
+
+            <!-- Content Split -->
+            <div class="grid-2">
+                <!-- Timeline -->
+                <div class="card">
+                    <h2 class="font-bold" style="margin-bottom: 20px;">Today's Schedule</h2>
+                    <div style="margin-top: 10px;">
+                        <div class="timeline-item timeline-past">
+                            <div style="flex: 1;">
+                                <div class="text-secondary" style="font-size: var(--text-xs);">08:00 - 10:00</div>
+                                <h3 class="font-bold">Introduction to Programming</h3>
+                                <p class="text-secondary text-sm">Lab 3A • Prof. Moyo</p>
+                            </div>
+                            <span class="badge badge-neutral">Done</span>
+                        </div>
+                        <div class="timeline-item">
+                            <div style="flex: 1;">
+                                <div class="text-secondary" style="font-size: var(--text-xs);">14:00 - 16:00</div>
+                                <h3 class="font-bold">Database Systems</h3>
+                                <p class="text-secondary text-sm">Room 204 • Dr. Chiwenga</p>
+                            </div>
+                            <span class="badge badge-primary">Upcoming</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <h2 class="font-bold" style="margin-bottom: 20px;">Recent Activity</h2>
+                    <ul id="activityList">
+                        <li style="padding: 10px 0; border-bottom: 1px solid var(--color-gray-100);">
+                            <span class="badge badge-success" style="margin-right: 10px;">Present</span>
+                            <span class="text-sm">Marked attendance for Intro to Programming</span>
+                            <div class="text-secondary" style="font-size: var(--text-xs); margin-top: 4px;">Today, 08:05 AM</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qrModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;">
+        <div class="card" style="width: 400px; max-width: 90%; text-align: center;">
+            <h2 class="font-bold" style="margin-bottom: 20px;">Scan QR Code</h2>
+            <div style="width: 250px; height: 250px; background: #eee; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; border: 2px dashed #ccc;">
+                <span style="font-size: 50px;">📷</span>
+            </div>
+            <p class="text-secondary" style="margin-bottom: 20px;">Align the QR code within the frame to mark attendance.</p>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="simulateScan()" class="btn btn-primary btn-full">Simulate Scan</button>
+                <button onclick="closeQRModal()" class="btn btn-outline btn-full">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // Check Auth using Session Storage (Simple Client Side Check)
+        const userStr = sessionStorage.getItem('upath_user');
+        if (!userStr) window.location.href = 'login.html';
+        const user = JSON.parse(userStr);
+
+        // Populate User Info
+        document.getElementById('userName').textContent = user.fullName.split(' ')[0]; // First name
+        document.getElementById('userId').textContent = user.idNumber;
+        document.getElementById('userInitials').textContent = user.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = 'login.html';
+        }
+
+        function openQRModal() {
+            document.getElementById('qrModal').style.display = 'flex';
+        }
+
+        function closeQRModal() {
+            document.getElementById('qrModal').style.display = 'none';
+        }
+
+        async function simulateScan() {
+            const btn = document.querySelector('#qrModal .btn-primary');
+            btn.textContent = "Scanning...";
+            
+            setTimeout(() => {
+                alert("Attendance Marked Successfully! ✅");
+                closeQRModal();
+                btn.textContent = "Simulate Scan";
+                
+                // Add to recent activity visually
+                const list = document.getElementById('activityList');
+                const li = document.createElement('li');
+                li.style.padding = '10px 0';
+                li.style.borderBottom = '1px solid var(--color-gray-100)';
+                li.innerHTML = `
+                    <span class="badge badge-success" style="margin-right: 10px;">Present</span>
+                    <span class="text-sm">Marked attendance for Database Systems</span>
+                    <div class="text-secondary" style="font-size: var(--text-xs); margin-top: 4px;">Just now</div>
+                `;
+                list.insertBefore(li, list.firstChild);
+                
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

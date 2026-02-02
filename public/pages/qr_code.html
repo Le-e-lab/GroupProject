@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class QR Code - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        body {
+            background-color: var(--color-black);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        
+        .qr-card {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 90%;
+            color: var(--color-black);
+        }
+
+        .qr-image {
+            width: 100%; /* Responsive */
+            max-width: 400px;
+            height: auto;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 2px solid #eee;
+        }
+
+        .timer {
+            font-family: monospace;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin-top: 10px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .close-btn:hover { background: rgba(255,255,255,0.3); }
+
+    </style>
+</head>
+<body>
+
+    <button class="close-btn" onclick="window.close()">✕</button>
+
+    <div class="qr-card">
+        <h1 class="font-bold text-3xl" id="className">Loading...</h1>
+        <p class="text-secondary" id="classCode">Please wait</p>
+        
+        <!-- API QR Code -->
+        <img id="qrImage" class="qr-image" src="" alt="Generating QR...">
+        
+        <p class="text-sm font-bold text-secondary">SCAN TO MARK ATTENDANCE</p>
+        
+        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+             <div class="text-secondary text-sm">Session Active For</div>
+             <div class="timer" id="timer">15:00</div>
+        </div>
+    </div>
+
+    <script>
+        // Get Params
+        const urlParams = new URLSearchParams(window.location.search);
+        const name = urlParams.get('name') || "Unknown Class";
+        const code = urlParams.get('code') || "---";
+        const id = urlParams.get('id') || "0";
+
+        // Update UI
+        document.getElementById('className').textContent = name;
+        document.getElementById('classCode').textContent = code;
+
+        // Generate QR Data logic
+        const qrData = JSON.stringify({
+            app: "upath",
+            action: "attendance",
+            classId: id,
+            date: new Date().toISOString().split('T')[0],
+            timestamp: Date.now()
+        });
+
+        // Set Image Source (Using goqr.me or qrserver API)
+        const size = "400x400";
+        const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}&data=${encodeURIComponent(qrData)}`;
+        document.getElementById('qrImage').src = apiUrl;
+
+        // Mock Timer
+        let time = 15 * 60; // 15 mins
+        setInterval(() => {
+            time--;
+            const mins = Math.floor(time / 60);
+            const secs = time % 60;
+            document.getElementById('timer').textContent = `${mins}:${secs < 10 ? '0'+secs : secs}`;
+        }, 1000);
+    </script>
+
+</body>
+</html>

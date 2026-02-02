@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Attendance - UPath Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        .dashboard-layout { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 260px;
+            background: var(--color-black);
+            color: white;
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+        .main-content { margin-left: 260px; padding: var(--space-8); flex: 1; width: 100%; }
+        
+        /* Table Styles */
+        .student-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .student-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid var(--color-gray-200);
+            color: var(--color-gray-500);
+            font-size: var(--text-sm);
+        }
+        .student-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--color-gray-200);
+        }
+        .student-table tr:hover { background: var(--color-gray-100); }
+        
+        .checkbox-custom { transform: scale(1.2); cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div style="margin-bottom: 40px;">
+            <a href="#" class="text-primary font-bold" style="font-size: var(--text-xl); color: white;">📍 UPath <span class="badge badge-primary" style="font-size: 10px; vertical-align: middle;">Staff</span></a>
+        </div>
+        <nav style="flex: 1;">
+            <a href="/lecturer_dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+            <a href="/pages/lecturer_schedule.html" class="nav-item"><span class="nav-icon">📅</span> Schedule</a>
+            <a href="/pages/my_classes.html" class="nav-item"><span class="nav-icon">👥</span> My Classes</a>
+            <a href="/pages/manual_attendance.html" class="nav-item active"><span class="nav-icon">📝</span> Manual Entry</a>
+            <a href="/pages/lecturer_reports.html" class="nav-item"><span class="nav-icon">📊</span> Reports</a>
+        </nav>
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+            <button onclick="logout()" class="btn btn-outline btn-full" style="color: white; border-color: rgba(255,255,255,0.3);">Log Out</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <h1 class="font-bold text-3xl">Manual Attendance</h1>
+        <p class="text-secondary mb-6">Manually mark students present/absent for a specific session.</p>
+
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="grid-3" style="align-items: end;">
+                <div>
+                    <label class="form-label">Select Class</label>
+                    <select class="form-input">
+                        <option>Introduction to Programming (CS101)</option>
+                        <option>Database Systems (CS204)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" value="2024-02-02">
+                </div>
+                <button class="btn btn-primary">Load Student List</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="font-bold">Student List (45)</h3>
+                <div>
+                    <button class="btn btn-sm btn-outline text-success" onclick="markAll(true)">Mark All Present</button>
+                    <button class="btn btn-sm btn-outline text-error" onclick="markAll(false)">Mark All Absent</button>
+                </div>
+            </div>
+
+            <table class="student-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox"></th>
+                        <th>Student Name</th>
+                        <th>ID Number</th>
+                        <th>Program</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="studentListBody">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn btn-primary" onclick="save()">Save Updates</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+    // Mock Data Generator
+    const students = [
+        { name: "Tinashe Gombe", id: "X2024001", program: "Comp Sci" },
+        { name: "Sarah Johns", id: "X2024002", program: "Comp Sci" },
+        { name: "Mike Peter", id: "X2024003", program: "Info Sys" },
+        { name: "David Mole", id: "X2024004", program: "Comp Sci" },
+        { name: "Grace Lee", id: "X2024005", program: "Info Sys" },
+    ];
+
+    const tbody = document.getElementById('studentListBody');
+    
+    students.forEach((s, i) => {
+        const isPresent = Math.random() > 0.1; // 90% attendance
+        tbody.innerHTML += `
+            <tr>
+                <td><input type="checkbox" class="checkbox-custom" ${isPresent ? 'checked' : ''}></td>
+                <td class="font-bold">${s.name}</td>
+                <td>${s.id}</td>
+                <td>${s.program}</td>
+                <td>
+                    <span class="badge ${isPresent ? 'badge-primary' : 'badge-neutral'}" style="background: ${isPresent ? '#E8F5E9' : '#FFEBEE'}; color: ${isPresent ? '#2E7D32' : '#C62828'};">
+                        ${isPresent ? 'Present' : 'Absent'}
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+
+    function markAll(status) {
+        const checkboxes = document.querySelectorAll('.checkbox-custom');
+        checkboxes.forEach(cb => cb.checked = status);
+    }
+
+    async function save() {
+        const rows = document.querySelectorAll('#studentListBody tr');
+        const studentsToSave = [];
+        
+        rows.forEach(row => {
+            const checkbox = row.querySelector('.checkbox-custom');
+            const id = row.cells[2].textContent; // ID Column
+            studentsToSave.push({
+                id: id,
+                status: checkbox.checked ? 'present' : 'absent'
+            });
+        });
+
+        // Mock Class ID (In real app, get from <select>)
+        const classId = "c1"; 
+        const date = document.querySelector('input[type="date"]').value;
+
+        const btn = document.querySelector('button[onclick="save()"]'); // Select by onclick for now
+        if(btn) btn.innerHTML = "Saving...";
+
+        try {
+            const result = await API.saveBulkAttendance({
+                classId,
+                date,
+                students: studentsToSave
+            });
+            
+            alert('Success: ' + result.message);
+        } catch (e) {
+            console.error(e);
+            alert('Error saving attendance');
+        } finally {
+            if(btn) btn.innerHTML = "Save Updates";
+        }
+    }
+
+    function logout() {
+        sessionStorage.removeItem('upath_user');
+        window.location.href = '/pages/auth.html';
+    }
+</script>
+
+</body>
+</html>

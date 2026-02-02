@@ -1,0 +1,98 @@
+[
+  {
+    "id": "c1",
+    "name": "Introduction to Programming",
+    "code": "CS101",
+    "type": "Lecture",
+    "description": "Fundamental concepts of programming using C++.",
+    "time": "08:00 - 10:00",
+    "room": "Hall A",
+    "lecturerName": "Prof. Moyo",
+    "lecturerId": "L1",
+    "day": "Monday"
+  },
+  {
+    "id": "c2",
+    "name": "Database Systems",
+    "code": "CS204",
+    "type": "Lecture",
+    "description": "Relational database design and SQL queries.",
+    "time": "14:00 - 16:00",
+    "room": "Room 204",
+    "lecturerName": "Dr. Chiwenga",
+    "lecturerId": "L1",
+    "day": "Monday"
+  },
+  {
+    "id": "c3",
+    "name": "Web Development",
+    "code": "CS305",
+    "type": "Lab",
+    "description": "Practical session on HTML, CSS, and JavaScript.",
+    "time": "10:00 - 12:00",
+    "room": "Lab 1",
+    "lecturerName": "Prof. Moyo",
+    "lecturerId": "L1",
+    "day": "Tuesday"
+  },
+  {
+    "id": "c4",
+    "name": "Data Structures",
+    "code": "CS201",
+    "type": "Lecture",
+    "description": "Arrays, Linked Lists, Trees, and Graphs.",
+    "time": "08:00 - 10:00",
+    "room": "Hall B",
+    "lecturerName": "Dr. Smith",
+    "lecturerId": "L2",
+    "day": "Wednesday"
+  },
+  {
+    "id": "c5",
+    "name": "Operating Systems",
+    "code": "CS202",
+    "type": "Tutorial",
+    "description": "Process scheduling and memory management exercises.",
+    "time": "11:00 - 13:00",
+    "room": "Room 105",
+    "lecturerName": "Dr. Chiwenga",
+    "lecturerId": "L1",
+    "day": "Wednesday"
+  },
+  {
+    "id": "c6",
+    "name": "Software Engineering",
+    "code": "CS301",
+    "type": "Lecture",
+    "description": "Agile methodologies and project management.",
+    "time": "09:00 - 11:00",
+    "room": "Lab 2",
+    "lecturerName": "Prof. Moyo",
+    "lecturerId": "L1",
+    "day": "Thursday"
+  },
+  {
+    "id": "c7",
+    "name": "Computer Networks",
+    "code": "CS303",
+    "type": "Lab",
+    "description": "Network configuration and packet analysis.",
+    "time": "14:00 - 16:00",
+    "room": "Net Lab",
+    "lecturerName": "Mr. Ndlovu",
+    "lecturerId": "L3",
+    "day": "Thursday"
+  },
+  {
+    "id": "c8",
+    "name": "Artificial Intelligence",
+    "code": "CS401",
+    "type": "Lecture",
+    "description": "Introduction to Neural Networks and Machine Learning.",
+    "time": "10:00 - 12:00",
+    "room": "Lab 4",
+    "lecturerName": "Dr. Smith",
+    "lecturerId": "L2",
+    "day": "Friday"
+  }
+]

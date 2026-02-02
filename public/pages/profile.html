@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        .dashboard-layout { display: flex; min-height: 100vh; }
+        
+        .sidebar {
+            width: 260px;
+            background: var(--color-gray-100);
+            border-right: 1px solid var(--color-gray-200);
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 0; /* Remove default padding to let banner stretch */
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-4);
+            color: var(--color-gray-500);
+            border-radius: var(--radius-md);
+            margin-bottom: 4px;
+            font-weight: var(--font-medium);
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: rgba(0,0,0,0.05); color: var(--color-black); }
+        .nav-item.active { background: var(--color-white); color: var(--color-primary); box-shadow: var(--shadow-sm); }
+        .nav-icon { margin-right: 12px; font-size: 1.2em; }
+        
+        /* New Profile Design */
+        .profile-banner {
+            height: 200px;
+            background: linear-gradient(135deg, var(--color-primary), #111);
+            position: relative;
+        }
+        
+        .profile-container {
+            max-width: 800px;
+            margin: -60px auto 0;
+            padding: 0 var(--space-4);
+            position: relative;
+        }
+
+        .profile-header-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-gray-200);
+            padding: var(--space-6);
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 30px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            padding: 4px;
+            margin-top: -60px; /* Pull up */
+            position: relative;
+        }
+        .profile-avatar-inner {
+            width: 100%;
+            height: 100%;
+            background: var(--color-black);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .profile-tabs {
+            border-bottom: 1px solid var(--color-gray-200);
+            margin-bottom: 30px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            color: var(--color-gray-500);
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div style="margin-bottom: 40px;">
+                <a href="#" class="text-primary font-bold" style="font-size: var(--text-xl);">📍 UPath</a>
+            </div>
+            
+            <nav style="flex: 1;">
+                <a href="/dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+                <a href="/pages/schedule.html" class="nav-item"><span class="nav-icon">📅</span> Schedule</a>
+                <a href="/pages/reports.html" class="nav-item"><span class="nav-icon">📊</span> Reports</a>
+                <a href="/pages/navigation.html" class="nav-item"><span class="nav-icon">🧭</span> Navigation</a>
+                <a href="/pages/profile.html" class="nav-item active"><span class="nav-icon">👤</span> Profile</a>
+            </nav>
+
+            <div style="border-top: 1px solid var(--color-gray-200); pt-4;">
+               <button onclick="logout()" class="btn btn-outline btn-full" style="font-size: var(--text-sm);">Log Out</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="profile-banner"></div>
+            
+            <div class="profile-container">
+                <!-- Header Card -->
+                <div class="profile-header-card">
+                    <div class="profile-avatar">
+                        <div class="profile-avatar-inner" id="profileInitials">--</div>
+                    </div>
+                    <div style="flex: 1; padding-bottom: 10px;">
+                        <h1 class="font-bold text-3xl" id="profileName">--</h1>
+                        <p class="text-secondary" id="profileRole">Student</p>
+                    </div>
+                    <div style="padding-bottom: 10px;">
+                        <button class="btn btn-outline btn-sm">Edit Profile</button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="profile-tabs">
+                    <button class="tab-btn active">Personal Details</button>
+                    <button class="tab-btn">Security</button>
+                    <button class="tab-btn">Notifications</button>
+                </div>
+
+                <!-- Form Section -->
+                <div class="card" style="border: none; box-shadow: none; padding: 0;">
+                    <form id="profileForm" onsubmit="event.preventDefault(); alert('Profile updated!');">
+                        <div class="grid-2">
+                             <div>
+                                <label class="text-sm font-bold block mb-2">Full Name</label>
+                                <input type="text" id="inputName" class="form-input" readonly style="background: var(--color-gray-100);">
+                             </div>
+                             <div>
+                                <label class="text-sm font-bold block mb-2">Student ID</label>
+                                <input type="text" id="inputId" class="form-input" readonly style="background: var(--color-gray-100);">
+                             </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <label class="text-sm font-bold block mb-2">Email Address</label>
+                            <input type="email" id="inputEmail" class="form-input" value="student@upath.edu">
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <label class="text-sm font-bold block mb-2">Bio / About</label>
+                            <textarea class="form-input" rows="3" placeholder="Tell us a bit about yourself..."></textarea>
+                        </div>
+
+                        <div style="margin-top: 30px; text-align: right;">
+                            <button class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Check Auth
+        const userStr = sessionStorage.getItem('upath_user');
+        if (!userStr) window.location.href = '/pages/auth.html';
+        const user = JSON.parse(userStr);
+
+        // Populate Data
+        document.getElementById('profileName').textContent = user.fullName;
+        document.getElementById('inputName').value = user.fullName;
+        document.getElementById('inputId').value = user.idNumber;
+        document.getElementById('profileInitials').textContent = user.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        
+        // Mock Email
+        document.getElementById('inputEmail').value = user.email || 'student@upath.edu';
+
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '/pages/auth.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XUL Login - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated Background Blobs */
+        .blob {
+            position: absolute;
+            filter: blur(50px);
+            opacity: 0.6;
+            animation: float 10s infinite alternate;
+        }
+        .blob-1 {
+            width: 400px;
+            height: 400px;
+            background: #ffcdd2; /* Light Red */
+            top: -100px;
+            left: -100px;
+        }
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: #e1bee7; /* Light Purple/Blueish */
+            bottom: -150px;
+            right: -100px;
+            animation-duration: 15s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(30px, 50px); }
+        }
+
+        /* Login Card */
+        .login-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 50px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.5);
+            animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-circle {
+            width: 80px;
+            height: 80px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 40px;
+            box-shadow: 0 10px 20px rgba(211, 47, 47, 0.3);
+            animation: popIn 0.8s 0.3s backwards cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        h1 { margin-bottom: 5px; color: var(--color-black); }
+        p { margin-bottom: 30px; color: var(--color-gray-500); }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeIn 0.5s 0.6s forwards;
+        }
+        
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .info-box {
+            background: rgba(46, 125, 50, 0.1);
+            color: #2E7D32;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="login-card">
+        <div class="logo-circle">📍</div>
+        <h1 class="font-bold text-3xl">UPath</h1>
+        <p>Sign in with your School ID</p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label class="form-label">School ID</label>
+                <input type="text" id="email" class="form-input" placeholder="e.g. X2024001" required>
+            </div>
+            
+            <div class="input-group" style="position: relative;">
+                <label class="form-label">Password</label>
+                <input type="password" id="password" class="form-input" placeholder="••••••••" required style="padding-right: 40px;">
+                <span id="togglePassword" style="position: absolute; right: 12px; bottom: 12px; cursor: pointer; color: #757575; font-size: 1.2rem;">👁️</span>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="loginBtn">Access Portal</button>
+        </form>
+
+        <div class="info-box">
+            <span style="font-size: 20px">🔐</span>
+            <div>
+                <strong>Secured by XUL System</strong>
+                <br>Use your WiFi credentials to login.
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; font-size: 0.8rem; color: #999;">
+             Mock Credentials: <br> Student: <strong>240105</strong> | Lecturer: <strong>210100</strong><br>
+             Pass: <strong>123456</strong> | <strong>wifi123</strong>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        
+        // Show/Hide Password
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            // Toggle Icon (Simple text swap for demo)
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+        
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = passwordInput.value; // Use var reference logic
+            const btn = document.getElementById('loginBtn');
+            
+            btn.textContent = 'Verifying...';
+            btn.style.opacity = '0.7';
+
+            try {
+                // Determine if input is ID or Email by basic regex or just pass to backend
+                // Backend logic handles user.idNumber === email check (we modified it earlier or need to verify)
+                const result = await API.login(email, password);
+                
+                if (result.user) {
+                    sessionStorage.setItem('upath_user', JSON.stringify(result.user));
+                    
+                    // Button Success State
+                    btn.textContent = 'Success! Redirecting...';
+                    btn.style.background = 'var(--color-success)';
+                    
+                    setTimeout(() => {
+                        if (result.user.role === 'lecturer') {
+                            window.location.href = '../lecturer_dashboard.html';
+                        } else {
+                            window.location.href = '../dashboard.html';
+                        }
+                    }, 800);
+                } else {
+                    alert('Login Failed: ' + (result.message || 'Check credentials'));
+                    btn.textContent = 'Access Portal';
+                    btn.style.background = '';
+                    btn.style.opacity = '1';
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Connection Error');
+                btn.textContent = 'Access Portal';
+            }
+        });
+    </script>
+</body>
+</html>
