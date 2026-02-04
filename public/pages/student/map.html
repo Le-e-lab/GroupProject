@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Map - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .map-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+            height: calc(100vh - 140px);
+        }
+        .map-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+        }
+        .campus-map {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            position: relative;
+            overflow: auto;
+        }
+        .map-svg {
+            width: 100%;
+            height: 100%;
+            min-height: 500px;
+        }
+        .building {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .building:hover {
+            filter: brightness(0.9);
+        }
+        .building.active {
+            filter: drop-shadow(0 0 8px var(--primary));
+        }
+        .building-label {
+            font-size: 9px;
+            font-weight: 600;
+            fill: white;
+            pointer-events: none;
+        }
+        .path-line {
+            stroke: var(--primary);
+            stroke-width: 4;
+            stroke-dasharray: 8 4;
+            fill: none;
+            animation: dash 1s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -12; }
+        }
+        .sidebar-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            height: fit-content;
+        }
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .building-list {
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .building-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            margin-bottom: 4px;
+        }
+        .building-item:hover {
+            background: var(--bg);
+        }
+        .building-item.active {
+            background: var(--primary-light);
+            border: 1px solid var(--primary);
+        }
+        .building-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+        .building-info h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .building-info p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .nav-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .nav-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .nav-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            background: var(--surface);
+        }
+        .nav-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .nav-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .nav-btn:hover {
+            background: var(--primary-hover);
+        }
+        .directions-box {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            display: none;
+        }
+        .directions-box.show {
+            display: block;
+        }
+        .directions-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        .directions-steps {
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .directions-steps li {
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+        .walk-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: var(--primary-light);
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        @media (max-width: 900px) {
+            .map-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .map-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role">Student</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/dashboard.html" class="navbar-link">Overview</a>
+            <a href="/pages/student/schedule.html" class="navbar-link">Classes</a>
+            <a href="/pages/student/reports.html" class="navbar-link">Attendance</a>
+            <a href="/pages/student/map.html" class="navbar-link active">Map</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/student/profile.html" class="navbar-avatar" id="userAvatar">CB</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-container">
+            <div class="page-header">
+                <h1 class="page-title">Campus Map</h1>
+                <p class="page-subtitle">Find lecture venues around campus</p>
+            </div>
+
+            <div class="map-layout">
+                <!-- Interactive Map -->
+                <div class="map-container">
+                    <svg class="map-svg" viewBox="0 0 800 600" id="campusMap">
+                        <!-- Background -->
+                        <rect x="0" y="0" width="800" height="600" fill="#E8F4E8"/>
+                        
+                        <!-- Main walkways -->
+                        <path d="M50 300 L750 300" stroke="#DDD" stroke-width="20" fill="none"/>
+                        <path d="M400 50 L400 550" stroke="#DDD" stroke-width="20" fill="none"/>
+                        <path d="M150 150 L650 150" stroke="#DDD" stroke-width="12" fill="none"/>
+                        <path d="M150 450 L650 450" stroke="#DDD" stroke-width="12" fill="none"/>
+                        
+                        <!-- Trees/Green areas -->
+                        <circle cx="80" cy="80" r="25" fill="#81C784" opacity="0.6"/>
+                        <circle cx="720" cy="80" r="20" fill="#81C784" opacity="0.6"/>
+                        <circle cx="80" cy="520" r="30" fill="#81C784" opacity="0.6"/>
+                        <circle cx="720" cy="520" r="25" fill="#81C784" opacity="0.6"/>
+                        
+                        <!-- Buildings - Real Venues from Timetable -->
+                        
+                        <!-- ICT Mai Mugabe Lab -->
+                        <g class="building" id="bldg-mai-mugabe" onclick="selectBuilding('mai-mugabe')">
+                            <rect x="100" y="70" width="130" height="80" rx="8" fill="#6366F1"/>
+                            <text x="165" y="105" text-anchor="middle" class="building-label">ICT Mai Mugabe</text>
+                            <text x="165" y="120" text-anchor="middle" class="building-label">Lab</text>
+                        </g>
+                        
+                        <!-- ICT Smart Classroom 1 & 4 -->
+                        <g class="building" id="bldg-smart-classroom" onclick="selectBuilding('smart-classroom')">
+                            <rect x="280" y="70" width="150" height="80" rx="8" fill="#8B5CF6"/>
+                            <text x="355" y="105" text-anchor="middle" class="building-label">ICT Smart</text>
+                            <text x="355" y="120" text-anchor="middle" class="building-label">Classroom 1 & 4</text>
+                        </g>
+                        
+                        <!-- ICT General Purpose Lab -->
+                        <g class="building" id="bldg-general-lab" onclick="selectBuilding('general-lab')">
+                            <rect x="480" y="70" width="140" height="80" rx="8" fill="#EC4899"/>
+                            <text x="550" y="105" text-anchor="middle" class="building-label">ICT General</text>
+                            <text x="550" y="120" text-anchor="middle" class="building-label">Purpose Lab</text>
+                        </g>
+                        
+                        <!-- TMLT -->
+                        <g class="building" id="bldg-tmlt" onclick="selectBuilding('tmlt')">
+                            <rect x="80" y="210" width="120" height="90" rx="8" fill="#F59E0B"/>
+                            <text x="140" y="255" text-anchor="middle" class="building-label">TMLT</text>
+                            <text x="140" y="270" text-anchor="middle" class="building-label">(Teaching Media)</text>
+                        </g>
+                        
+                        <!-- Old Library 1/2 -->
+                        <g class="building" id="bldg-old-library" onclick="selectBuilding('old-library')">
+                            <rect x="260" y="200" width="140" height="110" rx="8" fill="#10B981"/>
+                            <text x="330" y="250" text-anchor="middle" class="building-label">Old Library</text>
+                            <text x="330" y="265" text-anchor="middle" class="building-label">1/2</text>
+                        </g>
+                        
+                        <!-- AEG4 -->
+                        <g class="building" id="bldg-aeg4" onclick="selectBuilding('aeg4')">
+                            <rect x="460" y="200" width="120" height="110" rx="8" fill="#3B82F6"/>
+                            <text x="520" y="255" text-anchor="middle" class="building-label">AEG4</text>
+                            <text x="520" y="270" text-anchor="middle" class="building-label">(Lecture Hall)</text>
+                        </g>
+                        
+                        <!-- DHSG19 -->
+                        <g class="building" id="bldg-dhsg19" onclick="selectBuilding('dhsg19')">
+                            <rect x="620" y="210" width="100" height="90" rx="8" fill="#14B8A6"/>
+                            <text x="670" y="255" text-anchor="middle" class="building-label">DHSG19</text>
+                        </g>
+                        
+                        <!-- Cafeteria -->
+                        <g class="building" id="bldg-cafeteria" onclick="selectBuilding('cafeteria')">
+                            <rect x="80" y="380" width="120" height="90" rx="8" fill="#EF4444"/>
+                            <text x="140" y="430" text-anchor="middle" class="building-label">Cafeteria</text>
+                        </g>
+                        
+                        <!-- Student Center -->
+                        <g class="building" id="bldg-student" onclick="selectBuilding('student')">
+                            <rect x="260" y="380" width="140" height="100" rx="8" fill="#F97316"/>
+                            <text x="330" y="430" text-anchor="middle" class="building-label">Student Center</text>
+                        </g>
+                        
+                        <!-- Admin Block -->
+                        <g class="building" id="bldg-admin" onclick="selectBuilding('admin')">
+                            <rect x="460" y="380" width="130" height="100" rx="8" fill="#84CC16"/>
+                            <text x="525" y="430" text-anchor="middle" class="building-label">Admin Block</text>
+                        </g>
+                        
+                        <!-- Navigation path -->
+                        <path id="navPath" class="path-line" d="" style="display: none;"/>
+                        
+                        <!-- Current location marker -->
+                        <g id="currentMarker" style="display: none;">
+                            <circle r="12" fill="var(--primary)"/>
+                            <circle r="8" fill="white"/>
+                            <circle r="4" fill="var(--primary)"/>
+                        </g>
+                        
+                        <!-- Destination marker -->
+                        <g id="destMarker" style="display: none;">
+                            <path d="M0,-20 L-12,0 L0,-8 L12,0 Z" fill="#EF4444"/>
+                        </g>
+                        
+                        <!-- Entrance -->
+                        <g>
+                            <circle cx="400" cy="570" r="8" fill="#333"/>
+                            <text x="400" y="590" text-anchor="middle" font-size="10" fill="#333">Main Entrance</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <div class="sidebar-card">
+                        <h3 class="sidebar-title">Lecture Venues</h3>
+                        <div class="building-list" id="buildingList">
+                            <div class="building-item" onclick="selectBuilding('mai-mugabe')">
+                                <div class="building-icon">ICT</div>
+                                <div class="building-info">
+                                    <h4>ICT Mai Mugabe Lab</h4>
+                                    <p>OS, Network Security, Group Project</p>
+                                </div>
+                            </div>
+                            <div class="building-item" onclick="selectBuilding('smart-classroom')">
+                                <div class="building-icon">SC</div>
+                                <div class="building-info">
+                                    <h4>ICT Smart Classroom</h4>
+                                    <p>HCI, Network Security</p>
+                                </div>
+                            </div>
+                            <div class="building-item" onclick="selectBuilding('general-lab')">
+                                <div class="building-icon">GPL</div>
+                                <div class="building-info">
+                                    <h4>ICT General Purpose Lab</h4>
+                                    <p>Object Oriented Programming</p>
+                                </div>
+                            </div>
+                            <div class="building-item" onclick="selectBuilding('tmlt')">
+                                <div class="building-icon">TM</div>
+                                <div class="building-info">
+                                    <h4>TMLT</h4>
+                                    <p>French, English, Tech Comm, Ethics</p>
+                                </div>
+                            </div>
+                            <div class="building-item" onclick="selectBuilding('old-library')">
+                                <div class="building-icon">OL</div>
+                                <div class="building-info">
+                                    <h4>Old Library 1/2</h4>
+                                    <p>AI & Critical Thinking, Tech Comm</p>
+                                </div>
+                            </div>
+                            <div class="building-item" onclick="selectBuilding('aeg4')">
+                                <div class="building-icon">AE</div>
+                                <div class="building-info">
+                                    <h4>AEG4</h4>
+                                    <p>Software Engineering, English</p>
+                                </div>
+                            </div>
+                            <div class="building-item" onclick="selectBuilding('dhsg19')">
+                                <div class="building-icon">DH</div>
+                                <div class="building-info">
+                                    <h4>DHSG19</h4>
+                                    <p>Portuguese, Ethics</p>
+                                </div>
+                            </div>
+                            <div class="building-item" onclick="selectBuilding('cafeteria')">
+                                <div class="building-icon">CF</div>
+                                <div class="building-info">
+                                    <h4>Cafeteria</h4>
+                                    <p>Food court, Dining</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="nav-section">
+                            <p class="nav-label">Get Directions</p>
+                            <select class="nav-select" id="fromSelect">
+                                <option value="">From: Your Location</option>
+                                <option value="entrance">Main Entrance</option>
+                                <option value="mai-mugabe">ICT Mai Mugabe Lab</option>
+                                <option value="smart-classroom">ICT Smart Classroom</option>
+                                <option value="general-lab">ICT General Purpose Lab</option>
+                                <option value="tmlt">TMLT</option>
+                                <option value="old-library">Old Library 1/2</option>
+                                <option value="aeg4">AEG4</option>
+                                <option value="dhsg19">DHSG19</option>
+                                <option value="cafeteria">Cafeteria</option>
+                            </select>
+                            <select class="nav-select" id="toSelect">
+                                <option value="">To: Select destination</option>
+                                <option value="mai-mugabe">ICT Mai Mugabe Lab</option>
+                                <option value="smart-classroom">ICT Smart Classroom</option>
+                                <option value="general-lab">ICT General Purpose Lab</option>
+                                <option value="tmlt">TMLT</option>
+                                <option value="old-library">Old Library 1/2</option>
+                                <option value="aeg4">AEG4</option>
+                                <option value="dhsg19">DHSG19</option>
+                                <option value="cafeteria">Cafeteria</option>
+                                <option value="student">Student Center</option>
+                            </select>
+                            <button class="nav-btn" onclick="showDirections()">Show Route</button>
+
+                            <div class="directions-box" id="directionsBox">
+                                <div class="directions-title" id="dirTitle">Directions</div>
+                                <ol class="directions-steps" id="dirSteps"></ol>
+                                <div class="walk-time" id="walkTime">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="5" r="2"/>
+                                        <path d="M12 7v7m-3 3l3-3 3 3m-6-6l-2 5m6-5l2 5"/>
+                                    </svg>
+                                    <span id="walkTimeText">~3 min walk</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        const buildings = {
+            'mai-mugabe': { name: 'ICT Mai Mugabe Lab', x: 165, y: 110 },
+            'smart-classroom': { name: 'ICT Smart Classroom', x: 355, y: 110 },
+            'general-lab': { name: 'ICT General Purpose Lab', x: 550, y: 110 },
+            'tmlt': { name: 'TMLT', x: 140, y: 255 },
+            'old-library': { name: 'Old Library 1/2', x: 330, y: 255 },
+            'aeg4': { name: 'AEG4', x: 520, y: 255 },
+            'dhsg19': { name: 'DHSG19', x: 670, y: 255 },
+            'cafeteria': { name: 'Cafeteria', x: 140, y: 425 },
+            'student': { name: 'Student Center', x: 330, y: 430 },
+            'admin': { name: 'Admin Block', x: 525, y: 430 },
+            'entrance': { name: 'Main Entrance', x: 400, y: 570 }
+        };
+
+        let selectedBuilding = null;
+
+        function selectBuilding(id) {
+            document.querySelectorAll('.building').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.building-item').forEach(b => b.classList.remove('active'));
+            
+            const bldg = document.getElementById('bldg-' + id);
+            if (bldg) bldg.classList.add('active');
+            
+            const items = document.querySelectorAll('.building-item');
+            items.forEach(item => {
+                if (item.onclick.toString().includes(id)) {
+                    item.classList.add('active');
+                }
+            });
+
+            selectedBuilding = id;
+            document.getElementById('toSelect').value = id;
+        }
+
+        function showDirections() {
+            const from = document.getElementById('fromSelect').value || 'entrance';
+            const to = document.getElementById('toSelect').value;
+            
+            if (!to) {
+                alert('Please select a destination');
+                return;
+            }
+
+            const fromBldg = buildings[from];
+            const toBldg = buildings[to];
+            
+            const path = document.getElementById('navPath');
+            path.setAttribute('d', `M${fromBldg.x} ${fromBldg.y} L${toBldg.x} ${toBldg.y}`);
+            path.style.display = 'block';
+            
+            const currentMarker = document.getElementById('currentMarker');
+            currentMarker.setAttribute('transform', `translate(${fromBldg.x}, ${fromBldg.y})`);
+            currentMarker.style.display = 'block';
+            
+            const destMarker = document.getElementById('destMarker');
+            destMarker.setAttribute('transform', `translate(${toBldg.x}, ${toBldg.y - 20})`);
+            destMarker.style.display = 'block';
+            
+            const distance = Math.sqrt(Math.pow(toBldg.x - fromBldg.x, 2) + Math.pow(toBldg.y - fromBldg.y, 2));
+            const walkTime = Math.max(1, Math.ceil(distance / 100));
+            
+            const dirBox = document.getElementById('directionsBox');
+            dirBox.classList.add('show');
+            
+            document.getElementById('dirTitle').textContent = `${fromBldg.name} → ${toBldg.name}`;
+            document.getElementById('walkTimeText').textContent = `~${walkTime} min walk`;
+            
+            const steps = [];
+            if (Math.abs(fromBldg.y - toBldg.y) > 50) {
+                steps.push(toBldg.y < fromBldg.y ? 'Head north along main walkway' : 'Head south along main walkway');
+            }
+            if (Math.abs(fromBldg.x - toBldg.x) > 50) {
+                steps.push(toBldg.x > fromBldg.x ? 'Continue east towards the building' : 'Continue west towards the building');
+            }
+            steps.push(`Arrive at ${toBldg.name}`);
+            
+            document.getElementById('dirSteps').innerHTML = steps.map(s => `<li>${s}</li>`).join('');
+        }
+
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '/pages/auth.html';
+        }
+
+        // Load user avatar
+        const userStr = sessionStorage.getItem('upath_user');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            if (user.fullName) {
+                const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('userAvatar').textContent = initials;
+            }
+        }
+    </script>
+</body>
+</html>

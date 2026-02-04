@@ -1,0 +1,458 @@
+/* =========================================
+   Lecturer Dashboard Styles
+   Dark Professional Theme
+   ========================================= */
+
+/* Color Palette - Dark Theme */
+:root {
+    --lect-primary: #C62828;
+    --lect-primary-light: #FFEBEE;
+    --lect-primary-dark: #8E0000;
+    --lect-bg: #1A1A2E;
+    --lect-sidebar-bg: #16213E;
+    --lect-card: #0F3460;
+    --lect-card-light: #1A4272;
+    --lect-text: #FFFFFF;
+    --lect-text-muted: #9CA3AF;
+    --lect-border: #294D76;
+    --lect-accent: #E94560;
+    --lect-success: #4ADE80;
+    --lect-warning: #FBBF24;
+    --lect-shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* Page Background */
+body.lecturer-theme {
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%);
+    min-height: 100vh;
+    color: var(--lect-text);
+}
+
+/* Lecturer Layout */
+.lecturer-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Lecturer Sidebar */
+.lecturer-sidebar {
+    width: 240px;
+    background: var(--lect-sidebar-bg);
+    padding: 32px 20px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    border-right: 1px solid var(--lect-border);
+}
+
+.lecturer-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 40px;
+    padding: 0 12px;
+}
+
+.lecturer-logo-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--lect-primary);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.lecturer-logo-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--lect-text);
+    letter-spacing: 0.5px;
+}
+
+/* Staff Badge */
+.staff-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--lect-primary);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* Lecturer Navigation */
+.lecturer-nav {
+    flex: 1;
+}
+
+.lecturer-nav-section {
+    margin-bottom: 24px;
+}
+
+.lecturer-nav-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--lect-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 0 16px;
+    margin-bottom: 12px;
+}
+
+.lecturer-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: var(--lect-text-muted);
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 4px;
+    transition: all 0.2s ease;
+}
+
+.lecturer-nav-item:hover {
+    background: var(--lect-card);
+    color: var(--lect-text);
+}
+
+.lecturer-nav-item.active {
+    background: var(--lect-primary);
+    color: white;
+}
+
+.lecturer-nav-icon {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+}
+
+/* Logout Button */
+.lecturer-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 24px;
+    background: transparent;
+    border: 1px solid var(--lect-border);
+    color: var(--lect-text-muted);
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: auto;
+}
+
+.lecturer-logout-btn:hover {
+    background: var(--lect-primary);
+    border-color: var(--lect-primary);
+    color: white;
+}
+
+/* Main Content Area */
+.lecturer-main {
+    flex: 1;
+    margin-left: 240px;
+    padding: 32px 40px;
+}
+
+/* Header */
+.lecturer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.lecturer-welcome h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--lect-text);
+    margin-bottom: 4px;
+}
+
+.lecturer-welcome p {
+    color: var(--lect-text-muted);
+    font-size: 0.95rem;
+}
+
+.lecturer-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lecturer-header-btn {
+    width: 42px;
+    height: 42px;
+    background: var(--lect-card);
+    border: 1px solid var(--lect-border);
+    border-radius: 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.lecturer-header-btn:hover {
+    background: var(--lect-card-light);
+}
+
+/* Stats Cards */
+.lecturer-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.lecturer-stat-card {
+    background: var(--lect-card);
+    border: 1px solid var(--lect-border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s;
+}
+
+.lecturer-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px var(--lect-shadow);
+}
+
+.lecturer-stat-card.primary {
+    background: linear-gradient(135deg, var(--lect-primary) 0%, var(--lect-primary-dark) 100%);
+    border-color: var(--lect-primary);
+}
+
+.lecturer-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--lect-text);
+    margin-bottom: 8px;
+}
+
+.lecturer-stat-label {
+    font-size: 0.85rem;
+    color: var(--lect-text-muted);
+}
+
+.lecturer-stat-card.primary .lecturer-stat-label {
+    color: rgba(255,255,255,0.8);
+}
+
+/* Dashboard Grid */
+.lecturer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+}
+
+/* Cards */
+.lecturer-card {
+    background: var(--lect-card);
+    border: 1px solid var(--lect-border);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.lecturer-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.lecturer-card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--lect-text);
+}
+
+/* Quick Actions */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--lect-card);
+    border: 1px solid var(--lect-border);
+    border-radius: 12px;
+    color: var(--lect-text);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.quick-action-btn:hover {
+    background: var(--lect-card-light);
+    border-color: var(--lect-primary);
+    transform: translateY(-2px);
+}
+
+.quick-action-btn.primary {
+    background: var(--lect-primary);
+    border-color: var(--lect-primary);
+}
+
+.quick-action-btn.primary:hover {
+    background: var(--lect-primary-dark);
+}
+
+.quick-action-icon {
+    font-size: 1.3rem;
+}
+
+/* Class Table */
+.class-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.class-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--lect-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--lect-border);
+}
+
+.class-table td {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--lect-border);
+}
+
+.class-table tr:last-child td {
+    border-bottom: none;
+}
+
+.class-table tr:hover td {
+    background: var(--lect-card-light);
+}
+
+.class-name {
+    font-weight: 600;
+    color: var(--lect-text);
+}
+
+.class-code {
+    font-size: 0.8rem;
+    color: var(--lect-text-muted);
+}
+
+/* QR Button in Table */
+.table-qr-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--lect-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.table-qr-btn:hover {
+    background: var(--lect-primary-dark);
+    transform: scale(1.05);
+}
+
+/* Attendance Badge */
+.attendance-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.attendance-badge.good { background: rgba(74, 222, 128, 0.2); color: var(--lect-success); }
+.attendance-badge.warning { background: rgba(251, 191, 36, 0.2); color: var(--lect-warning); }
+.attendance-badge.danger { background: rgba(233, 69, 96, 0.2); color: var(--lect-accent); }
+
+/* Schedule Preview */
+.schedule-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--lect-border);
+}
+
+.schedule-preview-item:last-child {
+    border-bottom: none;
+}
+
+.schedule-time {
+    min-width: 70px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--lect-primary);
+}
+
+.schedule-details {
+    flex: 1;
+}
+
+.schedule-class-name {
+    font-weight: 600;
+    color: var(--lect-text);
+    margin-bottom: 2px;
+}
+
+.schedule-room {
+    font-size: 0.8rem;
+    color: var(--lect-text-muted);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .lecturer-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .lecturer-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+    .lecturer-sidebar {
+        transform: translateX(-100%);
+        z-index: 100;
+    }
+    .lecturer-sidebar.open {
+        transform: translateX(0);
+    }
+    .lecturer-main {
+        margin-left: 0;
+        padding: 20px;
+    }
+}

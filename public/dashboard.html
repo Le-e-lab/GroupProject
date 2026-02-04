@@ -3,253 +3,580 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - UPath</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css">
+    <title>Dashboard - UPath</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/theme.css">
     <style>
-        /* Dashboard Specific Layout */
-        .dashboard-layout { display: flex; min-height: 100vh; }
-        
-        .sidebar {
-            width: 260px;
-            background: var(--color-gray-100);
-            border-right: 1px solid var(--color-gray-200);
-            padding: var(--space-6);
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-        }
-
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: var(--space-8);
-        }
-
-        .nav-item {
+        .notification-banner {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 1px solid #F59E0B;
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            padding: var(--space-4);
-            color: var(--color-gray-500);
-            border-radius: var(--radius-md);
-            margin-bottom: 4px;
-            font-weight: var(--font-medium);
-            transition: all 0.2s;
+            gap: 16px;
+            animation: slideIn 0.3s ease;
         }
-        .nav-item:hover { background: rgba(0,0,0,0.05); color: var(--color-black); }
-        .nav-item.active { background: var(--color-white); color: var(--color-primary); box-shadow: var(--shadow-sm); }
-        .nav-icon { margin-right: 12px; font-size: 1.2em; }
-
-        /* Timeline */
-        .timeline-item {
-            display: flex;
-            gap: var(--space-4);
-            padding-bottom: var(--space-6);
-            border-left: 2px solid var(--color-gray-200);
-            padding-left: var(--space-6);
-            position: relative;
-        }
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -7px;
-            top: 0;
-            width: 12px;
-            height: 12px;
-            background: var(--color-primary);
-            border-radius: 50%;
-            border: 2px solid white;
-        }
-        .timeline-past::before { background: var(--color-gray-200); }
-        .timeline-item:last-child { border-left: none; }
-
-        @media(max-width: 768px) {
-            .sidebar { display: none; }
-            .main-content { margin-left: 0; }
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
-        .animate-card {
-            animation: fadeInUp 0.5s ease-out forwards;
-            opacity: 0; /* Star invisible */
+        .notif-icon {
+            width: 40px;
+            height: 40px;
+            background: #F59E0B;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
         }
-        .animate-delay-1 { animation-delay: 0.1s; }
-        .animate-delay-2 { animation-delay: 0.2s; }
-        .animate-delay-3 { animation-delay: 0.3s; }
-        .animate-delay-4 { animation-delay: 0.4s; }
+        .notif-content { flex: 1; }
+        .notif-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+        .notif-message {
+            font-size: 0.8rem;
+            color: #92400E;
+        }
+        .notif-time {
+            font-size: 0.75rem;
+            color: #B45309;
+            font-weight: 500;
+        }
+        .notif-dismiss {
+            background: none;
+            border: none;
+            color: #92400E;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 1.2rem;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .notif-dismiss:hover { opacity: 1; }
+
+        .action-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+        .action-info h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .action-info p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        .action-btn {
+            padding: 14px 32px;
+            background: white;
+            color: var(--primary);
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-link {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .section-link:hover { text-decoration: underline; }
+
+        .today-classes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .class-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .class-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+        .class-card.current {
+            border-color: var(--success);
+            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+        }
+        .class-card.current::before {
+            content: 'NOW';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--success);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .class-time {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .class-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .class-code {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .class-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .class-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .quick-action {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--text);
+            transition: all var(--transition);
+        }
+        .quick-action:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .quick-action-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .quick-action-text {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .action-card { flex-direction: column; text-align: center; }
+            .today-classes { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role">Student</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/dashboard.html" class="navbar-link active">Overview</a>
+            <a href="/pages/student/schedule.html" class="navbar-link">Classes</a>
+            <a href="/pages/student/reports.html" class="navbar-link">Attendance</a>
+            <a href="/pages/student/map.html" class="navbar-link">Map</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/student/profile.html" class="navbar-avatar" id="userAvatar">CB</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
 
-    <div class="dashboard-layout">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div style="margin-bottom: 40px;">
-                <a href="#" class="text-primary font-bold" style="font-size: var(--text-xl);">📍 UPath</a>
-            </div>
-            
-            <nav style="flex: 1;">
-                <a href="/dashboard.html" class="nav-item active"><span class="nav-icon">🏠</span> Dashboard</a>
-                <a href="/pages/schedule.html" class="nav-item"><span class="nav-icon">📅</span> Schedule</a>
-                <a href="/pages/reports.html" class="nav-item"><span class="nav-icon">📊</span> Reports</a>
-                <a href="/pages/navigation.html" class="nav-item"><span class="nav-icon">🧭</span> Navigation</a>
-                <a href="/pages/profile.html" class="nav-item"><span class="nav-icon">👤</span> Profile</a>
-            </nav>
-
-            <div style="border-top: 1px solid var(--color-gray-200); pt-4;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                    <div style="width: 40px; height: 40px; background: var(--color-primary-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--color-primary); font-weight: bold;">
-                        <span id="userInitials">--</span>
-                    </div>
-                    <div>
-                        <div class="font-bold" style="font-size: var(--text-sm);" id="userName">Student</div>
-                        <div class="text-secondary" style="font-size: var(--text-xs);" id="userId">ID: --</div>
-                    </div>
-                </div>
-                <button onclick="logout()" class="btn btn-outline btn-full" style="font-size: var(--text-sm);">Log Out</button>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <header style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center;">
+    <main class="page">
+        <div class="page-container">
+            <!-- Header with Live Clock -->
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <h1 class="font-bold" style="font-size: var(--text-3xl);">Dashboard</h1>
-                    <p class="text-secondary">Welcome back to your student portal.</p>
+                    <h1 class="page-title" id="welcomeTitle">Welcome back</h1>
+                    <p class="page-subtitle" id="dateDisplay"></p>
                 </div>
-                <button onclick="openQRModal()" class="btn btn-primary">
-                    <span style="font-size: 1.2em; margin-right: 8px;">📷</span> Mark Attendance
-                </button>
-            </header>
-
-            <!-- Stats Row -->
-            <div class="grid-3" style="margin-bottom: 40px;">
-                <div class="card animate-card animate-delay-1">
-                    <div class="text-secondary" style="font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 1px;">Attendance</div>
-                    <div class="font-bold text-primary" style="font-size: var(--text-4xl); margin: 10px 0;">85%</div>
-                    <div class="text-secondary" style="font-size: var(--text-sm);">Keep it up!</div>
-                </div>
-                <div class="card animate-card animate-delay-2">
-                    <div class="text-secondary" style="font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 1px;">Upcoming Classes</div>
-                    <div class="font-bold" style="font-size: var(--text-4xl); margin: 10px 0;">3</div>
-                    <div class="text-secondary" style="font-size: var(--text-sm);">Next: CS101 @ 14:00</div>
-                </div>
-                <div class="card animate-card animate-delay-3">
-                    <div class="text-secondary" style="font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 1px;">Assignments</div>
-                    <div class="font-bold" style="font-size: var(--text-4xl); margin: 10px 0;">2</div>
-                    <div class="text-secondary" style="font-size: var(--text-sm);">Due this week</div>
+                <div style="text-align: right;">
+                    <div id="liveClock" style="font-size: 2rem; font-weight: 800; color: var(--primary);"></div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Current Time</div>
                 </div>
             </div>
 
-            <!-- Content Split -->
-            <div class="grid-2">
-                <!-- Timeline -->
-                <div class="card">
-                    <h2 class="font-bold" style="margin-bottom: 20px;">Today's Schedule</h2>
-                    <div style="margin-top: 10px;">
-                        <div class="timeline-item timeline-past">
-                            <div style="flex: 1;">
-                                <div class="text-secondary" style="font-size: var(--text-xs);">08:00 - 10:00</div>
-                                <h3 class="font-bold">Introduction to Programming</h3>
-                                <p class="text-secondary text-sm">Lab 3A • Prof. Moyo</p>
-                            </div>
-                            <span class="badge badge-neutral">Done</span>
-                        </div>
-                        <div class="timeline-item">
-                            <div style="flex: 1;">
-                                <div class="text-secondary" style="font-size: var(--text-xs);">14:00 - 16:00</div>
-                                <h3 class="font-bold">Database Systems</h3>
-                                <p class="text-secondary text-sm">Room 204 • Dr. Chiwenga</p>
-                            </div>
-                            <span class="badge badge-primary">Upcoming</span>
-                        </div>
-                    </div>
-                </div>
+            <!-- Notifications - Dynamically loaded -->
+            <div id="notifications"></div>
 
-                <!-- Recent Activity -->
-                <div class="card">
-                    <h2 class="font-bold" style="margin-bottom: 20px;">Recent Activity</h2>
-                    <ul id="activityList">
-                        <li style="padding: 10px 0; border-bottom: 1px solid var(--color-gray-100);">
-                            <span class="badge badge-success" style="margin-right: 10px;">Present</span>
-                            <span class="text-sm">Marked attendance for Intro to Programming</span>
-                            <div class="text-secondary" style="font-size: var(--text-xs); margin-top: 4px;">Today, 08:05 AM</div>
-                        </li>
-                    </ul>
+            <!-- Action Card -->
+            <div class="action-card">
+                <div class="action-info">
+                    <h3>Mark Your Attendance</h3>
+                    <p>Scan QR code or enter the 6-digit code from your lecturer</p>
+                </div>
+                <a href="/pages/student/scan_qr.html" class="action-btn">Scan / Enter Code</a>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">87%</div>
+                    <div class="stat-label">Overall Attendance</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="classesToday">0</div>
+                    <div class="stat-label">Classes Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="markedPresent">0</div>
+                    <div class="stat-label">Marked Present</div>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <!-- QR Modal -->
-    <div id="qrModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;">
-        <div class="card" style="width: 400px; max-width: 90%; text-align: center;">
-            <h2 class="font-bold" style="margin-bottom: 20px;">Scan QR Code</h2>
-            <div style="width: 250px; height: 250px; background: #eee; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; border: 2px dashed #ccc;">
-                <span style="font-size: 50px;">📷</span>
+            <!-- Today's Classes -->
+            <div class="section-title">
+                Today's Classes
+                <a href="/pages/student/schedule.html" class="section-link">View Full Schedule</a>
             </div>
-            <p class="text-secondary" style="margin-bottom: 20px;">Align the QR code within the frame to mark attendance.</p>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="simulateScan()" class="btn btn-primary btn-full">Simulate Scan</button>
-                <button onclick="closeQRModal()" class="btn btn-outline btn-full">Cancel</button>
+            <div class="today-classes" id="todayClasses">
+                <div class="class-card">
+                    <div class="text-muted" style="text-align: center; padding: 20px;">Loading classes...</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="section-title">Quick Actions</div>
+            <div class="quick-actions">
+                <a href="/pages/student/schedule.html" class="quick-action">
+                    <div class="quick-action-icon">SC</div>
+                    <div class="quick-action-text">View Schedule</div>
+                </a>
+                <a href="/pages/student/reports.html" class="quick-action">
+                    <div class="quick-action-icon">AT</div>
+                    <div class="quick-action-text">Attendance Reports</div>
+                </a>
+                <a href="/pages/student/map.html" class="quick-action">
+                    <div class="quick-action-icon">MP</div>
+                    <div class="quick-action-text">Campus Map</div>
+                </a>
+                <a href="/pages/student/profile.html" class="quick-action">
+                    <div class="quick-action-icon">PR</div>
+                    <div class="quick-action-text">My Profile</div>
+                </a>
             </div>
         </div>
-    </div>
+    </main>
 
-    <script src="js/api.js"></script>
+    <script src="/js/api.js"></script>
     <script>
-        // Check Auth using Session Storage (Simple Client Side Check)
-        const userStr = sessionStorage.getItem('upath_user');
-        if (!userStr) window.location.href = 'login.html';
-        const user = JSON.parse(userStr);
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        let userYear = 2; // Default to Y2
 
-        // Populate User Info
-        document.getElementById('userName').textContent = user.fullName.split(' ')[0]; // First name
-        document.getElementById('userId').textContent = user.idNumber;
-        document.getElementById('userInitials').textContent = user.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        function loadUserData() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                const firstName = user.fullName ? user.fullName.split(' ')[0] : 'Student';
+                document.getElementById('welcomeTitle').textContent = `Welcome back, ${firstName}`;
+                
+                if (user.fullName) {
+                    const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('userAvatar').textContent = initials;
+                }
+                
+                // Determine year from ID
+                if (user.id && user.id.startsWith('250')) {
+                    userYear = 1;
+                } else {
+                    userYear = 2;
+                }
+            }
+        }
+
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        async function loadTodayClasses() {
+            const now = new Date();
+            const today = dayNames[now.getDay()];
+            const currentHour = now.getHours();
+            
+            // Get classes from API
+            const allClasses = API.getTimetable();
+            const todayClasses = allClasses.filter(c => c.day === today && c.year === userYear);
+            
+            // Sort by time
+            todayClasses.sort((a, b) => {
+                const timeA = parseInt(a.time.split(':')[0]);
+                const timeB = parseInt(b.time.split(':')[0]);
+                return timeA - timeB;
+            });
+            
+            // Update stats
+            document.getElementById('classesToday').textContent = todayClasses.length;
+            document.getElementById('markedPresent').textContent = Math.max(0, todayClasses.length - 1);
+            
+            // Render classes
+            const container = document.getElementById('todayClasses');
+            
+            if (todayClasses.length === 0) {
+                container.innerHTML = `
+                    <div class="class-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">🎉</div>
+                        <div style="font-weight: 600; color: var(--text);">No Classes Today</div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Enjoy your free day!</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            todayClasses.forEach(c => {
+                const startHour = parseInt(c.time.split(':')[0]);
+                const isCurrent = currentHour >= startHour && currentHour < startHour + 2;
+                
+                html += `
+                    <div class="class-card ${isCurrent ? 'current' : ''}">
+                        <div class="class-time">${c.time}</div>
+                        <div class="class-name">${c.name}</div>
+                        <div class="class-code">${c.code}</div>
+                        <div class="class-meta">
+                            <span>${c.room}</span>
+                            <span>${c.lecturerName}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function loadNotifications() {
+            const container = document.getElementById('notifications');
+            const now = new Date();
+            const currentHour = now.getHours();
+            const today = dayNames[now.getDay()];
+            
+            // 1. Get Announcements
+            const announcements = API.getAnnouncementsForStudent(userYear);
+            
+            // 2. Get Upcoming Classes
+            const allClasses = API.getTimetable();
+            const upcomingClasses = allClasses.filter(c => {
+                if (c.day !== today || c.year !== userYear) return false;
+                const startHour = parseInt(c.time.split(':')[0]);
+                return startHour > currentHour && startHour <= currentHour + 2;
+            });
+            
+            // If nothing, show nothing
+            if (announcements.length === 0 && upcomingClasses.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Render Announcements First
+            announcements.forEach((a, i) => {
+                let colorClass = '#2563EB'; // Info blue
+                let bgClass = 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)';
+                let borderClass = '#93C5FD';
+                let iconText = 'ℹ️';
+                
+                if (a.type === 'cancel') { 
+                    colorClass = '#DC2626'; 
+                    bgClass = 'linear-gradient(135deg, #FEE2E2 0%, #FECaca 100%)';
+                    borderClass = '#FCA5A5';
+                    iconText = '🚫';
+                } else if (a.type === 'delay') { 
+                    colorClass = '#D97706'; 
+                    bgClass = 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)';
+                    borderClass = '#FCD34D';
+                    iconText = '🕒'; 
+                }
+                
+                html += `
+                    <div class="notification-banner" id="announcement${i}" style="background: ${bgClass}; border: 1px solid ${borderClass};">
+                        <div class="notif-icon" style="background: ${colorClass};">${iconText}</div>
+                        <div class="notif-content">
+                            <div class="notif-title" style="color: #1F2937;">${a.courseName}: ${a.type === 'cancel' ? 'CANCELLED' : a.type === 'delay' ? 'DELAYED' : 'UPDATE'}</div>
+                            <div class="notif-message" style="color: #374151;">${a.message}</div>
+                        </div>
+                        <div class="notif-time" style="color: ${colorClass};">New</div>
+                        <button class="notif-dismiss" onclick="dismissNotif('announcement${i}')" style="color: ${colorClass};">×</button>
+                    </div>
+                `;
+            });
+            
+            // Render Class Notifications
+            upcomingClasses.forEach((c, i) => {
+                const startHour = parseInt(c.time.split(':')[0]);
+                const minsUntil = (startHour - currentHour) * 60 - now.getMinutes();
+                
+                html += `
+                    <div class="notification-banner" id="notif${i}">
+                        <div class="notif-icon">${c.code.substring(0, 2)}</div>
+                        <div class="notif-content">
+                            <div class="notif-title">${c.name} starting soon</div>
+                            <div class="notif-message">${c.room} • ${c.lecturerName}</div>
+                        </div>
+                        <div class="notif-time">In ~${minsUntil} min</div>
+                        <button class="notif-dismiss" onclick="dismissNotif('notif${i}')">×</button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        async function loadDashboardStats() {
+            // Get user ID
+            const userStr = sessionStorage.getItem('upath_user');
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            // Fetch unified stats (ASYNC)
+            try {
+                const stats = await API.fetchStudentStats(user.id);
+                const courseList = Object.values(stats);
+                
+                let totalSessions = 0;
+                let totalPresent = 0;
+                
+                courseList.forEach(c => {
+                    totalSessions += c.total;
+                    totalPresent += c.attended;
+                });
+                
+                const overallPct = totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : 0;
+                
+                // Update UI
+                const val = document.querySelector('.stat-value');
+                if (val) val.textContent = overallPct + '%';
+            } catch (e) {
+                console.warn("Could not sync dashboard stats:", e);
+            }
+        }
+
+        function dismissNotif(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.style.animation = 'slideIn 0.2s ease reverse';
+                setTimeout(() => el.remove(), 200);
+            }
+        }
 
         function logout() {
             sessionStorage.removeItem('upath_user');
-            window.location.href = 'login.html';
+            window.location.href = '/pages/auth.html';
         }
 
-        function openQRModal() {
-            document.getElementById('qrModal').style.display = 'flex';
+        /**
+         * Update the live clock display every second
+         */
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true 
+            });
+            document.getElementById('liveClock').textContent = timeStr;
         }
 
-        function closeQRModal() {
-            document.getElementById('qrModal').style.display = 'none';
-        }
-
-        async function simulateScan() {
-            const btn = document.querySelector('#qrModal .btn-primary');
-            btn.textContent = "Scanning...";
-            
-            setTimeout(() => {
-                alert("Attendance Marked Successfully! ✅");
-                closeQRModal();
-                btn.textContent = "Simulate Scan";
-                
-                // Add to recent activity visually
-                const list = document.getElementById('activityList');
-                const li = document.createElement('li');
-                li.style.padding = '10px 0';
-                li.style.borderBottom = '1px solid var(--color-gray-100)';
-                li.innerHTML = `
-                    <span class="badge badge-success" style="margin-right: 10px;">Present</span>
-                    <span class="text-sm">Marked attendance for Database Systems</span>
-                    <div class="text-secondary" style="font-size: var(--text-xs); margin-top: 4px;">Just now</div>
-                `;
-                list.insertBefore(li, list.firstChild);
-                
-            }, 1500);
-        }
+        // Initialize on page load
+        loadUserData();
+        updateDate();
+        loadTodayClasses();
+        loadNotifications();
+        loadDashboardStats();
+        updateClock();
+        
+        // Update clock every second
+        setInterval(updateClock, 1000);
     </script>
 </body>
 </html>

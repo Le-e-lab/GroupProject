@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Announcement - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .form-select, .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg);
+            font-family: inherit;
+        }
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .history-list {
+            display: grid;
+            gap: 16px;
+        }
+        .history-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .history-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .history-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge.cancel { background: #FEE2E2; color: #DC2626; }
+        .badge.delay { background: #FEF3C7; color: #D97706; }
+        .badge.info { background: #DBEAFE; color: #2563EB; }
+
+        @media (max-width: 768px) {
+            .history-item {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/lecturer_dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/lecturer_dashboard.html" class="navbar-link">Overview</a>
+            <a href="/pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
+            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
+            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-container" style="max-width: 800px;">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Class Announcements</h1>
+                    <p class="page-subtitle">Notify students about cancellations, delays, or important info</p>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <form id="announcementForm" onsubmit="event.preventDefault(); postAnnouncement();">
+                    <div class="form-group">
+                        <label class="form-label">Select Class</label>
+                        <select class="form-select" id="classSelect" required>
+                            <option value="">Loading classes...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Type of Announcement</label>
+                        <select class="form-select" id="typeSelect" required>
+                            <option value="info">General Information</option>
+                            <option value="delay">Class Delayed</option>
+                            <option value="cancel">Class Cancelled</option>
+                            <option value="exam">Test/Exam Alert</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Message</label>
+                        <textarea class="form-textarea" id="messageInput" placeholder="Enter your message to students..." required></textarea>
+                    </div>
+
+                    <div style="text-align: right;">
+                        <button type="submit" class="btn btn-primary">Post Announcement</button>
+                    </div>
+                </form>
+            </div>
+
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;">Recent Announcements</h2>
+            <div class="history-list" id="announcementHistory">
+                <!-- Dynamically loaded -->
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">No recent announcements</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success Toast -->
+    <div id="toast" style="position: fixed; bottom: 24px; right: 24px; background: var(--success); color: white; padding: 16px 24px; border-radius: var(--radius); transform: translateY(100px); transition: all 0.3s; opacity: 0;">
+        Announcement Posted Successfully!
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let lecturerId = '210101';
+        let lecturerName = 'Lecturer';
+
+        function loadUserData() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                lecturerId = user.id || lecturerId;
+                lecturerName = user.fullName || lecturerName;
+                
+                if (user.fullName) {
+                    const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('userAvatar').textContent = initials;
+                }
+            }
+            loadClasses();
+            loadHistory();
+        }
+
+        function loadClasses() {
+            const allClasses = API.getTimetable();
+            const myClasses = allClasses.filter(c => c.lecturerId === lecturerId);
+            
+            // Unique courses
+            const courses = {};
+            myClasses.forEach(c => {
+                if (!courses[c.code]) {
+                    courses[c.code] = {
+                        code: c.code,
+                        name: c.name,
+                        year: c.year
+                    };
+                }
+            });
+
+            const select = document.getElementById('classSelect');
+            select.innerHTML = '<option value="">Select a class...</option>';
+            
+            Object.values(courses).forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.code;
+                option.textContent = `${c.code} - ${c.name} (Year ${c.year})`;
+                option.dataset.name = c.name;
+                option.dataset.year = c.year;
+                select.appendChild(option);
+            });
+        }
+
+        function postAnnouncement() {
+            const classSelect = document.getElementById('classSelect');
+            const typeSelect = document.getElementById('typeSelect');
+            const messageInput = document.getElementById('messageInput');
+            
+            if (!classSelect.value) return;
+            
+            const selectedOption = classSelect.options[classSelect.selectedIndex];
+            
+            const announcement = {
+                lecturerId,
+                lecturerName,
+                courseCode: classSelect.value,
+                courseName: selectedOption.dataset.name,
+                year: parseInt(selectedOption.dataset.year),
+                type: typeSelect.value,
+                message: messageInput.value
+            };
+            
+            API.postAnnouncement(announcement);
+            
+            // Show success
+            const toast = document.getElementById('toast');
+            toast.style.transform = 'translateY(0)';
+            toast.style.opacity = '1';
+            
+            setTimeout(() => {
+                toast.style.transform = 'translateY(100px)';
+                toast.style.opacity = '0';
+            }, 3000);
+            
+            // Reset form and reload
+            messageInput.value = '';
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const list = API.getAnnouncementsByLecturer(lecturerId);
+            const container = document.getElementById('announcementHistory');
+            
+            if (list.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No recent announcements</div>';
+                return;
+            }
+            
+            let html = '';
+            list.forEach(a => {
+                let badgeClass = 'info';
+                let badgeText = 'General';
+                
+                if (a.type === 'cancel') { badgeClass = 'cancel'; badgeText = 'Cancelled'; }
+                else if (a.type === 'delay') { badgeClass = 'delay'; badgeText = 'Delayed'; }
+                else if (a.type === 'exam') { badgeClass = 'info'; badgeText = 'Exam Alert'; }
+                
+                const date = new Date(a.timestamp).toLocaleDateString() + ' ' + new Date(a.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                html += `
+                    <div class="history-item">
+                        <div class="history-content">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                <span class="badge ${badgeClass}">${badgeText}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">${date}</span>
+                            </div>
+                            <h4>${a.courseName} (${a.courseCode})</h4>
+                            <p>${a.message}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '/pages/auth.html';
+        }
+
+        loadUserData();
+    </script>
+</body>
+</html>

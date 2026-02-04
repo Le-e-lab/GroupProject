@@ -1,18 +1,26 @@
-[
-  {
-    "id": "u1",
-    "fullName": "Tinashe Gombe",
-    "email": "student@xul.ac.zw",
-    "password": "123456",
-    "role": "student",
-    "idNumber": "240105"
-  },
-  {
-    "id": "u2",
-    "fullName": "Dr. Sarah Moyo",
-    "email": "smoyo@xul.ac.zw",
-    "password": "wifi123",
-    "role": "lecturer",
-    "idNumber": "210100"
-  }
-]
+{
+  "students": [
+    { "id": "240101", "fullName": "Chris Banda", "password": "123456", "year": 2, "email": "chris.banda@students.uz.ac.zw" },
+    { "id": "240102", "fullName": "Tatenda Moyo", "password": "123456", "year": 2, "email": "tatenda.moyo@students.uz.ac.zw" },
+    { "id": "240103", "fullName": "Rudo Chiwenga", "password": "123456", "year": 2, "email": "rudo.chiwenga@students.uz.ac.zw" },
+    { "id": "240104", "fullName": "Tino Nyathi", "password": "123456", "year": 2, "email": "tino.nyathi@students.uz.ac.zw" },
+    { "id": "240105", "fullName": "Grace Mutasa", "password": "123456", "year": 2, "email": "grace.mutasa@students.uz.ac.zw" },
+    { "id": "250101", "fullName": "Brian Chikwanha", "password": "123456", "year": 1, "email": "brian.chikwanha@students.uz.ac.zw" },
+    { "id": "250102", "fullName": "Nyasha Dube", "password": "123456", "year": 1, "email": "nyasha.dube@students.uz.ac.zw" },
+    { "id": "250103", "fullName": "Fadzai Mupfumo", "password": "123456", "year": 1, "email": "fadzai.mupfumo@students.uz.ac.zw" },
+    { "id": "250104", "fullName": "Simba Ngwenya", "password": "123456", "year": 1, "email": "simba.ngwenya@students.uz.ac.zw" },
+    { "id": "250105", "fullName": "Rumbi Tsuro", "password": "123456", "year": 1, "email": "rumbi.tsuro@students.uz.ac.zw" }
+  ],
+  "lecturers": [
+    { "id": "210101", "fullName": "Mr. Makambwa", "password": "staff123", "department": "Computer Science", "email": "makambwa@uz.ac.zw" },
+    { "id": "210102", "fullName": "Dr. Tendai Zengeni", "password": "staff123", "department": "Computer Science", "email": "zengeni@uz.ac.zw" },
+    { "id": "210103", "fullName": "Mr. Joseph Chinzvende", "password": "staff123", "department": "Computer Science", "email": "chinzvende@uz.ac.zw" },
+    { "id": "210104", "fullName": "Rev. N. Bondo", "password": "staff123", "department": "Ethics", "email": "bondo@uz.ac.zw" },
+    { "id": "210105", "fullName": "Mr. L. Dhlakama", "password": "staff123", "department": "Computer Science", "email": "dhlakama@uz.ac.zw" },
+    { "id": "210106", "fullName": "Prof. Yogesh Awasthi", "password": "staff123", "department": "Computer Science", "email": "awasthi@uz.ac.zw" },
+    { "id": "210107", "fullName": "Dr. R. Makoni", "password": "staff123", "department": "Computer Science", "email": "makoni@uz.ac.zw" },
+    { "id": "210108", "fullName": "Dr. M. Kayembe", "password": "staff123", "department": "Languages", "email": "kayembe@uz.ac.zw" },
+    { "id": "210109", "fullName": "Dr. M. Mzite", "password": "staff123", "department": "Languages", "email": "mzite@uz.ac.zw" },
+    { "id": "210110", "fullName": "Ms. J. Muzamhindo", "password": "staff123", "department": "Languages", "email": "muzamhindo@uz.ac.zw" }
+  ]
+}

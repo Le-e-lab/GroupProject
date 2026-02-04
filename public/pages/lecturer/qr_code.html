@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate QR Code - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+            background: var(--bg);
+        }
+        .qr-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            max-width: 800px;
+            width: 100%;
+        }
+        .qr-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            text-align: center;
+            position: relative;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--text);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        /* ... existing styles ... */
+        .qr-card {
+            /* ... existing styles ... */
+            /* Removed position relative that might have been confusing if used with absolute back button */
+            text-align: center;
+        }
+
+        /* Update logic script */
+        .back-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .class-info {
+            background: var(--primary-light);
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+        }
+        .class-name {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        .class-details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .qr-image {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            background: white;
+            padding: 12px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+        }
+        .qr-image img {
+            width: 100%;
+            height: 100%;
+        }
+        .code-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .code-display {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: var(--primary);
+            font-family: monospace;
+            margin-bottom: 8px;
+        }
+        .timer {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .timer span {
+            font-weight: 600;
+            color: var(--warning);
+        }
+        .action-btns {
+            display: flex;
+            gap: 12px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid;
+        }
+        .action-btn.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .action-btn.primary:hover {
+            background: var(--primary-hover);
+        }
+        .action-btn.secondary {
+            background: var(--surface);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        .action-btn.secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .notif-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+        }
+        .notif-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .notif-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .notif-btns {
+            display: grid;
+            gap: 10px;
+        }
+        .notif-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: left;
+        }
+        .notif-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .notif-btn.sent {
+            border-color: var(--success);
+            background: var(--success-light);
+        }
+        .notif-btn-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .notif-btn-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--primary);
+            stroke-width: 2;
+            fill: none;
+        }
+        .notif-btn-text {
+            flex: 1;
+        }
+        .notif-btn-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .notif-btn-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .custom-msg {
+            margin-top: 20px;
+        }
+        .custom-msg textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            resize: none;
+            font-family: inherit;
+        }
+        .custom-msg textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .send-btn {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .send-btn:hover {
+            background: var(--primary-hover);
+        }
+        @media (max-width: 768px) {
+            .qr-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="qr-layout">
+        <!-- QR Code Card -->
+        <div class="qr-card">
+            <a href="/lecturer_dashboard.html" class="back-btn">← Back to Dashboard</a>
+            
+            <div class="class-info">
+                <div class="class-name" id="className">Introduction to Programming</div>
+                <div class="class-details" id="classDetails">CS101 • Lab 3A • In progress</div>
+            </div>
+
+            <div class="qr-image">
+                <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=UPATH-123456" alt="QR Code">
+            </div>
+
+            <p class="code-label">Students can also enter this code:</p>
+            <div class="code-display" id="codeDisplay">123456</div>
+            <div class="timer">Expires in <span id="countdown">5:00</span></div>
+
+            <div class="action-btns">
+                <button class="action-btn primary" onclick="regenerateCode()">Regenerate</button>
+                <button class="action-btn secondary" onclick="copyCode()">Copy Code</button>
+            </div>
+        </div>
+
+        <!-- Notifications Card -->
+        <div class="notif-card">
+            <h3 class="notif-title">Send Notification</h3>
+            <p class="notif-subtitle">Notify students about changes</p>
+            
+            <div class="notif-btns">
+                <button class="notif-btn" onclick="sendNotif('late', this)">
+                    <span class="notif-btn-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </span>
+                    <div class="notif-btn-text">
+                        <div class="notif-btn-title">Running Late</div>
+                        <div class="notif-btn-desc">Notify 15 min delay</div>
+                    </div>
+                </button>
+
+                <button class="notif-btn" onclick="sendNotif('venue', this)">
+                    <span class="notif-btn-icon">
+                        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </span>
+                    <div class="notif-btn-text">
+                        <div class="notif-btn-title">Venue Change</div>
+                        <div class="notif-btn-desc">Class moved to different room</div>
+                    </div>
+                </button>
+
+                <button class="notif-btn" onclick="sendNotif('cancelled', this)">
+                    <span class="notif-btn-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    </span>
+                    <div class="notif-btn-text">
+                        <div class="notif-btn-title">Class Cancelled</div>
+                        <div class="notif-btn-desc">Cancel today's class</div>
+                    </div>
+                </button>
+
+                <button class="notif-btn" onclick="sendNotif('substitute', this)">
+                    <span class="notif-btn-icon">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </span>
+                    <div class="notif-btn-text">
+                        <div class="notif-btn-title">Substitute Lecturer</div>
+                        <div class="notif-btn-desc">Another lecturer covering</div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="custom-msg">
+                <textarea id="customMsg" rows="3" placeholder="Or type a custom message..."></textarea>
+                <button class="send-btn" onclick="sendCustom()">Send Custom Message</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Init mobile nav if needed (though no nav here, but for completeness)
+        // Main logic
+
+        let timeLeft = 300;
+        const urlParams = new URLSearchParams(window.location.search);
+        const classCode = urlParams.get('class') || 'CS101';
+        
+        const classData = {
+            CS101: { name: 'Introduction to Programming', room: 'Lab 3A' },
+            CS204: { name: 'Database Systems', room: 'Room 204' },
+            CS305: { name: 'Web Development', room: 'Lab 2B' }
+        };
+
+        function generateCode() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+        
+        function updateDisplay(code) {
+            document.getElementById('codeDisplay').textContent = code;
+            document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=UPATH-${classCode}-${code}`;
+        }
+        
+        function regenerateCode() {
+            updateDisplay(generateCode());
+            timeLeft = 300;
+        }
+        
+        function copyCode() {
+            const code = document.getElementById('codeDisplay').textContent;
+            navigator.clipboard.writeText(code);
+            alert('Code copied: ' + code);
+        }
+
+        function sendNotif(type, btn) {
+            const messages = {
+                late: 'Lecturer is running approximately 15 minutes late',
+                venue: 'Class venue has been changed',
+                cancelled: 'Today\'s class has been cancelled',
+                substitute: 'A substitute lecturer will be covering this class'
+            };
+            
+            const announcement = {
+                lecturerId: '210101',
+                lecturerName: 'Lecturer',
+                courseCode: classCode,
+                courseName: info.name,
+                year: 2,
+                type: type === 'cancelled' ? 'cancel' : type === 'late' ? 'delay' : 'info',
+                message: messages[type]
+            };
+            
+            if (window.API) {
+                API.postAnnouncement(announcement);
+            }
+            
+            document.querySelectorAll('.notif-btn').forEach(b => b.classList.remove('sent'));
+            btn.classList.add('sent');
+            
+            // Show toast or alert
+            const msg = messages[type];
+            alert(`Notification Sent: ${msg}`);
+        }
+
+        function sendCustom() {
+            const msg = document.getElementById('customMsg').value.trim();
+            if (!msg) return alert('Please enter a message');
+            
+            const announcement = {
+                lecturerId: '210101',
+                lecturerName: 'Lecturer',
+                courseCode: classCode,
+                courseName: info.name,
+                year: 2,
+                type: 'info',
+                message: msg
+            };
+            
+            if (window.API) {
+                API.postAnnouncement(announcement);
+            }
+            
+            alert('Custom message sent to students!');
+            document.getElementById('customMsg').value = '';
+        }
+        
+        setInterval(() => {
+            if (timeLeft <= 0) regenerateCode();
+            else {
+                timeLeft--;
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                document.getElementById('countdown').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+        }, 1000);
+        
+        const info = classData[classCode] || { name: classCode, room: 'TBD' };
+        document.getElementById('className').textContent = info.name;
+        document.getElementById('classDetails').textContent = `${classCode} • ${info.room} • In progress`;
+        updateDisplay(generateCode());
+    </script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        /**
+         * ========================================
+         * Lecturer Analytics Page Styles
+         * ========================================
+         */
+        
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .live-clock {
+            text-align: right;
+        }
+        .live-clock .time {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #DC2626;
+        }
+        .live-clock .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+        }
+        .stat-card.highlight {
+            background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+            color: white;
+            border: none;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        .stat-card.highlight .stat-value {
+            color: white;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .stat-card.highlight .stat-label {
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* Course Analytics Cards */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+        }
+        .course-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            transition: all var(--transition);
+        }
+        .course-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .course-name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .course-code {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .year-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+        .year-badge.y1 { background: #10B981; }
+        .year-badge.y2 { background: #6366F1; }
+        .course-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .mini-stat {
+            text-align: center;
+        }
+        .mini-stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .mini-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .course-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .course-actions .btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .courses-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="/lecturer_dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/lecturer_dashboard.html" class="navbar-link">Overview</a>
+            <a href="/pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
+            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
+            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link active">Analytics</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-container">
+            <!-- Header with Clock -->
+            <div class="analytics-header">
+                <div>
+                    <h1 class="page-title">Attendance Analytics</h1>
+                    <p class="page-subtitle" id="lecturerName">Loading...</p>
+                </div>
+                <div class="live-clock">
+                    <div class="time" id="liveClock"></div>
+                    <div class="label">Current Time</div>
+                </div>
+            </div>
+
+            <!-- Overall Stats -->
+            <div class="stats-grid">
+                <div class="stat-card highlight">
+                    <div class="stat-value" id="avgAttendance">0%</div>
+                    <div class="stat-label">Avg Attendance</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalCourses">0</div>
+                    <div class="stat-label">My Courses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalStudents">0</div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sessionsWeek">0</div>
+                    <div class="stat-label">Sessions/Week</div>
+                </div>
+            </div>
+
+            <!-- Course Breakdown -->
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;">Course Analytics</h2>
+            <div class="courses-grid" id="coursesGrid">
+                <!-- Dynamically loaded -->
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        /**
+         * ========================================
+         * Lecturer Analytics Page Script
+         * Loads course data and attendance analytics
+         * ========================================
+         */
+        
+        let lecturerId = '210101';
+
+        /**
+         * Load user data from session
+         */
+        function loadUserData() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                if (user.id) lecturerId = user.id;
+                
+                document.getElementById('lecturerName').textContent = user.fullName || 'Lecturer';
+                
+                if (user.fullName) {
+                    const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('userAvatar').textContent = initials;
+                }
+            }
+            loadAnalytics();
+        }
+
+        /**
+         * Load analytics data from API
+         * Uses localStorage to persist data for the current day
+         */
+        async function loadAnalytics() {
+            // Get Lecturer ID
+            const userStr = sessionStorage.getItem('upath_user');
+            const lecturerId = userStr ? JSON.parse(userStr).id : '210101';
+
+            const allClasses = API.getTimetable();
+            const myClasses = allClasses.filter(c => c.lecturerId === lecturerId);
+            
+            const courses = {};
+            
+            // fetch stats for each course parallelly
+            const uniqueCodes = [...new Set(myClasses.map(c => c.code))];
+            
+            try {
+                const statsPromises = uniqueCodes.map(code => API.fetchCourseStats(code));
+                const statsResults = await Promise.all(statsPromises);
+                
+                // Map results back to codes
+                const statsMap = {};
+                uniqueCodes.forEach((code, i) => {
+                    statsMap[code] = statsResults[i];
+                });
+                
+                myClasses.forEach(c => {
+                    if (!courses[c.code]) {
+                        const s = statsMap[c.code] || { totalSessions: 0, avgAttendance: 0, presentCount: 0 };
+                        courses[c.code] = {
+                            code: c.code,
+                            name: c.name,
+                            year: c.year,
+                            sessions: s.totalSessions,
+                            avgAttendance: s.avgAttendance,
+                            presentCount: s.presentCount
+                        };
+                    }
+                });
+            } catch (e) {
+                 console.error("Analytics fetch failed", e);
+            }
+
+            // Calculate overall dashboard stats
+            const courseList = Object.values(courses);
+            let totalAvg = 0;
+            let totalSessions = 0;
+            
+            courseList.forEach(c => {
+                totalAvg += c.avgAttendance;
+                totalSessions += c.sessions;
+            });
+            
+            const globalAvg = courseList.length > 0 ? Math.round(totalAvg / courseList.length) : 0;
+            
+            // Update UI Stats
+            document.getElementById('avgAttendance').textContent = globalAvg + '%';
+            document.getElementById('sessionsWeek').textContent = Math.round(totalSessions / 12); // Approx weekly avg
+            
+            // We can leave Total Students static or mock it for now since we don't have a full student DB count in API yet
+            document.getElementById('totalStudents').textContent = courseList.length * 40; 
+            document.getElementById('totalCourses').textContent = courseList.length;
+
+            // Render Course Cards
+            const grid = document.getElementById('coursesGrid');
+            
+            if (courseList.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
+                        No courses found for your account.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            
+            courseList.forEach(course => {
+                let status = 'success';
+                if (course.avgAttendance < 80) status = 'warning';
+                if (course.avgAttendance < 70) status = 'danger';
+                
+                html += `
+                    <div class="course-card">
+                        <div class="course-header">
+                            <div class="course-info">
+                                <h3>${course.name}</h3>
+                                <p>${course.code} • Year ${course.year}</p>
+                            </div>
+                            <div class="course-percent ${status}">${course.avgAttendance}%</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${status}" style="width: ${course.avgAttendance}%"></div>
+                        </div>
+                        <div class="course-details">
+                            <span>${course.sessions} sessions total</span>
+                            <span>${course.presentCount} total check-ins</span>
+                        </div>
+                        <div class="course-actions">
+                            <a href="/pages/lecturer/qr_code.html?class=${course.code}" class="btn btn-primary">Generate QR</a>
+                            <a href="/pages/lecturer/manual_attendance.html?class=${course.code}" class="btn btn-secondary">View Details</a>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        /**
+         * Update live clock every second
+         */
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true 
+            });
+            document.getElementById('liveClock').textContent = timeStr;
+        }
+
+        /**
+         * Logout and clear session
+         */
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '/pages/auth.html';
+        }
+
+        // Initialize
+        loadUserData();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

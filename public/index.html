@@ -3,67 +3,653 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPath - Africa University</title>
+    <title>UPath - Smart Attendance System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/theme.css">
+    <style>
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, var(--bg) 0%, var(--primary-light) 100%);
+        }
+        .hero-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            animation: fadeIn 0.6s ease;
+        }
+        .hero-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .hero-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .hero-logo-text {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .hero-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.6s ease 0.1s backwards;
+        }
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1.2;
+            margin-bottom: 16px;
+            animation: fadeInUp 0.6s ease 0.2s backwards;
+        }
+        .hero-title span {
+            color: var(--primary);
+        }
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            animation: fadeInUp 0.6s ease 0.3s backwards;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            animation: fadeInUp 0.6s ease 0.4s backwards;
+        }
+        .hero-btn {
+            padding: 16px 32px;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all var(--transition);
+        }
+        .hero-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .hero-btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+        }
+        .hero-btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .hero-btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 80px 24px;
+        }
+        .section-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Features Section */
+        .features {
+            background: var(--surface);
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+        .feature-card {
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            transition: all var(--transition);
+        }
+        .feature-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .feature-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* How It Works Section */
+        .how-it-works {
+            background: var(--bg);
+        }
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+        .step-card {
+            text-align: center;
+            padding: 24px;
+        }
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            margin: 0 auto 16px;
+        }
+        .step-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .step-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Two Options Section */
+        .options {
+            background: var(--surface);
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+        .option-card {
+            background: var(--bg);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            text-align: center;
+            border: 2px solid var(--border);
+            transition: all var(--transition);
+        }
+        .option-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+        .option-icon {
+            font-size: 56px;
+            margin-bottom: 20px;
+        }
+        .option-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .option-desc {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .option-steps {
+            text-align: left;
+            background: var(--surface);
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+        }
+        .option-steps li {
+            padding: 6px 0;
+            color: var(--text-secondary);
+        }
+
+        /* Security Section */
+        .security {
+            background: var(--bg);
+        }
+        .security-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+        .security-content h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .security-content > p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.7;
+        }
+        .security-list {
+            list-style: none;
+        }
+        .security-list li {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .security-list .check {
+            width: 24px;
+            height: 24px;
+            background: var(--success-light);
+            color: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        .security-list span {
+            color: var(--text);
+            line-height: 1.5;
+        }
+        .security-visual {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg) 100%);
+            border-radius: var(--radius-xl);
+            padding: 48px;
+            text-align: center;
+        }
+        .security-visual .icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+        }
+        .security-visual h3 {
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .security-visual p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Communication Section */
+        .communication {
+            background: var(--surface);
+        }
+        .comm-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+        .comm-card {
+            text-align: center;
+            padding: 24px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            transition: all var(--transition);
+        }
+        .comm-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+        .comm-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+        .comm-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+        .comm-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 80px 24px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            text-align: center;
+        }
+        .cta h2 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .cta p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 32px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta-btn {
+            display: inline-block;
+            padding: 16px 40px;
+            background: white;
+            color: var(--primary);
+            border-radius: var(--radius);
+            font-weight: 700;
+            text-decoration: none;
+            transition: all var(--transition);
+        }
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 40px 24px;
+            background: var(--text);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .features-grid, .comm-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2rem; }
+            .hero-nav { padding: 16px 20px; }
+            .hero-buttons { flex-direction: column; width: 100%; }
+            .hero-btn { width: 100%; text-align: center; }
+            .features-grid, .steps-grid, .comm-grid, .options-grid { grid-template-columns: 1fr; }
+            .security-grid { grid-template-columns: 1fr; }
+            .section { padding: 60px 20px; }
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="container navbar-inner">
-            <a href="index.html" class="navbar-brand"><span class="navbar-logo">📍</span> UPath</a>
-            <div>
-                <a href="pages/auth.html" class="btn btn-outline" style="margin-right: 10px;">Login</a>
-                <a href="pages/auth.html" class="btn btn-primary">Sign Up</a>
-            </div>
-        </div>
-    </nav>
+    <!-- Hero Section -->
+    <section class="hero">
+        <nav class="hero-nav">
+            <a href="/" class="hero-logo">
+                <div class="hero-logo-icon">U</div>
+                <span class="hero-logo-text">UPath</span>
+            </a>
+            <!-- Login button removed as requested -->
+        </nav>
 
-    <!-- Hero -->
-    <header style="padding: 100px 0; text-align: center;">
-        <div class="container">
-            <span class="badge badge-neutral" style="margin-bottom: var(--space-4);">Africa University Official</span>
-            <h1 style="font-size: var(--text-5xl); font-weight: 800; letter-spacing: -1px; margin-bottom: var(--space-4); max-width: 800px; margin-left: auto; margin-right: auto;">
-                Navigation & Attendance <br><span class="text-primary">Simplified.</span>
-            </h1>
-            <p class="text-secondary" style="font-size: var(--text-xl); max-width: 600px; margin: 0 auto 40px;">
-                The smart companion for students and staff. Navigate campus and manage classes effortlessly.
+        <div class="hero-content">
+            <span class="hero-badge">🚀 Smart Attendance Made Simple</span>
+            <h1 class="hero-title">Track Attendance with <span>Bluetooth Proximity</span></h1>
+            <p class="hero-subtitle">
+                No more fake sign-ins. UPath verifies students are physically in the classroom using Bluetooth before marking attendance.
             </p>
-            <div style="display: flex; gap: 15px; justify-content: center;">
-                <a href="pages/auth.html" class="btn btn-primary btn-lg">Student Portal</a>
+            <div class="hero-buttons">
+                <a href="/pages/auth.html" class="hero-btn hero-btn-primary">Get Started</a>
+                <a href="#how-it-works" class="hero-btn hero-btn-secondary">Learn More</a>
             </div>
         </div>
-    </header>
+    </section>
 
-    <!-- Essential Features -->
-    <section style="padding: 80px 0; border-top: 1px solid var(--color-gray-100);">
-        <div class="container">
-            <div class="grid-3">
-                <div class="card">
-                    <div style="font-size: 40px; margin-bottom: 20px;">📍</div>
-                    <h3 class="font-bold" style="font-size: var(--text-xl); margin-bottom: 10px;">Smart Navigation</h3>
-                    <p class="text-secondary">Find your way to any lecture hall or office with simple turn-by-turn routing.</p>
+    <!-- Two Ways to Mark Attendance -->
+    <section class="section options">
+        <div class="section-container">
+            <h2 class="section-title">Two Ways to Mark Attendance</h2>
+            <p class="section-subtitle">Students can choose whichever method is more convenient. Both require Bluetooth proximity verification.</p>
+
+            <div class="options-grid">
+                <div class="option-card">
+                    <div class="option-icon">📷</div>
+                    <h3 class="option-title">Scan QR Code</h3>
+                    <p class="option-desc">Point your phone camera at the lecturer's screen</p>
+                    <ol class="option-steps">
+                        <li>1. Lecturer displays QR code</li>
+                        <li>2. Open UPath and tap "Scan QR"</li>
+                        <li>3. Bluetooth verifies you're in class</li>
+                        <li>4. Attendance marked ✓</li>
+                    </ol>
                 </div>
-                <div class="card">
-                    <div style="font-size: 40px; margin-bottom: 20px;">📱</div>
-                    <h3 class="font-bold" style="font-size: var(--text-xl); margin-bottom: 10px;">QR Attendance</h3>
-                    <p class="text-secondary">Mark your presence instantly. No more paper sheets or manual roll calls.</p>
-                </div>
-                <div class="card">
-                    <div style="font-size: 40px; margin-bottom: 20px;">📊</div>
-                    <h3 class="font-bold" style="font-size: var(--text-xl); margin-bottom: 10px;">Live Insights</h3>
-                    <p class="text-secondary">Track your academic engagement and attendance stats in real-time.</p>
+
+                <div class="option-card">
+                    <div class="option-icon">🔢</div>
+                    <h3 class="option-title">Enter 6-Digit Code</h3>
+                    <p class="option-desc">Type the code shown below the QR code</p>
+                    <ol class="option-steps">
+                        <li>1. Lecturer shows code (e.g., 847293)</li>
+                        <li>2. Open UPath and tap "Enter Code"</li>
+                        <li>3. Bluetooth verifies you're in class</li>
+                        <li>4. Attendance marked ✓</li>
+                    </ol>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Features Section -->
+    <section class="section features">
+        <div class="section-container">
+            <h2 class="section-title">Why Choose UPath?</h2>
+            <p class="section-subtitle">Built for modern universities with security, simplicity, and communication at its core.</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📡</div>
+                    <h3 class="feature-title">Bluetooth Verification</h3>
+                    <p class="feature-desc">QR codes and manual codes only work when the student is within Bluetooth range of the lecturer's device.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⏱️</div>
+                    <h3 class="feature-title">Time-Limited Codes</h3>
+                    <p class="feature-desc">Codes automatically regenerate every 5 minutes. Even if shared, they expire and require physical presence.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">✏️</div>
+                    <h3 class="feature-title">Manual Override</h3>
+                    <p class="feature-desc">Phone dead? Forgot it? Lecturers can manually mark students present for legitimate cases.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📢</div>
+                    <h3 class="feature-title">Instant Notifications</h3>
+                    <p class="feature-desc">Lecturers can notify students about delays, venue changes, cancellations, or substitute lecturers instantly.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Smart Dashboard</h3>
+                    <p class="feature-desc">Dashboard auto-detects current class based on schedule. One click to start attendance for the right class.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3 class="feature-title">Secure & Private</h3>
+                    <p class="feature-desc">Your data stays on campus servers. No third-party tracking, no data selling. Just attendance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section how-it-works" id="how-it-works">
+        <div class="section-container">
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">Simple for students, powerful for lecturers.</p>
+
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h4 class="step-title">Lecturer Generates QR</h4>
+                    <p class="step-desc">Dashboard auto-detects current class. One tap to generate QR code with 6-digit backup code.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h4 class="step-title">Bluetooth Verification</h4>
+                    <p class="step-desc">Student's phone must detect the lecturer's device within Bluetooth range (~10 meters).</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h4 class="step-title">Student Marks Attendance</h4>
+                    <p class="step-desc">Scan QR or enter code. System confirms Bluetooth proximity before accepting.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h4 class="step-title">Recorded Instantly</h4>
+                    <p class="step-desc">Attendance logged in real-time. Both student and lecturer see confirmation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lecturer Communication -->
+    <section class="section communication">
+        <div class="section-container">
+            <h2 class="section-title">Lecturer Communication</h2>
+            <p class="section-subtitle">Keep students informed with instant notifications sent directly to their dashboard.</p>
+
+            <div class="comm-grid">
+                <div class="comm-card">
+                    <div class="comm-icon">⏰</div>
+                    <h4 class="comm-title">Running Late</h4>
+                    <p class="comm-desc">Notify students you'll be delayed</p>
+                </div>
+
+                <div class="comm-card">
+                    <div class="comm-icon">📍</div>
+                    <h4 class="comm-title">Venue Change</h4>
+                    <p class="comm-desc">Class moved to a different room</p>
+                </div>
+
+                <div class="comm-card">
+                    <div class="comm-icon">❌</div>
+                    <h4 class="comm-title">Class Cancelled</h4>
+                    <p class="comm-desc">Cancel class for the day</p>
+                </div>
+
+                <div class="comm-card">
+                    <div class="comm-icon">👤</div>
+                    <h4 class="comm-title">Substitute Lecturer</h4>
+                    <p class="comm-desc">Another lecturer taking over</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Section -->
+    <section class="section security">
+        <div class="section-container">
+            <div class="security-grid">
+                <div class="security-content">
+                    <h2>Built to Prevent Fraud</h2>
+                    <p>Traditional QR attendance systems fail because students share codes with friends at home. UPath is different.</p>
+
+                    <ul class="security-list">
+                        <li>
+                            <span class="check">✓</span>
+                            <span><strong>Bluetooth proximity check</strong> — Must be within 10 meters of the lecturer's device</span>
+                        </li>
+                        <li>
+                            <span class="check">✓</span>
+                            <span><strong>Time-expiring codes</strong> — QR codes and manual codes regenerate every 5 minutes</span>
+                        </li>
+                        <li>
+                            <span class="check">✓</span>
+                            <span><strong>Device fingerprinting</strong> — One device per student, no sharing</span>
+                        </li>
+                        <li>
+                            <span class="check">✓</span>
+                            <span><strong>GPS geofencing</strong> — Optional campus boundary checks</span>
+                        </li>
+                        <li>
+                            <span class="check">✓</span>
+                            <span><strong>Manual backup</strong> — Lecturers can mark students who forgot devices or have dead batteries</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="security-visual">
+                    <div class="icon">📡</div>
+                    <h3>Bluetooth Proximity</h3>
+                    <p>Students must be physically present in class. No more signing in from home, the parking lot, or anywhere else.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <h2>Ready to modernize attendance?</h2>
+        <p>Join universities already using UPath to save time and ensure accurate records.</p>
+        <a href="/pages/auth.html" class="cta-btn">Sign In Now</a>
+    </section>
+
     <!-- Footer -->
-    <footer style="padding: 40px 0; text-align: center; color: var(--color-gray-500); font-size: var(--text-sm);">
-        <p>&copy; 2026 UPath System for Africa University.</p>
+    <footer class="footer">
+        <p>© 2026 UPath. Smart Attendance for Modern Universities.</p>
     </footer>
 
 </body>

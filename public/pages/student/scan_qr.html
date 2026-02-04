@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Attendance - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        body {
+            background: var(--bg);
+        }
+        .scan-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        .page-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .page-subtitle {
+            color: var(--text-muted);
+        }
+        .method-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .method-tab {
+            flex: 1;
+            padding: 16px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .method-tab:hover {
+            border-color: var(--border-hover);
+        }
+        .method-tab.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        .content-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+        }
+        .scan-area {
+            background: var(--text);
+            border-radius: var(--radius-lg);
+            height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        .scan-frame {
+            width: 180px;
+            height: 180px;
+            border: 3px solid var(--primary);
+            border-radius: var(--radius-lg);
+            position: absolute;
+            animation: pulse-frame 2s ease infinite;
+        }
+        @keyframes pulse-frame {
+            0%, 100% { opacity: 0.5; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        .scan-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            z-index: 1;
+        }
+        .scan-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: white;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .scan-text {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            z-index: 1;
+        }
+        .code-entry {
+            display: none;
+        }
+        .code-entry.active {
+            display: block;
+        }
+        .code-label {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+        .code-inputs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .code-input {
+            width: 48px;
+            height: 56px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            transition: all var(--transition);
+        }
+        .code-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        .bluetooth-status {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .bt-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bt-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .bt-icon.checking {
+            animation: pulse 1s ease infinite;
+        }
+        .bt-icon.verified {
+            background: var(--success-light);
+            color: var(--success);
+        }
+        .bt-content {
+            flex: 1;
+        }
+        .bt-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .bt-message {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .submit-btn:hover {
+            background: var(--primary-hover);
+        }
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .success-card {
+            display: none;
+            text-align: center;
+            padding: 48px 24px;
+        }
+        .success-check {
+            width: 64px;
+            height: 64px;
+            background: var(--success-light);
+            color: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .success-check svg {
+            width: 32px;
+            height: 32px;
+            stroke: currentColor;
+            stroke-width: 3;
+            fill: none;
+        }
+        .success-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 8px;
+        }
+        .success-details {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .back-link {
+            display: inline-block;
+            padding: 14px 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Responsive Code Inputs */
+        @media (max-width: 380px) {
+            .code-input {
+                width: 36px;
+                height: 44px;
+                font-size: 1.2rem;
+            }
+            .code-inputs { gap: 6px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role">Student</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/dashboard.html" class="navbar-link">Overview</a>
+            <a href="/pages/student/schedule.html" class="navbar-link">Classes</a>
+            <a href="/pages/student/reports.html" class="navbar-link">Attendance</a>
+            <a href="/pages/student/map.html" class="navbar-link">Map</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/student/profile.html" class="navbar-avatar">CB</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="scan-container">
+            <div class="page-header">
+                <h1 class="page-title">Mark Attendance</h1>
+                <p class="page-subtitle">Scan QR code or enter the 6-digit code</p>
+            </div>
+
+            <div class="method-tabs">
+                <button class="method-tab active" onclick="setMethod('scan', this)">Scan QR Code</button>
+                <button class="method-tab" onclick="setMethod('code', this)">Enter Code</button>
+            </div>
+
+            <!-- Help Link -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="#" onclick="showHelp(event)" style="color: var(--primary); font-size: 0.85rem; text-decoration: none;">📷 Camera not working?</a>
+            </div>
+
+            <!-- Back Button -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="/dashboard.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">← Back to Dashboard</a>
+            </div>
+
+            <div class="content-card" id="mainCard">
+                <!-- Scan Area -->
+                <div class="scan-area" id="scanArea">
+                    <div class="scan-frame"></div>
+                    <div class="scan-icon">
+                        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </div>
+                    <span class="scan-text">Point camera at QR code</span>
+                </div>
+
+                <!-- Code Entry -->
+                <div class="code-entry" id="codeArea">
+                    <p class="code-label">Enter the 6-digit code from your lecturer</p>
+                    <div class="code-inputs">
+                        <input type="text" class="code-input" maxlength="1" data-index="0">
+                        <input type="text" class="code-input" maxlength="1" data-index="1">
+                        <input type="text" class="code-input" maxlength="1" data-index="2">
+                        <input type="text" class="code-input" maxlength="1" data-index="3">
+                        <input type="text" class="code-input" maxlength="1" data-index="4">
+                        <input type="text" class="code-input" maxlength="1" data-index="5">
+                    </div>
+                </div>
+
+                <!-- Bluetooth Status -->
+                <div class="bluetooth-status">
+                    <div class="bt-icon checking" id="btIcon">
+                        <svg viewBox="0 0 24 24"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg>
+                    </div>
+                    <div class="bt-content">
+                        <div class="bt-title">Bluetooth Proximity</div>
+                        <div class="bt-message" id="btStatus">Searching for lecturer's device...</div>
+                    </div>
+                </div>
+
+                <button class="submit-btn" id="submitBtn" onclick="submitAttendance()">Verify & Mark Present</button>
+            </div>
+            <!-- Success Card -->
+            <div class="content-card" id="successCard" style="display: none; text-align: center;">
+                <div class="success-check">
+                    <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                </div>
+                <h2 class="success-title">Marked Present!</h2>
+                <p class="success-details">Attendance recorded successfully.</p>
+                <a href="/dashboard.html" class="back-link">Return to Dashboard</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Help Modal -->
+    <div id="helpModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--surface); width: 90%; max-width: 400px; padding: 24px; border-radius: var(--radius-lg); position: relative;">
+            <button onclick="hideHelp()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h3 style="margin-bottom: 16px;">Camera Troubleshooting</h3>
+            <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.6; font-size: 0.9rem;">
+                <li><strong>Allow Permissions:</strong> When prompted, click "Allow" to let UPath access your camera.</li>
+                <li><strong>Browser Settings:</strong> Check your browser settings (site settings) to ensure camera is not blocked.</li>
+            </ul>
+            <button onclick="hideHelp()" style="width: 100%; margin-top: 20px; padding: 12px; background: var(--primary); color: white; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;">Got it</button>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let bluetoothVerified = false;
+
+        function setMethod(method, btn) {
+            // Update tabs
+            document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Show content
+            if (method === 'scan') {
+                document.getElementById('scanArea').style.display = 'flex';
+                document.getElementById('codeArea').style.display = 'none';
+                document.getElementById('codeArea').classList.remove('active');
+            } else {
+                document.getElementById('scanArea').style.display = 'none';
+                document.getElementById('codeArea').style.display = 'block';
+                document.getElementById('codeArea').classList.add('active');
+                document.querySelector('.code-input').focus();
+            }
+        }
+
+        // Code Input Handling
+        document.querySelectorAll('.code-input').forEach((input, idx, inputs) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1) {
+                    if (idx < inputs.length - 1) inputs[idx + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+                    inputs[idx - 1].focus();
+                }
+            });
+        });
+
+        function simulateBluetooth() {
+            const icon = document.getElementById('btIcon');
+            const status = document.getElementById('btStatus');
+            
+            setTimeout(() => {
+                bluetoothVerified = true;
+                icon.classList.remove('checking');
+                icon.classList.add('verified');
+                status.textContent = "Lecturer's device detected nearby";
+                status.style.color = "var(--success)";
+            }, 1500);
+        }
+        // ... existing vars ...
+
+        // ... existing functions ...
+
+
+
+        async function submitAttendance() {
+            if (!bluetoothVerified) {
+                alert('Please wait for Bluetooth verification');
+                return;
+            }
+            
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = "Processing...";
+            
+            // 1. Get Student Info
+            let studentId = '240101'; // Default Fallback
+            let year = 2;
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                studentId = user.id;
+                year = user.year || 2;
+            }
+            
+            // 2. Determine "Live" Class dynamically
+            let classId = 'NCSC211'; // Default Fallback
+            try {
+                const all = await API.fetchTimetable();
+                const now = new Date();
+                const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+                const currentH = now.getHours();
+                
+                // Find a class happening right now for this student's year
+                const liveClass = all.find(c => {
+                    if (c.year !== year || c.day !== dayName) return false;
+                    const startH = parseInt(c.time.split(':')[0]);
+                    // Simple "is active" check (active for 2 hours)
+                    return currentH >= startH && currentH < (startH + 2);
+                });
+                
+                if (liveClass) {
+                    classId = liveClass.code;
+                    console.log("Marking attendance for live class:", classId);
+                } else {
+                    console.warn("No live class found, using default (Demo Mode)");
+                }
+            } catch (e) {
+                console.error("Error finding live class", e);
+            }
+            
+            // 3. Mark via API
+            if (window.API) {
+                await API.markAttendanceAsync(studentId, classId);
+            }
+            
+            // 4. Show Success
+            setTimeout(() => {
+                document.getElementById('mainCard').style.display = 'none';
+                document.getElementById('successCard').style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = "Verify & Mark Present";
+            }, 500);
+        }
+
+        function logout() {
+            if (window.API) API.logout();
+            else {
+                sessionStorage.removeItem('upath_user');
+                window.location.href = '/pages/auth.html';
+            }
+        }
+        
+        function showHelp(e) {
+            e.preventDefault();
+            document.getElementById('helpModal').style.display = 'flex';
+        }
+        
+        function hideHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        setTimeout(simulateBluetooth, 2000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Classes - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .classes-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .class-count {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .classes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+        }
+        .class-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all var(--transition);
+        }
+        .class-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+        }
+        .class-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .class-code {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 5px 12px;
+            border-radius: 4px;
+        }
+        .year-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+        .year-badge.y1 { background: #10B981; }
+        .year-badge.y2 { background: #6366F1; }
+        .class-body {
+            padding: 0 20px 20px;
+        }
+        .class-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        .class-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        .class-sessions {
+            background: var(--bg);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+        .session-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .session-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .session-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .session-day {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .session-time {
+            color: var(--text-secondary);
+        }
+        .class-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .class-actions .btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .classes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/lecturer_dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/lecturer_dashboard.html" class="navbar-link">Overview</a>
+            <a href="/pages/lecturer/my_classes.html" class="navbar-link active">Classes</a>
+            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
+            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-container">
+            <div class="classes-header">
+                <div>
+                    <h1 class="page-title">My Classes</h1>
+                    <p class="page-subtitle" id="lecturerName">Loading...</p>
+                </div>
+                <div class="class-count" id="classCount">0 Courses</div>
+            </div>
+
+            <div class="classes-grid" id="classesGrid">
+                <!-- Dynamically loaded -->
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let lecturerId = '210101';
+
+        function loadUserData() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                if (user.id) lecturerId = user.id;
+                
+                document.getElementById('lecturerName').textContent = user.fullName || 'Lecturer';
+                
+                if (user.fullName) {
+                    const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('userAvatar').textContent = initials;
+                }
+            }
+            loadClasses();
+        }
+
+        function loadClasses() {
+            const allClasses = API.getTimetable();
+            const myClasses = allClasses.filter(c => c.lecturerId === lecturerId);
+            
+            // Group by course code
+            const grouped = {};
+            myClasses.forEach(c => {
+                if (!grouped[c.code]) {
+                    grouped[c.code] = {
+                        code: c.code,
+                        name: c.name,
+                        year: c.year,
+                        room: c.room,
+                        sessions: []
+                    };
+                }
+                grouped[c.code].sessions.push({
+                    day: c.day,
+                    time: c.time,
+                    room: c.room
+                });
+            });
+            
+            const courses = Object.values(grouped);
+            document.getElementById('classCount').textContent = `${courses.length} Course${courses.length !== 1 ? 's' : ''}`;
+            
+            const grid = document.getElementById('classesGrid');
+            
+            if (courses.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                        <div style="font-size: 2rem; margin-bottom: 12px;">📚</div>
+                        <div style="font-weight: 600;">No Classes Assigned</div>
+                        <div style="font-size: 0.85rem; margin-top: 4px;">Contact admin if this is incorrect.</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            courses.forEach(course => {
+                html += `
+                    <div class="class-card">
+                        <div class="class-header">
+                            <span class="class-code">${course.code}</span>
+                            <span class="year-badge ${course.year === 1 ? 'y1' : 'y2'}">Year ${course.year}</span>
+                        </div>
+                        <div class="class-body">
+                            <div class="class-name">${course.name}</div>
+                            <div class="class-info">${course.sessions.length} session${course.sessions.length !== 1 ? 's' : ''}/week • ${course.room}</div>
+                            
+                            <div class="class-sessions">
+                                <div class="session-title">Schedule</div>
+                                ${course.sessions.map(s => `
+                                    <div class="session-item">
+                                        <span class="session-day">${s.day}</span>
+                                        <span class="session-time">${s.time}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="class-actions">
+                                <a href="/pages/lecturer/qr_code.html?class=${course.code}" class="btn btn-primary">Generate QR</a>
+                                <a href="/pages/lecturer/manual_attendance.html?class=${course.code}" class="btn btn-secondary">Manual Entry</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '/pages/auth.html';
+        }
+
+        loadUserData();
+    </script>
+</body>
+</html>

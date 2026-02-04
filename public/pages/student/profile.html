@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .success-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--success);
+            color: white;
+            padding: 16px 24px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .success-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role">Student</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/dashboard.html" class="navbar-link">Overview</a>
+            <a href="/pages/student/schedule.html" class="navbar-link">Classes</a>
+            <a href="/pages/student/reports.html" class="navbar-link">Attendance</a>
+            <a href="/pages/student/map.html" class="navbar-link">Map</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/student/profile.html" class="navbar-avatar" id="userAvatar" style="background: var(--primary-hover);">CB</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-container" style="max-width: 700px;">
+            <div class="page-header">
+                <h1 class="page-title">My Profile</h1>
+                <p class="page-subtitle">Manage your account settings</p>
+            </div>
+
+            <div class="card">
+                <div class="flex items-center gap-3 mb-4" style="gap: 24px;">
+                    <div style="width: 80px; height: 80px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.8rem; font-weight: 700;" id="profileAvatar">CB</div>
+                    <div>
+                        <h2 style="font-size: 1.3rem; font-weight: 700;" id="profileName">Loading...</h2>
+                        <p class="text-muted" id="profileRole">Student</p>
+                        <p class="text-muted" style="font-size: 0.8rem;" id="profileYear"></p>
+                    </div>
+                </div>
+
+                <form onsubmit="event.preventDefault(); saveProfile();">
+                    <div class="grid-2 mb-2" style="gap: 16px;">
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Full Name</label>
+                            <input type="text" class="input" id="inputName" placeholder="Enter your full name">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Student ID</label>
+                            <input type="text" class="input" id="inputId" readonly style="background: var(--bg); cursor: not-allowed;">
+                        </div>
+                    </div>
+                    <div class="grid-2 mb-2" style="gap: 16px;">
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Email</label>
+                            <input type="email" class="input" id="inputEmail" placeholder="your.email@university.edu">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Phone</label>
+                            <input type="tel" class="input" id="inputPhone" placeholder="+263 7XX XXX XXX">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2" id="saveBtn">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div class="success-toast" id="toast">Profile saved successfully!</div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+        });
+
+        function loadUserData() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                currentUser = JSON.parse(userStr);
+                
+                // Update display
+                document.getElementById('profileName').textContent = currentUser.fullName || 'User';
+                document.getElementById('inputName').value = currentUser.fullName || '';
+                document.getElementById('inputId').value = currentUser.id || currentUser.idNumber || '';
+                document.getElementById('inputEmail').value = currentUser.email || '';
+                document.getElementById('inputPhone').value = currentUser.phone || '';
+                
+                // Set role and year
+                if (currentUser.role === 'lecturer') {
+                    document.getElementById('profileRole').textContent = 'Lecturer';
+                } else {
+                    document.getElementById('profileRole').textContent = 'Student';
+                    if (currentUser.year) {
+                        document.getElementById('profileYear').textContent = `Year ${currentUser.year}`;
+                    }
+                }
+                
+                // Update avatar
+                if (currentUser.fullName) {
+                    const initials = currentUser.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('profileAvatar').textContent = initials;
+                    document.getElementById('userAvatar').textContent = initials;
+                }
+            }
+        }
+
+        function saveProfile() {
+            const btn = document.getElementById('saveBtn');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+            
+            // Get form values
+            const newName = document.getElementById('inputName').value.trim();
+            const newEmail = document.getElementById('inputEmail').value.trim();
+            const newPhone = document.getElementById('inputPhone').value.trim();
+            
+            // Update user object
+            if (currentUser) {
+                currentUser.fullName = newName || currentUser.fullName;
+                currentUser.email = newEmail || currentUser.email;
+                currentUser.phone = newPhone;
+                
+                // Save back to session storage
+                sessionStorage.setItem('upath_user', JSON.stringify(currentUser));
+                
+                // Update displays
+                document.getElementById('profileName').textContent = currentUser.fullName;
+                const initials = currentUser.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('profileAvatar').textContent = initials;
+                document.getElementById('userAvatar').textContent = initials;
+            }
+            
+            // Show success
+            setTimeout(() => {
+                btn.textContent = 'Save Changes';
+                btn.disabled = false;
+                
+                // Show toast
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            }, 600);
+        }
+
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '/pages/auth.html';
+        }
+    </script>
+</body>
+</html>

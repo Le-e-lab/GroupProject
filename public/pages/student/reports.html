@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Reports - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        /* ========================================
+         * Reports Page Styles
+         * ======================================== */
+        
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .live-clock {
+            text-align: right;
+        }
+        .live-clock .time {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .live-clock .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Overall Stats Card */
+        .overall-stats {
+            background: linear-gradient(135deg, var(--primary) 0%, #818CF8 100%);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+        .overall-stat {
+            text-align: center;
+        }
+        .overall-stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .overall-stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        /* Course Cards */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .course-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            transition: all var(--transition);
+        }
+        .course-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .course-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .course-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .course-percent {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .course-percent.warning {
+            color: var(--warning);
+        }
+        .course-percent.danger {
+            color: var(--danger);
+        }
+        .course-percent.success {
+            color: var(--success);
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .progress-fill.success { background: var(--success); }
+        .progress-fill.warning { background: var(--warning); }
+        .progress-fill.danger { background: var(--danger); }
+        .course-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 1024px) {
+            .overall-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .overall-stats { grid-template-columns: 1fr; }
+            .courses-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="/dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role">Student</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/dashboard.html" class="navbar-link">Overview</a>
+            <a href="/pages/student/schedule.html" class="navbar-link">Classes</a>
+            <a href="/pages/student/reports.html" class="navbar-link active">Attendance</a>
+            <a href="/pages/student/map.html" class="navbar-link">Map</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/student/profile.html" class="navbar-avatar" id="userAvatar">CB</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-container">
+            <!-- Header with Clock -->
+            <div class="reports-header">
+                <div>
+                    <h1 class="page-title">Attendance Reports</h1>
+                    <p class="page-subtitle" id="studentInfo">Loading...</p>
+                </div>
+                <div class="live-clock">
+                    <div class="time" id="liveClock"></div>
+                    <div class="label">Current Time</div>
+                </div>
+            </div>
+
+            <!-- Overall Stats -->
+            <div class="overall-stats">
+                <div class="overall-stat">
+                    <div class="overall-stat-value" id="overallPercent">0%</div>
+                    <div class="overall-stat-label">Overall Attendance</div>
+                </div>
+                <div class="overall-stat">
+                    <div class="overall-stat-value" id="totalClasses">0</div>
+                    <div class="overall-stat-label">Total Classes</div>
+                </div>
+                <div class="overall-stat">
+                    <div class="overall-stat-value" id="attendedClasses">0</div>
+                    <div class="overall-stat-label">Attended</div>
+                </div>
+                <div class="overall-stat">
+                    <div class="overall-stat-value" id="missedClasses">0</div>
+                    <div class="overall-stat-label">Missed</div>
+                </div>
+            </div>
+
+            <!-- Course Breakdown -->
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;">Course Breakdown</h2>
+            <div class="courses-grid" id="coursesGrid">
+                <!-- Dynamically loaded -->
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        /**
+         * ========================================
+         * Reports Page Script
+         * Loads attendance data from API
+         * ========================================
+         */
+        
+        let userYear = 2;
+
+        /**
+         * Load user data from session and set year
+         */
+        function loadUserData() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                
+                // Display user info
+                document.getElementById('studentInfo').textContent = 
+                    `${user.fullName || 'Student'} • Year ${user.year || 2}`;
+                
+                // Set avatar initials
+                if (user.fullName) {
+                    const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('userAvatar').textContent = initials;
+                }
+                
+                // Determine year from ID
+                if (user.id && user.id.startsWith('250')) {
+                    userYear = 1;
+                } else {
+                    userYear = 2;
+                }
+            }
+            loadAttendanceData();
+        }
+
+        /**
+         * Load attendance data from API
+         * Uses real course data with persistent attendance (stored in localStorage)
+         * Attendance only regenerates on a new day
+         */
+        async function loadAttendanceData() {
+            // Get user ID
+            const user = API.getCurrentUser();
+            if (!user) return; // Should handle redirect
+
+            // Fetch unified stats from API (ASYNC)
+            let stats = {};
+            try {
+                stats = await API.fetchStudentStats(user.id);
+            } catch (e) {
+                console.error("Failed to load stats", e);
+            }
+            
+            const courseList = Object.values(stats);
+            
+            // Calculate overall stats
+            let totalSessions = 0;
+            let totalAttended = 0;
+            
+            courseList.forEach(c => {
+                totalSessions += c.total;
+                totalAttended += c.attended;
+            });
+            
+            const overallPercent = totalSessions > 0 ? Math.round((totalAttended / totalSessions) * 100) : 0;
+            
+            // Update overall stats
+            document.getElementById('overallPercent').textContent = overallPercent + '%';
+            document.getElementById('totalClasses').textContent = totalSessions;
+            document.getElementById('attendedClasses').textContent = totalAttended;
+            document.getElementById('missedClasses').textContent = totalSessions - totalAttended;
+            
+            // Render course cards
+            const grid = document.getElementById('coursesGrid');
+            let html = '';
+            
+            courseList.forEach(course => {
+                const percent = course.total > 0 ? Math.round((course.attended / course.total) * 100) : 0;
+                let status = 'success';
+                if (percent < 80) status = 'warning';
+                if (percent < 70) status = 'danger';
+                
+                html += `
+                    <div class="course-card">
+                        <div class="course-header">
+                            <div class="course-info">
+                                <h3>${course.name || course.code}</h3>
+                                <p>${course.code}</p>
+                            </div>
+                            <div class="course-percent ${status}">${percent}%</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${status}" style="width: ${percent}%"></div>
+                        </div>
+                        <div class="course-details">
+                            <span>${course.attended}/${course.total} sessions attended</span>
+                            <span>${course.total - course.attended} missed</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+
+        /**
+         * Update live clock every second
+         */
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true 
+            });
+            document.getElementById('liveClock').textContent = timeStr;
+        }
+
+        /**
+         * Logout and clear session
+         */
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '/pages/auth.html';
+        }
+
+        // Initialize
+        loadUserData();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .success-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--success);
+            color: white;
+            padding: 16px 24px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .success-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/lecturer_dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+            <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="/lecturer_dashboard.html" class="navbar-link">Overview</a>
+            <a href="/pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
+            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
+            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
+        </div>
+        <div class="navbar-actions">
+            <a href="/pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar" style="background: #DC2626;">LC</a>
+            <button class="navbar-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-container" style="max-width: 700px;">
+            <div class="page-header">
+                <h1 class="page-title">My Profile</h1>
+                <p class="page-subtitle">Manage your account settings</p>
+            </div>
+
+            <div class="card">
+                <div class="flex items-center gap-3 mb-4" style="gap: 24px;">
+                    <div style="width: 80px; height: 80px; background: #DC2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.8rem; font-weight: 700;" id="profileAvatar">LC</div>
+                    <div>
+                        <h2 style="font-size: 1.3rem; font-weight: 700;" id="profileName">Loading...</h2>
+                        <p class="text-muted" style="color: #DC2626; font-weight: 500;">Lecturer</p>
+                        <p class="text-muted" style="font-size: 0.8rem;" id="profileDept"></p>
+                    </div>
+                </div>
+
+                <form onsubmit="event.preventDefault(); saveProfile();">
+                    <div class="grid-2 mb-2" style="gap: 16px;">
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Full Name</label>
+                            <input type="text" class="input" id="inputName" placeholder="Enter your full name">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Staff ID</label>
+                            <input type="text" class="input" id="inputId" readonly style="background: var(--bg); cursor: not-allowed;">
+                        </div>
+                    </div>
+                    <div class="grid-2 mb-2" style="gap: 16px;">
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Email</label>
+                            <input type="email" class="input" id="inputEmail" placeholder="your.email@university.edu">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Department</label>
+                            <input type="text" class="input" id="inputDept" placeholder="e.g., Computer Science">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Phone</label>
+                        <input type="tel" class="input" id="inputPhone" placeholder="+263 7XX XXX XXX">
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2" id="saveBtn">Save Changes</button>
+                </form>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 16px;">My Teaching Statistics</h3>
+                <div class="grid-2" style="gap: 16px;">
+                    <div style="text-align: center; padding: 16px; background: var(--bg); border-radius: var(--radius);">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statCourses">0</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Courses</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: var(--bg); border-radius: var(--radius);">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statSessions">0</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Sessions/Week</div>
+                    </div>
+                </div>
+            </div>
+            <!-- MANAGE SCHEDULE SECTION -->
+            <div class="card" style="margin-top: 20px;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 16px;">Manage Schedule</h3>
+                <div id="scheduleList" class="grid-2" style="gap: 16px;">
+                    <!-- Classes loaded here -->
+                    <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Loading classes...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- EDIT CLASS MODAL -->
+    <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--surface); width: 90%; max-width: 400px; padding: 24px; border-radius: var(--radius-lg); position: relative;">
+            <button onclick="closeModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h3 style="margin-bottom: 16px;">Edit Class Schedule</h3>
+            <form onsubmit="event.preventDefault(); saveClassChanges();">
+                <input type="hidden" id="editClassId">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Day</label>
+                    <select id="editDay" class="input" style="width: 100%;">
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Time</label>
+                    <input type="text" id="editTime" class="input" placeholder="e.g. 08:00 - 10:00" style="width: 100%;">
+                </div>
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Room</label>
+                    <input type="text" id="editRoom" class="input" style="width: 100%;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="success-toast" id="toast">Changes saved successfully!</div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let currentUser = null;
+        let myClasses = [];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            loadUserData();
+            await loadScheduleData(); // Load real data
+        });
+
+        function loadUserData() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                currentUser = JSON.parse(userStr);
+                
+                // Update display
+                document.getElementById('profileName').textContent = currentUser.fullName || 'Lecturer';
+                document.getElementById('inputName').value = currentUser.fullName || '';
+                document.getElementById('inputId').value = currentUser.id || '';
+                document.getElementById('inputEmail').value = currentUser.email || '';
+                document.getElementById('inputDept').value = currentUser.department || '';
+                document.getElementById('inputPhone').value = currentUser.phone || '';
+                document.getElementById('profileDept').textContent = currentUser.department || '';
+                
+                if (currentUser.fullName) {
+                    const initials = currentUser.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('profileAvatar').textContent = initials;
+                    document.getElementById('userAvatar').textContent = initials;
+                }
+            }
+        }
+
+        async function loadScheduleData() {
+            if (!currentUser || !currentUser.id) return;
+            
+            // Fetch real data from backend
+            const allClasses = await API.fetchTimetable();
+            myClasses = allClasses.filter(c => c.lecturerId === currentUser.id);
+            
+            // Update Stats
+            const uniqueCodes = [...new Set(myClasses.map(c => c.code))];
+            document.getElementById('statCourses').textContent = uniqueCodes.length;
+            document.getElementById('statSessions').textContent = myClasses.length;
+
+            // Render List
+            const list = document.getElementById('scheduleList');
+            if(myClasses.length === 0) {
+                list.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No courses assigned.</div>`;
+                return;
+            }
+
+            let html = '';
+            myClasses.forEach(c => {
+                html += `
+                    <div style="background: var(--bg); padding: 16px; border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 700;">${c.code} (${c.day})</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">${c.time} • ${c.room}</div>
+                        </div>
+                        <button onclick="openModal('${c.id}')" style="background: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Edit</button>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
+        // --- EDIT MODAL FUNCTIONS ---
+        function openModal(classId) {
+            const cls = myClasses.find(c => c.id === classId);
+            if (!cls) return;
+
+            document.getElementById('editClassId').value = cls.id;
+            document.getElementById('editDay').value = cls.day;
+            document.getElementById('editTime').value = cls.time;
+            document.getElementById('editRoom').value = cls.room;
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveClassChanges() {
+            const id = document.getElementById('editClassId').value;
+            const day = document.getElementById('editDay').value;
+            const time = document.getElementById('editTime').value;
+            const room = document.getElementById('editRoom').value;
+
+            // Call API
+            const success = await API.updateClass(id, { day, time, room });
+
+            if (success) {
+                closeModal();
+                showToast('Schedule updated successfully!');
+                await loadScheduleData(); // Refresh list
+            } else {
+                alert('Failed to update class. Try again.');
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function saveProfile() {
+            // ... (Existing Profile Save Logic - Keeping it simple for this snippet, relies on existing implementation if any, or we can dupe it)
+            // Ideally we'd keep the existing saveProfile function but for brevity in replace block I'll assume it's fine or I should include it.
+            // Since replace is block based, I'll include the previous saveProfile logic to be safe.
+             const btn = document.getElementById('saveBtn');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+            
+            const newName = document.getElementById('inputName').value.trim();
+            const newEmail = document.getElementById('inputEmail').value.trim();
+            const newDept = document.getElementById('inputDept').value.trim();
+            const newPhone = document.getElementById('inputPhone').value.trim();
+            
+            if (currentUser) {
+                currentUser.fullName = newName || currentUser.fullName;
+                currentUser.email = newEmail || currentUser.email;
+                currentUser.department = newDept || currentUser.department;
+                currentUser.phone = newPhone;
+                sessionStorage.setItem('upath_user', JSON.stringify(currentUser));
+                
+                document.getElementById('profileName').textContent = currentUser.fullName;
+                document.getElementById('profileDept').textContent = currentUser.department;
+                const initials = currentUser.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('profileAvatar').textContent = initials;
+                document.getElementById('userAvatar').textContent = initials;
+            }
+            
+            setTimeout(() => {
+                btn.textContent = 'Save Changes';
+                btn.disabled = false;
+                showToast('Profile saved successfully!');
+            }, 600);
+        }
+
+        function logout() {
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '/pages/auth.html';
+        }
+    </script>
+</body>
+</html>
