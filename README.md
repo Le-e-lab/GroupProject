@@ -35,8 +35,24 @@ A modern, responsive University Portal system simulated for "XUL University". Th
     ```bash
     npm start
     ```
-2.  Open your browser and visit:
+3.  Open your browser and visit:
     `http://localhost:3000`
+
+## 🌐 Running with Ngrok (Public Access)
+
+To exposet the local server to the internet (e.g. for testing on mobile devices):
+
+1.  **Install Ngrok**: Download and install [ngrok](https://ngrok.com/download).
+2.  **Authenticate**: Run `ngrok config add-authtoken <your-token>` (sign up to get one).
+3.  **Start Tunnel**:
+    ```bash
+    ngrok http 3000
+    ```
+4.  **Update Frontend**:
+    - Copy the `https://....ngrok-free.app` URL.
+    - Open `public/js/api.js`.
+    - Update `baseUrl` variable (if hardcoded) or ensure it uses relative paths (current default is relative, so it should work automatically).
+5.  **Access**: Open the ngrok URL on your mobile device.
 
 ## 🔐 Mock Credentials (Login)
 
@@ -47,8 +63,12 @@ The system simulates a Single Sign-On (SSO) experience. You can use any of the u
 -   **Password**: `123456`
 
 **Lecturer Access 👩‍🏫**
--   **Staff ID**: `210101` (Mr. Makambwa)
--   **Password**: `staff123`
+**Staff ID**: `210101` (Mr. Makambwa) or `L22847` (Dr. Zengeni)
+-   **Password**: `password123`
+
+## 📚 Documentation
+
+For detailed technical documentation, including mobile setup and architecture, see [DOCUMENTATION.md](./DOCUMENTATION.md).
 
 ## 📂 Project Structure
 

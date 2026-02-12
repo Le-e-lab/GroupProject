@@ -1,77 +1,51 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-
-const usersFile = path.join(__dirname, '../data/users.json');
-
-/**
- * Helper to read users from the JSON "database"
- * @returns {object} - { students: [], lecturers: [] }
- */
-const getUsers = () => {
-    try {
-        if (!fs.existsSync(usersFile)) return { students: [], lecturers: [] };
-        const data = fs.readFileSync(usersFile);
-        return JSON.parse(data);
-    } catch (err) {
-        console.error("Error reading users.json:", err.message);
-        return { students: [], lecturers: [] };
-    }
-};
-
-/**
- * Helper to save users
- * @param {object} users - Full users object
- */
-const saveUsers = (users) => {
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-};
+const { User } = require('../models');
+const { Op } = require('sequelize');
 
 /**
  * ========================================
  * REGISTER ROUTE
  * ========================================
  */
-router.post('/register', (req, res) => {
-    const { fullName, email, password, role, idNumber } = req.body;
+router.post('/register', async (req, res) => {
+    try {
+        const { fullName, email, password, role, idNumber } = req.body;
 
-    if (!fullName || !email || !password || !role) {
-        return res.status(400).json({ message: 'All fields are required' });
+        if (!fullName || !email || !password || !role) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        // Check if user exists
+        const existingUser = await User.findOne({
+            where: {
+                [Op.or]: [{ email }, { id: idNumber || '' }]
+            }
+        });
+
+        if (existingUser) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        const newUser = await User.create({
+            id: idNumber || (role === 'lecturer' ? '21' : '25') + Math.floor(1000 + Math.random() * 9000), // Mock ID gen
+            fullName,
+            email,
+            password, // TODO: Use bcrypt
+            role,
+            department: role === 'lecturer' ? 'Computer Science' : undefined,
+            year: role === 'student' ? 1 : undefined
+        });
+
+        res.status(201).json({ 
+            message: 'Registration successful', 
+            user: { id: newUser.id, name: newUser.fullName, role: newUser.role } 
+        });
+
+    } catch (err) {
+        console.error("Registration error:", err);
+        res.status(500).json({ message: 'Error registering user' });
     }
-
-    const db = getUsers();
-    // Default to empty arrays if undefined
-    if (!db.students) db.students = [];
-    if (!db.lecturers) db.lecturers = [];
-
-    // Search collision in both arrays
-    const allUsers = [...db.students, ...db.lecturers];
-    if (allUsers.find(u => u.email === email || u.id === idNumber)) {
-        return res.status(400).json({ message: 'User already exists' });
-    }
-
-    const newUser = {
-        id: idNumber || (role === 'lecturer' ? '21' : '25') + Math.floor(1000 + Math.random() * 9000), // Mock ID gen
-        fullName,
-        email,
-        password, // TODO: Use bcrypt in production
-        role,
-        department: role === 'lecturer' ? 'Computer Science' : undefined, // Default for now
-        year: role === 'student' ? 1 : undefined,
-        createdAt: new Date().toISOString()
-    };
-
-    // Push to correct array
-    if (role === 'lecturer') {
-        db.lecturers.push(newUser);
-    } else {
-        db.students.push(newUser);
-    }
-
-    saveUsers(db);
-
-    res.status(201).json({ message: 'Registration successful', user: { id: newUser.id, name: newUser.fullName, role: newUser.role } });
 });
 
 /**
@@ -79,45 +53,81 @@ router.post('/register', (req, res) => {
  * LOGIN ROUTE
  * ========================================
  */
-router.post('/login', (req, res) => {
-    let { email, password } = req.body;
-    
-    // Debugging logs
-    console.log(`[AUTH] Login Attempt: Input="${email}"`);
+router.post('/login', async (req, res) => {
+    try {
+        // Allow login with EMAIL or ID (frontend sends ID in 'email' field usually)
+        const { email, password } = req.body;
+        const identifier = email; // Alias for clarity
 
-    const db = getUsers();
-    const allUsers = [...(db.students || []), ...(db.lecturers || [])];
-    
-    // Safe trim
-    email = email ? email.trim() : '';
-    password = password ? password.trim() : '';
+        console.log(`[AUTH] Login Attempt: Input="${identifier}"`);
 
-    // Find user by Email OR ID (idNumber)
-    const user = allUsers.find(u => {
-        const matchId = (u.id === email); // Front-end sends ID as 'email' field sometimes
-        const matchEmail = (u.email === email);
-        const matchPass = (u.password === password);
-        return (matchId || matchEmail) && matchPass;
-    });
+        // 1. Find user by email OR id
+        const user = await User.findOne({ 
+            where: { 
+                [Op.or]: [
+                    { email: identifier },
+                    { id: identifier }
+                ]
+            } 
+        });
+        
+        if (!user || user.password !== password) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
 
-    if (!user) {
-        console.warn("[AUTH] Login Failed: Invalid credentials");
-        return res.status(401).json({ message: 'Invalid credentials' });
+        // 2. Return User Profile (Excluding sensitive data if any, keeping password for now as simple str)
+        // Ideally we shouldn't send password back, but keeping structure for now.
+        // CRITICAL: Must include 'program' for student filtering.
+        res.json({ 
+            message: 'Login successful', 
+            user: { 
+                id: user.id, 
+                fullName: user.fullName, 
+                email: user.email, 
+                role: user.role,
+                year: user.year,
+                department: user.department,
+                program: user.program, // <--- The Key Filter Field
+                college: user.college  // <--- Added for Organization
+            } 
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
     }
+});
 
-    console.log(`[AUTH] Login Success: ${user.fullName} (${user.role})`);
+/**
+ * ========================================
+ * GET ALL USERS ROUTE
+ * ========================================
+ */
+router.get('/users', async (req, res) => {
+    try {
+        const users = await User.findAll({
+            attributes: { exclude: ['password'] }
+        });
+        
+        const students = users.filter(u => u.role === 'student');
+        const lecturers = users.filter(u => u.role === 'lecturer');
 
-    res.json({ 
-        message: 'Login successful', 
-        user: { 
-            id: user.id, 
-            fullName: user.fullName, 
-            email: user.email, 
-            role: user.role,
-            year: user.year,
-            department: user.department
-        } 
-    });
+        res.json({ students, lecturers });
+    } catch (err) {
+        console.error("Error fetching users:", err);
+        res.status(500).json({ message: 'Server error fetching users' });
+    }
+});
+router.get('/user/:id', async (req, res) => {
+    try {
+        const user = await User.findByPk(req.params.id, {
+            attributes: { exclude: ['password'] }
+        });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json(user);
+    } catch (err) {
+        console.error("Error fetching user:", err);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 module.exports = router;

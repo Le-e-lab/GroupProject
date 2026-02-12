@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Attendance - UPath</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="../../css/theme.css">
 </head>
 <body>
     <nav class="navbar">
-        <a href="/lecturer_dashboard.html" class="navbar-brand">
+        <a href="../../lecturer_dashboard.html" class="navbar-brand">
             <div class="navbar-logo">U</div>
             <span class="navbar-title">UPath</span>
             <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
         </a>
         <div class="navbar-nav">
-            <a href="/lecturer_dashboard.html" class="navbar-link">Overview</a>
-            <a href="/pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
-            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
-            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
+            <a href="../../lecturer_dashboard.html" class="navbar-link">Overview</a>
+            <a href="../../pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
+            <a href="../../pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
+            <a href="../../pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
         </div>
         <div class="navbar-actions">
             <div class="navbar-avatar">LC</div>
@@ -34,9 +34,7 @@
                     <p class="page-subtitle">Mark attendance for your class</p>
                 </div>
                 <select class="select" style="width: auto;" onchange="loadStudents(this.value)">
-                    <option value="CS101">CS101 - Intro to Programming</option>
-                    <option value="CS204">CS204 - Database Systems</option>
-                    <option value="CS305">CS305 - Web Development</option>
+                    <option value="" disabled selected>Loading classes...</option>
                 </select>
             </div>
 
@@ -46,45 +44,14 @@
                     <div class="flex gap-1">
                         <button class="btn btn-secondary btn-sm" onclick="selectAll()">Select All</button>
                         <button class="btn btn-secondary btn-sm" onclick="clearAll()">Clear All</button>
+                        <button class="btn btn-primary btn-sm" onclick="addStudentPrompt()">+ Add Student</button>
                     </div>
                 </div>
 
                 <div id="studentList">
-                    <label class="list-item" style="cursor: pointer;">
-                        <input type="checkbox" style="width: 20px; height: 20px; accent-color: var(--primary);">
-                        <div class="list-item-content">
-                            <div class="list-item-title">Alice Johnson</div>
-                            <div class="list-item-subtitle">240001</div>
-                        </div>
-                    </label>
-                    <label class="list-item" style="cursor: pointer;">
-                        <input type="checkbox" style="width: 20px; height: 20px; accent-color: var(--primary);">
-                        <div class="list-item-content">
-                            <div class="list-item-title">Bob Smith</div>
-                            <div class="list-item-subtitle">240002</div>
-                        </div>
-                    </label>
-                    <label class="list-item" style="cursor: pointer;">
-                        <input type="checkbox" style="width: 20px; height: 20px; accent-color: var(--primary);">
-                        <div class="list-item-content">
-                            <div class="list-item-title">Carol Williams</div>
-                            <div class="list-item-subtitle">240003</div>
-                        </div>
-                    </label>
-                    <label class="list-item" style="cursor: pointer;">
-                        <input type="checkbox" style="width: 20px; height: 20px; accent-color: var(--primary);">
-                        <div class="list-item-content">
-                            <div class="list-item-title">David Brown</div>
-                            <div class="list-item-subtitle">240004</div>
-                        </div>
-                    </label>
-                    <label class="list-item" style="cursor: pointer;">
-                        <input type="checkbox" style="width: 20px; height: 20px; accent-color: var(--primary);">
-                        <div class="list-item-content">
-                            <div class="list-item-title">Eve Davis</div>
-                            <div class="list-item-subtitle">240005</div>
-                        </div>
-                    </label>
+                    <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                        Select a class above to load students.
+                    </div>
                 </div>
 
                 <div class="mt-3">
@@ -96,7 +63,7 @@
         </div>
     </main>
 
-    <script src="/js/api.js"></script>
+    <script src="../../js/api.js"></script>
     <script>
         let currentClass = null;
         let classList = [];
@@ -104,42 +71,104 @@
         async function initPage() {
             const user = API.getCurrentUser();
             if (!user || user.role !== 'lecturer') {
-                window.location.href = '/pages/auth.html';
+                window.location.href = '../../pages/auth.html';
                 return;
             }
 
-            // Load Lecturer's Classes
-            const classes = API.getClassesByLecturer(user.id);
+            // Load Lecturer's Classes using API
+            const classes = await API.getClassesByLecturer(user.id);
             classList = classes;
             
-            const select = document.querySelector('.select');
-            select.innerHTML = classes.map(c => 
-                `<option value="${c.code}">${c.code} - ${c.name} (${c.time})</option>`
-            ).join('');
+            // DEDUP: Group classes by course code (show each course only once)
+            const uniqueCourses = [];
+            const seenCodes = new Set();
+            classes.forEach(c => {
+                if (!seenCodes.has(c.code)) {
+                    seenCodes.add(c.code);
+                    uniqueCourses.push(c);
+                }
+            });
             
-            // Allow "All Classes" or default to first
-            if (classes.length > 0) {
-                loadStudents(classes[0].code);
+            const select = document.querySelector('.select');
+            if (uniqueCourses.length > 0) {
+                select.innerHTML = uniqueCourses.map(c => 
+                    `<option value="${c.code}">${c.code} - ${c.name}</option>`
+                ).join('');
+                
+                // Auto-load first class
+                loadStudents(uniqueCourses[0].code);
+            } else {
+                select.innerHTML = `<option disabled selected>No classes assigned</option>`;
             }
         }
 
-        function loadStudents(classCode) {
+        async function loadStudents(classCode) {
             currentClass = classList.find(c => c.code === classCode);
             if (!currentClass) return;
 
-            // Get students for this class year
-            const students = API.getStudentsForClass(currentClass.year);
             const container = document.getElementById('studentList');
-            
-            container.innerHTML = students.map(s => `
-                <label class="list-item" style="cursor: pointer;">
-                    <input type="checkbox" value="${s.id}" style="width: 20px; height: 20px; accent-color: var(--primary);">
-                    <div class="list-item-content">
-                        <div class="list-item-title">${s.fullName}</div>
-                        <div class="list-item-subtitle">${s.id}</div>
+            container.innerHTML = `<div style="padding:20px; text-align:center;">Loading students with attendance data...</div>`;
+
+            try {
+                // Use new API endpoint that returns students with attendance stats
+                const response = await fetch(`/api/attendance/students/${classCode}`);
+                
+                if (!response.ok) {
+                    throw new Error('API error');
+                }
+                
+                const data = await response.json();
+                const students = data.students || [];
+                
+                if (students.length === 0) {
+                    container.innerHTML = `
+                        <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                            No registered students found for this class.<br>
+                            <small>Course: ${classCode}</small>
+                        </div>`;
+                    return;
+                }
+                
+                // Sort: Danger first, then Risk, then Warning, then Good
+                const order = { danger: 0, risk: 1, warning: 2, good: 3 };
+                students.sort((a, b) => order[a.status] - order[b.status]);
+
+                // Render List with REAL risk badges
+                container.innerHTML = students.map(s => {
+                    let badge = '';
+                    if (s.status === 'danger') {
+                        badge = `<span style="font-size:0.6rem; background:#fecaca; color:#dc2626; padding:2px 6px; border-radius:4px; margin-left:8px;">Danger (0%)</span>`;
+                    } else if (s.status === 'risk') {
+                        badge = `<span style="font-size:0.6rem; background:#fee2e2; color:#ef4444; padding:2px 6px; border-radius:4px; margin-left:8px;">At Risk (${s.percentage}%)</span>`;
+                    } else if (s.status === 'warning') {
+                        badge = `<span style="font-size:0.6rem; background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:4px; margin-left:8px;">Warning (${s.percentage}%)</span>`;
+                    } else {
+                        badge = `<span style="font-size:0.6rem; background:#d1fae5; color:#059669; padding:2px 6px; border-radius:4px; margin-left:8px;">${s.percentage}%</span>`;
+                    }
+                    
+                    return `
+                    <div class="list-item" style="cursor: pointer; display:flex; align-items:center;">
+                        <input type="checkbox" value="${s.id}" style="width: 20px; height: 20px; accent-color: var(--primary);">
+                        <div class="list-item-content" style="flex:1; margin-left:12px;">
+                            <div class="list-item-title">${s.fullName} ${badge}</div>
+                            <div class="list-item-subtitle">${s.id} • ${s.attended}/${s.total} sessions</div>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="alert('Student ID: ${s.id}\\nProgram: ${s.program}\\nYear: ${s.year}\\nAttendance: ${s.attended}/${s.total} (${s.percentage}%)')" style="font-size:0.7rem; padding:4px 8px;">Details</button>
                     </div>
-                </label>
-            `).join('');
+                `}).join('');
+
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = `<div style="color:red; text-align:center;">Error loading students.</div>`;
+            }
+        }
+
+        function addStudentPrompt() {
+            const id = prompt("Enter Student ID to add:");
+            if (id) {
+                alert(`Student ${id} added to class roster (Simulation).`);
+                // In real app, we'd call API.enrollStudent(id, currentClass.code)
+            }
         }
 
         function selectAll() {
@@ -167,28 +196,12 @@
             btn.disabled = true;
 
             try {
-                // Determine Mode: Loop vs Bulk (API supports bulk-mark? checked api.js, yes, saveBulkAttendance exists)
-                // Let's use bulk for efficiency if intended, but user prompt "syncing with actual data" implies thoroughness.
-                // API.saveBulkAttendance exists in api.js line 721. Using that.
-                
+                // Use Bulk Mark Endpoint
                 await API.saveBulkAttendance(currentClass.code, studentIds);
                 
-                // Also update individual stats for immediate feedback transparency? 
-                // The bulk endpoint doesn't really "persist" deeply in this mock setup (it logs console). 
-                // To ensure "Overview" sees it, we might need to rely on the local storage logic in API.
-                // `saveBulkAttendance` in api.js (line 721) does a fetch. Backend handles it.
-                // But fallback just logs.
-                // To be safe for THIS demo without full backend, let's also manually mark local storage if needed?
-                // Actually `markAttendanceAsync` (line 1028) has fallback `markAttendance`. 
-                // `saveBulkAttendance` (line 721) DOES NOT have a functional fallback that writes to storage! It just logs.
-                 
-                // CRITICAL FIX: Loop markAttendanceAsync instead, because it has robust fallback to local storage
-                // which updates the dashboard numbers immediately even without backend.
-                
-                const promises = studentIds.map(sid => API.markAttendanceAsync(sid, currentClass.code));
-                await Promise.all(promises);
-
+                // Visual Feedback
                 alert(`Attendance saved for ${studentIds.length} student(s)!`);
+                clearAll(); // Reset selection
             } catch (error) {
                 console.error(error);
                 alert('Failed to save attendance.');
@@ -198,9 +211,8 @@
             }
         }
 
-        function logout() { sessionStorage.removeItem('upath_user'); window.location.href = '/pages/auth.html'; }
+        function logout() { sessionStorage.removeItem('upath_user'); window.location.href = '../../pages/auth.html'; }
 
-        // Init
         document.addEventListener('DOMContentLoaded', initPage);
     </script>
 </body>

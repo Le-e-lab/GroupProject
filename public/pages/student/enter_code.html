@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Code - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/theme.css">
+    <link rel="stylesheet" href="../../css/toast.css">
+    <style>
+        .code-container {
+            max-width: 400px;
+            margin: 40px auto;
+            text-align: center;
+            padding: 20px;
+        }
+        .code-input {
+            font-size: 2.5rem;
+            letter-spacing: 8px;
+            text-align: center;
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            font-family: monospace;
+            font-weight: 700;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .code-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+        .verify-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .verify-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .verify-btn:active {
+            transform: translateY(0);
+        }
+        .instruction {
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../../dashboard.html" class="navbar-brand">
+            <div class="navbar-logo">U</div>
+            <span class="navbar-title">UPath</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="../../dashboard.html" class="navbar-link">Overview</a>
+            <a href="../../pages/student/schedule.html" class="navbar-link">Classes</a>
+            <a href="../../pages/student/enter_code.html" class="navbar-link active">Enter Code</a>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="code-container">
+            <h1 class="page-title" style="margin-bottom: 8px;">Mark Attendance</h1>
+            <p class="instruction">Enter the 6-digit code provided by your lecturer to mark yourself present.</p>
+            
+            <input type="text" id="codeInput" class="code-input" placeholder="000000" maxlength="6" autofocus>
+            
+            <button class="verify-btn" onclick="submitCode()" id="submitBtn">Verify Code</button>
+            
+            <div id="statusMessage" style="margin-top: 24px; font-weight: 500;"></div>
+        </div>
+    </main>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/toast.js"></script>
+    <script>
+        async function submitCode() {
+            const code = document.getElementById('codeInput').value.trim();
+            const btn = document.getElementById('submitBtn');
+            const msg = document.getElementById('statusMessage');
+            
+            if (code.length < 6) {
+                Toast.warning('Code must be 6 digits');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerText = 'Verifying Location...';
+            msg.innerText = '';
+            
+            // --- SECURITY: Request Location (Just-in-Time) ---
+            let userLat = null;
+            let userLon = null;
+
+            try {
+                if (navigator.geolocation) {
+                    // One-shot location request
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 5000,
+                            maximumAge: 0
+                        });
+                    });
+                    userLat = position.coords.latitude;
+                    userLon = position.coords.longitude;
+                    btn.innerText = 'Verifying Code...';
+                } else {
+                    console.warn("Geolocation not supported");
+                    btn.innerText = 'Verifying Code...';
+                }
+            } catch (err) {
+                console.warn("Location access denied or failed", err);
+                // Location is OPTIONAL - continue without it
+                btn.innerText = 'Verifying Code...';
+            }
+
+            try {
+                const user = API.getCurrentUser();
+                const classes = await API.getTodayClasses(user.year || 2);
+                const now = new Date();
+                const currentHour = now.getHours();
+                
+                // Find potential live classes (current hour or just past)
+                const liveClasses = classes.filter(c => {
+                    const h = parseInt(c.time.split(':')[0]);
+                    return h === currentHour || h === currentHour - 1; 
+                });
+                
+                if (liveClasses.length === 0) {
+                     msg.innerText = "No classes seem to be live right now.";
+                     msg.style.color = "var(--warning)";
+                     btn.disabled = false;
+                     btn.innerText = 'Verify Code';
+                     return;
+                }
+                
+                let success = false;
+                
+                // Try code on all live classes
+                for (const c of liveClasses) {
+                    // PASS LOCATION DATA
+                    const res = await API.validateSessionCode(c.id, code, userLat, userLon);
+                    
+                    if (res && res.message && (res.message.includes('success') || res.message.includes('Marked'))) {
+                        success = true;
+                        if (typeof Toast !== 'undefined') Toast.success(`Marked Present for ${c.name}`);
+                        msg.innerText = `Success! Marked present for ${c.name}`;
+                        msg.style.color = "var(--success)";
+                        document.getElementById('codeInput').value = '';
+                        setTimeout(() => window.location.href = '../../dashboard.html', 1500);
+                        break;
+                    } else if (res && res.message && res.message.includes('Location')) {
+                         // Specific location error
+                         msg.innerText = res.message;
+                         msg.style.color = "var(--danger)";
+                         if (typeof Toast !== 'undefined') Toast.error(res.message);
+                         success = true; // Stop loop but show error
+                         break;
+                    }
+                }
+                
+                if (!success) {
+                    if (!msg.innerText) {
+                        Toast.error("Invalid Code or Class not active.");
+                        msg.innerText = "Invalid Code";
+                        msg.style.color = "var(--danger)";
+                    }
+                }
+                
+            } catch (e) {
+                console.error(e);
+                Toast.error("Error verifying code");
+            } finally {
+                btn.disabled = false;
+                if (btn.innerText !== 'Verify Code') btn.innerText = 'Verify Code';
+            }
+        }
+    </script>
+</body>
+</html>

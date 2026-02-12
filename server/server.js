@@ -62,6 +62,85 @@ app.use('/api/auth', authRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/classes', classRoutes);
 
+// Database synchronization
+const db = require('./models'); // <--- Missing import
+const { User, Attendance, Session, Class } = db;
+const { Op } = require('sequelize');
+
+async function seedAttendanceIfEmpty() {
+    const count = await Attendance.count();
+    if (count > 0) {
+        console.log(`Attendance data exists (${count} records).`);
+        return;
+    }
+    
+    console.log("Seeding demo attendance data...");
+    
+    // Get students and their programs
+    const students = await User.findAll({ where: { role: 'student' }});
+    const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    
+    // Generate dates for past 6 weeks (mid-semester = ~6 sessions)
+    const dates = [];
+    const today = new Date();
+    for (let week = 1; week <= 6; week++) {
+        // One session per week per course
+        const d = new Date(today);
+        d.setDate(d.getDate() - (week * 7)); // Go back by weeks
+        dates.push(d.toISOString().split('T')[0]);
+    }
+    
+    const records = [];
+    for (const student of students) {
+        if (!student.program || !student.year) continue;
+        
+        // Get classes for this student's program and year
+        const classes = await Class.findAll({
+            where: {
+                Program: student.program,
+                Day: { [Op.in]: validDays },
+                Year_Semester: { [Op.like]: `Y${student.year}%` }
+            }
+        });
+        
+        // For each class, randomly attend some sessions (60-95%)
+        const seenCodes = new Set();
+        for (const cls of classes) {
+            if (seenCodes.has(cls.Course_Code)) continue;
+            seenCodes.add(cls.Course_Code);
+            
+            const compositeId = `${cls.Course_Code}-${cls.Day}-${cls.From_Time}`;
+            const rate = 0.6 + Math.random() * 0.35;
+            
+            dates.forEach(dt => {
+                if (Math.random() < rate) {
+                    records.push({
+                        classId: compositeId,
+                        userId: student.id,
+                        date: dt,
+                        status: 'present',
+                        method: Math.random() > 0.3 ? 'totp' : 'manual'
+                    });
+                }
+            });
+        }
+    }
+    
+    if (records.length > 0) {
+        await Attendance.bulkCreate(records);
+        console.log(`Seeded ${records.length} attendance records.`);
+    }
+}
+
+Promise.all([
+    User.sync(),
+    Attendance.sync(),
+    Session.sync()
+]).then(() => {
+    console.log("Synced Users, Attendance, and Sessions.");
+    return seedAttendanceIfEmpty();
+}).catch(err => console.error("DB Sync Error:", err));
+
 // Fallback for SPA (or 404)
 app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));

@@ -431,7 +431,7 @@
     <!-- Hero Section -->
     <section class="hero">
         <nav class="hero-nav">
-            <a href="/" class="hero-logo">
+            <a href="index.html" class="hero-logo">
                 <div class="hero-logo-icon">U</div>
                 <span class="hero-logo-text">UPath</span>
             </a>
@@ -440,44 +440,32 @@
 
         <div class="hero-content">
             <span class="hero-badge">🚀 Smart Attendance Made Simple</span>
-            <h1 class="hero-title">Track Attendance with <span>Bluetooth Proximity</span></h1>
+            <h1 class="hero-title">Track Attendance with <span>Secure Codes</span></h1>
             <p class="hero-subtitle">
-                No more fake sign-ins. UPath verifies students are physically in the classroom using Bluetooth before marking attendance.
+                No more fake sign-ins. UPath verifies students are in the classroom using time-sensitive unique codes.
             </p>
             <div class="hero-buttons">
-                <a href="/pages/auth.html" class="hero-btn hero-btn-primary">Get Started</a>
+                <a href="pages/auth.html" class="hero-btn hero-btn-primary">Get Started</a>
                 <a href="#how-it-works" class="hero-btn hero-btn-secondary">Learn More</a>
             </div>
         </div>
     </section>
 
-    <!-- Two Ways to Mark Attendance -->
+    <!-- How It Works Section -->
     <section class="section options">
         <div class="section-container">
-            <h2 class="section-title">Two Ways to Mark Attendance</h2>
-            <p class="section-subtitle">Students can choose whichever method is more convenient. Both require Bluetooth proximity verification.</p>
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">Simple, secure, and fast.</p>
 
-            <div class="options-grid">
-                <div class="option-card">
-                    <div class="option-icon">📷</div>
-                    <h3 class="option-title">Scan QR Code</h3>
-                    <p class="option-desc">Point your phone camera at the lecturer's screen</p>
-                    <ol class="option-steps">
-                        <li>1. Lecturer displays QR code</li>
-                        <li>2. Open UPath and tap "Scan QR"</li>
-                        <li>3. Bluetooth verifies you're in class</li>
-                        <li>4. Attendance marked ✓</li>
-                    </ol>
-                </div>
-
+            <div class="options-grid" style="grid-template-columns: 1fr; max-width: 600px; margin: 0 auto;">
                 <div class="option-card">
                     <div class="option-icon">🔢</div>
                     <h3 class="option-title">Enter 6-Digit Code</h3>
-                    <p class="option-desc">Type the code shown below the QR code</p>
+                    <p class="option-desc">Type the code shown on the lecturer's screen</p>
                     <ol class="option-steps">
-                        <li>1. Lecturer shows code (e.g., 847293)</li>
-                        <li>2. Open UPath and tap "Enter Code"</li>
-                        <li>3. Bluetooth verifies you're in class</li>
+                        <li>1. Lecturer displays valid code (e.g., 847293)</li>
+                        <li>2. Open UPath and tap "Mark Attendance"</li>
+                        <li>3. Enter the code within 30 seconds</li>
                         <li>4. Attendance marked ✓</li>
                     </ol>
                 </div>
@@ -493,9 +481,9 @@
 
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">📡</div>
-                    <h3 class="feature-title">Bluetooth Verification</h3>
-                    <p class="feature-desc">QR codes and manual codes only work when the student is within Bluetooth range of the lecturer's device.</p>
+                    <div class="feature-icon">🛡️</div>
+                    <h3 class="feature-title">Secure Validation</h3>
+                    <p class="feature-desc">Attendance codes are time-sensitive and unique to each session, preventing fraudulent attendance marking.</p>
                 </div>
 
                 <div class="feature-card">
@@ -531,39 +519,7 @@
         </div>
     </section>
 
-    <!-- How It Works Section -->
-    <section class="section how-it-works" id="how-it-works">
-        <div class="section-container">
-            <h2 class="section-title">How It Works</h2>
-            <p class="section-subtitle">Simple for students, powerful for lecturers.</p>
 
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-number">1</div>
-                    <h4 class="step-title">Lecturer Generates QR</h4>
-                    <p class="step-desc">Dashboard auto-detects current class. One tap to generate QR code with 6-digit backup code.</p>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-number">2</div>
-                    <h4 class="step-title">Bluetooth Verification</h4>
-                    <p class="step-desc">Student's phone must detect the lecturer's device within Bluetooth range (~10 meters).</p>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-number">3</div>
-                    <h4 class="step-title">Student Marks Attendance</h4>
-                    <p class="step-desc">Scan QR or enter code. System confirms Bluetooth proximity before accepting.</p>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-number">4</div>
-                    <h4 class="step-title">Recorded Instantly</h4>
-                    <p class="step-desc">Attendance logged in real-time. Both student and lecturer see confirmation.</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Lecturer Communication -->
     <section class="section communication">
@@ -605,36 +561,32 @@
             <div class="security-grid">
                 <div class="security-content">
                     <h2>Built to Prevent Fraud</h2>
-                    <p>Traditional QR attendance systems fail because students share codes with friends at home. UPath is different.</p>
+                    <p>Traditional attendance sheets can be signed by anyone. UPath uses technology to ensure integrity.</p>
 
                     <ul class="security-list">
                         <li>
                             <span class="check">✓</span>
-                            <span><strong>Bluetooth proximity check</strong> — Must be within 10 meters of the lecturer's device</span>
+                            <span><strong>Time-expiring codes</strong> — Codes regenerate every 30 seconds</span>
                         </li>
                         <li>
                             <span class="check">✓</span>
-                            <span><strong>Time-expiring codes</strong> — QR codes and manual codes regenerate every 5 minutes</span>
+                            <span><strong>Session Locking</strong> — Attendance window closes automatically</span>
                         </li>
                         <li>
                             <span class="check">✓</span>
-                            <span><strong>Device fingerprinting</strong> — One device per student, no sharing</span>
+                            <span><strong>Device fingerprinting</strong> — One device per student login</span>
                         </li>
                         <li>
                             <span class="check">✓</span>
-                            <span><strong>GPS geofencing</strong> — Optional campus boundary checks</span>
-                        </li>
-                        <li>
-                            <span class="check">✓</span>
-                            <span><strong>Manual backup</strong> — Lecturers can mark students who forgot devices or have dead batteries</span>
+                            <span><strong>Manual backup</strong> — Lecturers can mark students who have issues</span>
                         </li>
                     </ul>
                 </div>
 
                 <div class="security-visual">
-                    <div class="icon">📡</div>
-                    <h3>Bluetooth Proximity</h3>
-                    <p>Students must be physically present in class. No more signing in from home, the parking lot, or anywhere else.</p>
+                    <div class="icon">🔐</div>
+                    <h3>Secure Sessions</h3>
+                    <p>Dynamic codes ensure that only students present in the class at the right time can mark their attendance.</p>
                 </div>
             </div>
         </div>
@@ -644,7 +596,7 @@
     <section class="cta">
         <h2>Ready to modernize attendance?</h2>
         <p>Join universities already using UPath to save time and ensure accurate records.</p>
-        <a href="/pages/auth.html" class="cta-btn">Sign In Now</a>
+        <a href="pages/auth.html" class="cta-btn">Sign In Now</a>
     </section>
 
     <!-- Footer -->
@@ -652,5 +604,29 @@
         <p>© 2026 UPath. Smart Attendance for Modern Universities.</p>
     </footer>
 
+    <script>
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                const dashboardUrl = user.role === 'lecturer' ? 'lecturer_dashboard.html' : 'dashboard.html';
+                
+                // Update Hero Button
+                const heroBtn = document.querySelector('.hero-btn-primary');
+                if (heroBtn) {
+                    heroBtn.textContent = 'Go to Dashboard';
+                    heroBtn.href = dashboardUrl;
+                }
+                
+                // Update CTA Button
+                const ctaBtn = document.querySelector('.cta-btn');
+                if (ctaBtn) {
+                    ctaBtn.textContent = 'Go to Dashboard';
+                    ctaBtn.href = dashboardUrl;
+                }
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,425 +1,673 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - UPath</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/toast.css?v=2" />
     <style>
-        .notification-banner {
-            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-            border: 1px solid #F59E0B;
-            border-radius: var(--radius-lg);
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            animation: slideIn 0.3s ease;
+      .notification-banner {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 1px solid #f59e0b;
+        border-radius: var(--radius-lg);
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        animation: slideIn 0.3s ease;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
         }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .notif-icon {
-            width: 40px;
-            height: 40px;
-            background: #F59E0B;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 0.8rem;
-            flex-shrink: 0;
-        }
-        .notif-content { flex: 1; }
-        .notif-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text);
-            margin-bottom: 2px;
-        }
-        .notif-message {
-            font-size: 0.8rem;
-            color: #92400E;
-        }
-        .notif-time {
-            font-size: 0.75rem;
-            color: #B45309;
-            font-weight: 500;
-        }
-        .notif-dismiss {
-            background: none;
-            border: none;
-            color: #92400E;
-            cursor: pointer;
-            padding: 8px;
-            font-size: 1.2rem;
-            opacity: 0.6;
-            transition: opacity 0.2s;
-        }
-        .notif-dismiss:hover { opacity: 1; }
+      }
+      .notif-icon {
+        width: 40px;
+        height: 40px;
+        background: #f59e0b;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+      }
+      .notif-content {
+        flex: 1;
+      }
+      .notif-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text);
+        margin-bottom: 2px;
+      }
+      .notif-message {
+        font-size: 0.8rem;
+        color: #92400e;
+      }
+      .notif-time {
+        font-size: 0.75rem;
+        color: #b45309;
+        font-weight: 500;
+      }
+      .notif-dismiss {
+        background: none;
+        border: none;
+        color: #92400e;
+        cursor: pointer;
+        padding: 8px;
+        font-size: 1.2rem;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+      }
+      .notif-dismiss:hover {
+        opacity: 1;
+      }
 
-        .action-card {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-            color: white;
-            border-radius: var(--radius-lg);
-            padding: 32px;
-            margin-bottom: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-        }
-        .action-info h3 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .action-info p {
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-        .action-btn {
-            padding: 14px 32px;
-            background: white;
-            color: var(--primary);
-            border: none;
-            border-radius: var(--radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition);
-            text-decoration: none;
-            white-space: nowrap;
-        }
-        .action-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
+      .action-card {
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-hover) 100%
+        );
+        color: white;
+        border-radius: var(--radius-lg);
+        padding: 32px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .action-info h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .action-info p {
+        opacity: 0.9;
+        font-size: 0.9rem;
+      }
+      .action-btn {
+        padding: 14px 32px;
+        background: white;
+        color: var(--primary);
+        border: none;
+        border-radius: var(--radius);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all var(--transition);
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .action-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
 
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .section-link {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--primary);
-            text-decoration: none;
-        }
-        .section-link:hover { text-decoration: underline; }
+      .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .section-link {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--primary);
+        text-decoration: none;
+      }
+      .section-link:hover {
+        text-decoration: underline;
+      }
 
-        .today-classes {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        .class-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            transition: all var(--transition);
-            position: relative;
-            overflow: hidden;
-        }
-        .class-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
-        }
-        .class-card.current {
-            border-color: var(--success);
-            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
-        }
-        .class-card.current::before {
-            content: 'NOW';
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: var(--success);
-            color: white;
-            font-size: 0.65rem;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-        .class-time {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 8px;
-        }
-        .class-name {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 4px;
-        }
-        .class-code {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-        }
-        .class-meta {
-            display: flex;
-            gap: 16px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .class-meta span {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
+      .today-classes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .class-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        transition: all var(--transition);
+        position: relative;
+        overflow: hidden;
+      }
+      .class-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+      }
+      .class-card.current {
+        border-color: var(--success);
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      }
+      .class-card.current::before {
+        content: "NOW";
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: var(--success);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+      .class-time {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 8px;
+      }
+      .class-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .class-code {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+      }
+      .class-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .class-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
 
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px 24px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary);
+        margin-bottom: 4px;
+      }
+      .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+      }
+      .quick-action {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        text-decoration: none;
+        color: var(--text);
+        transition: all var(--transition);
+      }
+      .quick-action:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+      }
+      .quick-action-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-light);
+        color: var(--primary);
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+      .quick-action-text {
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 768px) {
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
+          grid-template-columns: 1fr;
         }
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 20px 24px;
-            text-align: center;
+        .action-card {
+          flex-direction: column;
+          text-align: center;
         }
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 4px;
+        .today-classes {
+          grid-template-columns: 1fr;
         }
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-        }
-        .quick-action {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            text-decoration: none;
-            color: var(--text);
-            transition: all var(--transition);
-        }
-        .quick-action:hover {
-            border-color: var(--primary);
-            background: var(--primary-light);
-        }
-        .quick-action-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--primary-light);
-            color: var(--primary);
-            border-radius: var(--radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.85rem;
-        }
-        .quick-action-text {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .action-card { flex-direction: column; text-align: center; }
-            .today-classes { grid-template-columns: 1fr; }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <nav class="navbar">
-        <a href="/dashboard.html" class="navbar-brand">
-            <div class="navbar-logo">U</div>
-            <span class="navbar-title">UPath</span>
-            <span class="navbar-role">Student</span>
-        </a>
-        <div class="navbar-nav">
-            <a href="/dashboard.html" class="navbar-link active">Overview</a>
-            <a href="/pages/student/schedule.html" class="navbar-link">Classes</a>
-            <a href="/pages/student/reports.html" class="navbar-link">Attendance</a>
-            <a href="/pages/student/map.html" class="navbar-link">Map</a>
-        </div>
-        <div class="navbar-actions">
-            <a href="/pages/student/profile.html" class="navbar-avatar" id="userAvatar">CB</a>
-            <button class="navbar-logout" onclick="logout()">Sign Out</button>
-        </div>
+      <a href="/dashboard.html" class="navbar-brand">
+        <div class="navbar-logo">U</div>
+        <span class="navbar-title">UPath</span>
+        <span class="navbar-role">Student</span>
+      </a>
+      <div class="navbar-nav">
+        <a href="/dashboard.html" class="navbar-link active">Overview</a>
+        <a href="/pages/student/schedule.html" class="navbar-link">Classes</a>
+        <a href="/pages/student/reports.html" class="navbar-link">Attendance</a>
+        <a href="/pages/student/map.html" class="navbar-link">Map</a>
+      </div>
+      <div class="navbar-actions">
+        <a
+          href="/pages/student/profile.html"
+          class="navbar-avatar"
+          id="userAvatar"
+          >CB</a
+        >
+        <button class="navbar-logout" onclick="logout()">Sign Out</button>
+      </div>
     </nav>
 
     <main class="page">
-        <div class="page-container">
-            <!-- Header with Live Clock -->
-            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <h1 class="page-title" id="welcomeTitle">Welcome back</h1>
-                    <p class="page-subtitle" id="dateDisplay"></p>
-                </div>
-                <div style="text-align: right;">
-                    <div id="liveClock" style="font-size: 2rem; font-weight: 800; color: var(--primary);"></div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">Current Time</div>
-                </div>
+      <div class="page-container">
+        <!-- Header with Live Clock -->
+        <div
+          class="page-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+          "
+        >
+          <div>
+            <h1 class="page-title" id="welcomeTitle">Welcome back</h1>
+            <p class="page-subtitle" id="dateDisplay"></p>
+          </div>
+          <div style="text-align: right">
+            <div
+              id="liveClock"
+              style="font-size: 2rem; font-weight: 800; color: var(--primary)"
+            ></div>
+            <div style="font-size: 0.8rem; color: var(--text-muted)">
+              Current Time
             </div>
-
-            <!-- Notifications - Dynamically loaded -->
-            <div id="notifications"></div>
-
-            <!-- Action Card -->
-            <div class="action-card">
-                <div class="action-info">
-                    <h3>Mark Your Attendance</h3>
-                    <p>Scan QR code or enter the 6-digit code from your lecturer</p>
-                </div>
-                <a href="/pages/student/scan_qr.html" class="action-btn">Scan / Enter Code</a>
-            </div>
-
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">87%</div>
-                    <div class="stat-label">Overall Attendance</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="classesToday">0</div>
-                    <div class="stat-label">Classes Today</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="markedPresent">0</div>
-                    <div class="stat-label">Marked Present</div>
-                </div>
-            </div>
-
-            <!-- Today's Classes -->
-            <div class="section-title">
-                Today's Classes
-                <a href="/pages/student/schedule.html" class="section-link">View Full Schedule</a>
-            </div>
-            <div class="today-classes" id="todayClasses">
-                <div class="class-card">
-                    <div class="text-muted" style="text-align: center; padding: 20px;">Loading classes...</div>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="section-title">Quick Actions</div>
-            <div class="quick-actions">
-                <a href="/pages/student/schedule.html" class="quick-action">
-                    <div class="quick-action-icon">SC</div>
-                    <div class="quick-action-text">View Schedule</div>
-                </a>
-                <a href="/pages/student/reports.html" class="quick-action">
-                    <div class="quick-action-icon">AT</div>
-                    <div class="quick-action-text">Attendance Reports</div>
-                </a>
-                <a href="/pages/student/map.html" class="quick-action">
-                    <div class="quick-action-icon">MP</div>
-                    <div class="quick-action-text">Campus Map</div>
-                </a>
-                <a href="/pages/student/profile.html" class="quick-action">
-                    <div class="quick-action-icon">PR</div>
-                    <div class="quick-action-text">My Profile</div>
-                </a>
-            </div>
+          </div>
         </div>
+
+        <!-- Notifications - Dynamically loaded -->
+        <div id="notifications"></div>
+
+        <!-- Action Card -->
+        <div class="action-card">
+          <div class="action-info">
+            <h3>Mark Your Attendance</h3>
+            <p>
+              Enter the 6-digit code from your lecturer to mark yourself
+              present.
+            </p>
+          </div>
+          <div class="action-buttons" style="display: flex; gap: 12px">
+            <a
+              href="/pages/student/scan_qr.html"
+              class="action-btn"
+              style="background: white; color: var(--primary)"
+              >Scan QR</a
+            >
+            <a
+              href="/pages/student/enter_code.html"
+              class="action-btn"
+              style="
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                border: 1px solid white;
+              "
+              >Enter Code</a
+            >
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="overallAttendance">0%</div>
+            <div class="stat-label">Overall Attendance</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="classesToday">0</div>
+            <div class="stat-label">Classes Today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="markedPresent">0</div>
+            <div class="stat-label">Marked Present</div>
+          </div>
+        </div>
+
+        <!-- Today's Classes -->
+        <div class="section-title">
+          Today's Classes
+          <a href="/pages/student/schedule.html" class="section-link"
+            >View Full Schedule</a
+          >
+        </div>
+        <div class="today-classes" id="todayClasses">
+          <div class="class-card">
+            <div class="text-muted" style="text-align: center; padding: 20px">
+              Loading classes...
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-title">Quick Actions</div>
+        <div class="quick-actions">
+          <a href="/pages/student/schedule.html" class="quick-action">
+            <div class="quick-action-icon">SC</div>
+            <div class="quick-action-text">View Schedule</div>
+          </a>
+          <a href="/pages/student/reports.html" class="quick-action">
+            <div class="quick-action-icon">AT</div>
+            <div class="quick-action-text">Attendance Reports</div>
+          </a>
+          <a href="/pages/student/map.html" class="quick-action">
+            <div class="quick-action-icon">MP</div>
+            <div class="quick-action-text">Campus Map</div>
+          </a>
+          <a href="/pages/student/profile.html" class="quick-action">
+            <div class="quick-action-icon">PR</div>
+            <div class="quick-action-text">My Profile</div>
+          </a>
+        </div>
+      </div>
     </main>
 
-    <script src="/js/api.js"></script>
+    <script src="js/api.js"></script>
     <script>
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        let userYear = 2; // Default to Y2
+      const dayNames = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      let userYear = 2; // Default to Y2
 
-        function loadUserData() {
-            const userStr = sessionStorage.getItem('upath_user');
-            if (userStr) {
-                const user = JSON.parse(userStr);
-                const firstName = user.fullName ? user.fullName.split(' ')[0] : 'Student';
-                document.getElementById('welcomeTitle').textContent = `Welcome back, ${firstName}`;
-                
-                if (user.fullName) {
-                    const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-                    document.getElementById('userAvatar').textContent = initials;
-                }
-                
-                // Determine year from ID
-                if (user.id && user.id.startsWith('250')) {
-                    userYear = 1;
-                } else {
-                    userYear = 2;
-                }
+      /**
+       * LOAD USER DATA (Critical Path)
+       * ------------------------------
+       * This function ensures the user session is valid before loading any academic data.
+       *
+       * SELF-REPAIR MECHANISM:
+       * 1. Checks if 'program' is missing from the local session (common after server updates).
+       * 2. If missing, it BLOCKS the UI with a "Repairing..." overlay.
+       * 3. It forces a fetch(API.fetchUser) to get the latest DB record.
+       * 4. It updates sessionStorage and reloads the page to apply the fix.
+       *
+       * This prevents the "Show All Classes" bug by ensuring the filter variable (program) always exists.
+       */
+      async function loadUserData() {
+        let user = API.getCurrentUser();
+
+        // BLOCKING REPAIR: If user exists but has no program (and is student), DO NOT PROCEED.
+        // This prevents the dashboard from loading with "undefined" filter, which causes empty or wrong data.
+        if (user && user.role === "student" && !user.program) {
+          console.warn(
+            "[Dashboard] User data incomplete (Missing Program). Attempting repair...",
+          );
+
+          // Show blocking overlay
+          const cleanupOverlay = document.createElement("div");
+          cleanupOverlay.innerHTML = `
+                    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-family:'Inter',sans-serif;">
+                        <div style="font-size:3rem;margin-bottom:20px;">🔧</div>
+                        <h2 style="color:#111827;margin-bottom:10px;">Optimizing Your Profile</h2>
+                        <p style="color:#6B7280;">We detected a missing setting. Fixing it now...</p>
+                        <div id="repair-status" style="margin-top:20px;font-weight:600;color:#2563EB;">Contacting Server...</div>
+                    </div>
+                `;
+          document.body.appendChild(cleanupOverlay);
+          const status = document.getElementById("repair-status");
+
+          try {
+            const freshUser = await API.fetchUser(user.id);
+            if (freshUser && freshUser.program) {
+              status.innerText = "Success! Reloading...";
+              status.style.color = "#059669";
+
+              // Merge and Save
+              user = { ...user, ...freshUser };
+              sessionStorage.setItem("upath_user", JSON.stringify(user));
+
+              // Wait a moment then reload to apply changes cleanly
+              setTimeout(() => window.location.reload(), 1000);
+              return; // Stop execution here
+            } else {
+              status.innerText = "Error: Server returned incomplete data.";
+              status.style.color = "#DC2626";
+              console.error("Server returned user:", freshUser);
             }
+          } catch (e) {
+            status.innerText = "Connection Failed. Please check server.";
+          }
+
+          // If we get here, repair failed.
+          console.error("Repair failed.");
+          return;
         }
 
-        function updateDate() {
-            const now = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', options);
+        // Normal Flow (Data is good)
+        if (user) {
+          const firstName = user.fullName
+            ? user.fullName.split(" ")[0]
+            : "Student";
+          document.getElementById("welcomeTitle").textContent =
+            `Welcome back, ${firstName}`;
+
+          if (user.fullName) {
+            const initials = user.fullName
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .substring(0, 2)
+              .toUpperCase();
+            document.getElementById("userAvatar").textContent = initials;
+          }
+
+          // Determine year
+          if (user.year) {
+            userYear = user.year;
+          } else if (user.id && user.id.startsWith("25")) {
+            userYear = 1;
+          } else if (user.id && user.id.startsWith("24")) {
+            userYear = 2;
+          } else if (user.id && user.id.startsWith("23")) {
+            userYear = 3;
+          } else if (user.id && user.id.startsWith("22")) {
+            userYear = 4;
+          }
+
+          console.log(
+            "Logged in as:",
+            user.fullName,
+            "Program:",
+            user.program,
+            "Year:",
+            userYear,
+          );
+        }
+      }
+
+      function updateDate() {
+        const now = new Date();
+        const options = {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        };
+        document.getElementById("dateDisplay").textContent =
+          now.toLocaleDateString("en-US", options);
+      }
+
+      async function loadTodayClasses() {
+        const now = new Date();
+        const today = dayNames[now.getDay()];
+        const currentHour = now.getHours();
+
+        // Get classes from API (Pass Year and Program for strict server-side filtering)
+        const user = API.getCurrentUser();
+
+        // If user data is incomplete (no program), we might get empty results, which is better than wrong results.
+        // But usually loadUserData() ensures we have it.
+        const prog = user ? user.program : null;
+        const yr = user ? user.year || userYear : userYear;
+
+        const allClasses = await API.getTimetable(yr, prog);
+
+        // Filter by Day (Server filters by Program/Year, we filter by Day here)
+        // FIX: Also filter by year to match functionality of schedule.html and hide 'All Years' (mapped to 1) for Y2+
+        let todayClasses = allClasses.filter((c) => c.day === today && c.year === userYear);
+
+        // Sort by time
+        todayClasses.sort((a, b) => {
+          const timeA = parseInt(a.time.split(":")[0]);
+          const timeB = parseInt(b.time.split(":")[0]);
+          return timeA - timeB;
+        });
+
+        // Update stats
+        // Update stats
+        document.getElementById("classesToday").textContent = todayClasses.length;
+
+        // Fetch ACTUAL attendance for today
+        let markedCount = 0;
+        try {
+            if (user) {
+                const presentIds = await API.getTodayAttendance(user.id);
+                // Count how many of *today's classes* are in the presentIds list
+                // We check if c.id (composite) or c.code is in the list
+                // backend returns classId which is usually composite ID from frontend logic, 
+                // but let's be safe and check code too if matched.
+                // Re-verification: The endpoint returns 'classId' from Attendance table. 
+                // In 'validateSessionCode', we save 'classId'.
+                // 'dashboard.html' passes 'c.id' (composite) to 'openAttendanceModal'.
+                // So the Set should contain composite IDs.
+                const presentSet = new Set(presentIds);
+                markedCount = todayClasses.filter(c => presentSet.has(c.id)).length;
+            }
+        } catch (e) {
+            console.error("Error fetching today's attendance:", e);
         }
 
-        async function loadTodayClasses() {
-            const now = new Date();
-            const today = dayNames[now.getDay()];
-            const currentHour = now.getHours();
-            
-            // Get classes from API
-            const allClasses = API.getTimetable();
-            const todayClasses = allClasses.filter(c => c.day === today && c.year === userYear);
-            
+        document.getElementById("markedPresent").textContent = markedCount;
+
+        // Render classes
+        const container = document.getElementById("todayClasses");
+
+        if (todayClasses.length === 0) {
+          // Try to find next classes
+          let nextDay = "";
+          let nextClasses = [];
+
+          for (let i = 1; i <= 7; i++) {
+            const nextDate = new Date();
+            nextDate.setDate(now.getDate() + i);
+            const checkDay = dayNames[nextDate.getDay()];
+            const found = allClasses.filter(
+              (c) => c.day === checkDay && c.year === userYear,
+            );
+            if (found.length > 0) {
+              nextDay = checkDay;
+              nextClasses = found;
+              break;
+            }
+          }
+
+          if (nextClasses.length > 0) {
             // Sort by time
-            todayClasses.sort((a, b) => {
-                const timeA = parseInt(a.time.split(':')[0]);
-                const timeB = parseInt(b.time.split(':')[0]);
-                return timeA - timeB;
+            nextClasses.sort((a, b) => {
+              const timeA = parseInt(a.time.split(":")[0]);
+              const timeB = parseInt(b.time.split(":")[0]);
+              return timeA - timeB;
             });
-            
-            // Update stats
-            document.getElementById('classesToday').textContent = todayClasses.length;
-            document.getElementById('markedPresent').textContent = Math.max(0, todayClasses.length - 1);
-            
-            // Render classes
-            const container = document.getElementById('todayClasses');
-            
-            if (todayClasses.length === 0) {
-                container.innerHTML = `
+
+            document.querySelector(".section-title").innerHTML = `
+                        Upcoming Classes (${nextDay})
+                        <a href="/pages/student/schedule.html" class="section-link">View Full Schedule</a>
+                    `;
+
+            let html = "";
+            nextClasses.forEach((c) => {
+              html += `
+                            <div class="class-card">
+                                <div class="class-time">${c.time}</div>
+                                <div class="class-name">${c.name}</div>
+                                <div class="class-code">${c.code}</div>
+                                <div class="class-meta">
+                                    <span>${c.room}</span>
+                                    <span>${c.lecturerName}</span>
+                                </div>
+                            </div>
+                        `;
+            });
+            container.innerHTML = html;
+            return;
+          }
+
+          container.innerHTML = `
                     <div class="class-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                         <div style="font-size: 2rem; margin-bottom: 8px;">🎉</div>
                         <div style="font-weight: 600; color: var(--text);">No Classes Today</div>
                         <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Enjoy your free day!</div>
                     </div>
                 `;
-                return;
-            }
-            
-            let html = '';
-            todayClasses.forEach(c => {
-                const startHour = parseInt(c.time.split(':')[0]);
-                const isCurrent = currentHour >= startHour && currentHour < startHour + 2;
-                
-                html += `
-                    <div class="class-card ${isCurrent ? 'current' : ''}">
+          return;
+        }
+
+        let html = "";
+        todayClasses.forEach((c) => {
+          const startHour = parseInt(c.time.split(":")[0]);
+          const isCurrent =
+            currentHour >= startHour && currentHour < startHour + 2;
+
+          html += `
+                    <div class="class-card ${isCurrent ? "current" : ""}">
                         <div class="class-time">${c.time}</div>
                         <div class="class-name">${c.name}</div>
                         <div class="class-code">${c.code}</div>
@@ -429,73 +677,78 @@
                         </div>
                     </div>
                 `;
-            });
-            container.innerHTML = html;
+        });
+        container.innerHTML = html;
+      }
+
+      async function loadNotifications() {
+        const container = document.getElementById("notifications");
+        const now = new Date();
+        const currentHour = now.getHours();
+        const today = dayNames[now.getDay()];
+
+        // 1. Get Announcements
+        const announcements = API.getAnnouncementsForStudent(userYear);
+
+        // 2. Get Upcoming Classes
+        // Reuse server filtered data
+        const prog = user ? user.program : null;
+        const yr = user ? user.year || userYear : userYear;
+        const allClasses = await API.getTimetable(yr, prog);
+
+        const upcomingClasses = allClasses.filter((c) => {
+          if (c.day !== today) return false;
+
+          const startHour = parseInt(c.time.split(":")[0]);
+          return startHour > currentHour && startHour <= currentHour + 2;
+        });
+
+        // If nothing, show nothing
+        if (announcements.length === 0 && upcomingClasses.length === 0) {
+          container.innerHTML = "";
+          return;
         }
 
-        function loadNotifications() {
-            const container = document.getElementById('notifications');
-            const now = new Date();
-            const currentHour = now.getHours();
-            const today = dayNames[now.getDay()];
-            
-            // 1. Get Announcements
-            const announcements = API.getAnnouncementsForStudent(userYear);
-            
-            // 2. Get Upcoming Classes
-            const allClasses = API.getTimetable();
-            const upcomingClasses = allClasses.filter(c => {
-                if (c.day !== today || c.year !== userYear) return false;
-                const startHour = parseInt(c.time.split(':')[0]);
-                return startHour > currentHour && startHour <= currentHour + 2;
-            });
-            
-            // If nothing, show nothing
-            if (announcements.length === 0 && upcomingClasses.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
-            
-            let html = '';
-            
-            // Render Announcements First
-            announcements.forEach((a, i) => {
-                let colorClass = '#2563EB'; // Info blue
-                let bgClass = 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)';
-                let borderClass = '#93C5FD';
-                let iconText = 'ℹ️';
-                
-                if (a.type === 'cancel') { 
-                    colorClass = '#DC2626'; 
-                    bgClass = 'linear-gradient(135deg, #FEE2E2 0%, #FECaca 100%)';
-                    borderClass = '#FCA5A5';
-                    iconText = '🚫';
-                } else if (a.type === 'delay') { 
-                    colorClass = '#D97706'; 
-                    bgClass = 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)';
-                    borderClass = '#FCD34D';
-                    iconText = '🕒'; 
-                }
-                
-                html += `
+        let html = "";
+
+        // Render Announcements First
+        announcements.forEach((a, i) => {
+          let colorClass = "#2563EB"; // Info blue
+          let bgClass = "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)";
+          let borderClass = "#93C5FD";
+          let iconText = "ℹ️";
+
+          if (a.type === "cancel") {
+            colorClass = "#DC2626";
+            bgClass = "linear-gradient(135deg, #FEE2E2 0%, #FECaca 100%)";
+            borderClass = "#FCA5A5";
+            iconText = "🚫";
+          } else if (a.type === "delay") {
+            colorClass = "#D97706";
+            bgClass = "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)";
+            borderClass = "#FCD34D";
+            iconText = "🕒";
+          }
+
+          html += `
                     <div class="notification-banner" id="announcement${i}" style="background: ${bgClass}; border: 1px solid ${borderClass};">
                         <div class="notif-icon" style="background: ${colorClass};">${iconText}</div>
                         <div class="notif-content">
-                            <div class="notif-title" style="color: #1F2937;">${a.courseName}: ${a.type === 'cancel' ? 'CANCELLED' : a.type === 'delay' ? 'DELAYED' : 'UPDATE'}</div>
+                            <div class="notif-title" style="color: #1F2937;">${a.courseName}: ${a.type === "cancel" ? "CANCELLED" : a.type === "delay" ? "DELAYED" : "UPDATE"}</div>
                             <div class="notif-message" style="color: #374151;">${a.message}</div>
                         </div>
                         <div class="notif-time" style="color: ${colorClass};">New</div>
                         <button class="notif-dismiss" onclick="dismissNotif('announcement${i}')" style="color: ${colorClass};">×</button>
                     </div>
                 `;
-            });
-            
-            // Render Class Notifications
-            upcomingClasses.forEach((c, i) => {
-                const startHour = parseInt(c.time.split(':')[0]);
-                const minsUntil = (startHour - currentHour) * 60 - now.getMinutes();
-                
-                html += `
+        });
+
+        // Render Class Notifications
+        upcomingClasses.forEach((c, i) => {
+          const startHour = parseInt(c.time.split(":")[0]);
+          const minsUntil = (startHour - currentHour) * 60 - now.getMinutes();
+
+          html += `
                     <div class="notification-banner" id="notif${i}">
                         <div class="notif-icon">${c.code.substring(0, 2)}</div>
                         <div class="notif-content">
@@ -506,77 +759,90 @@
                         <button class="notif-dismiss" onclick="dismissNotif('notif${i}')">×</button>
                     </div>
                 `;
-            });
-            
-            container.innerHTML = html;
+        });
+
+        container.innerHTML = html;
+      }
+
+      async function loadDashboardStats() {
+        // Get user ID
+        const userStr = sessionStorage.getItem("upath_user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        // Fetch unified stats (ASYNC)
+        try {
+          const statsData = await API.fetchStudentStats(user.id);
+          // FIX: API returns { stats: [...] }, so extract the array
+          const courseList = statsData.stats || [];
+
+          let totalSessions = 0;
+          let totalPresent = 0;
+
+          courseList.forEach((c) => {
+            totalSessions += c.total || 0;
+            totalPresent += c.attended || 0;
+          });
+
+          const overallPct =
+            totalSessions > 0
+              ? Math.round((totalPresent / totalSessions) * 100)
+              : 0;
+
+          // Update UI - FIX: Use specific ID instead of generic class
+          const val = document.getElementById("overallAttendance");
+          if (val) val.textContent = overallPct + "%";
+        } catch (e) {
+          console.warn("Could not sync dashboard stats:", e);
         }
+      }
 
-        async function loadDashboardStats() {
-            // Get user ID
-            const userStr = sessionStorage.getItem('upath_user');
-            if (!userStr) return;
-            const user = JSON.parse(userStr);
-
-            // Fetch unified stats (ASYNC)
-            try {
-                const stats = await API.fetchStudentStats(user.id);
-                const courseList = Object.values(stats);
-                
-                let totalSessions = 0;
-                let totalPresent = 0;
-                
-                courseList.forEach(c => {
-                    totalSessions += c.total;
-                    totalPresent += c.attended;
-                });
-                
-                const overallPct = totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : 0;
-                
-                // Update UI
-                const val = document.querySelector('.stat-value');
-                if (val) val.textContent = overallPct + '%';
-            } catch (e) {
-                console.warn("Could not sync dashboard stats:", e);
-            }
+      function dismissNotif(id) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.animation = "slideIn 0.2s ease reverse";
+          setTimeout(() => el.remove(), 200);
         }
+      }
 
-        function dismissNotif(id) {
-            const el = document.getElementById(id);
-            if (el) {
-                el.style.animation = 'slideIn 0.2s ease reverse';
-                setTimeout(() => el.remove(), 200);
-            }
-        }
+      function logout() {
+        sessionStorage.removeItem("upath_user");
+        window.location.href = "/pages/auth.html";
+      }
 
-        function logout() {
-            sessionStorage.removeItem('upath_user');
-            window.location.href = '/pages/auth.html';
-        }
+      /**
+       * Update the live clock display every second
+       */
+      function updateClock() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        });
+        document.getElementById("liveClock").textContent = timeStr;
+      }
 
-        /**
-         * Update the live clock display every second
-         */
-        function updateClock() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true 
-            });
-            document.getElementById('liveClock').textContent = timeStr;
-        }
-
-        // Initialize on page load
-        loadUserData();
+      // Initialize on page load (Sequential to ensure user data is ready)
+      (async () => {
+        await loadUserData(); // Wait for user refresh
         updateDate();
         loadTodayClasses();
         loadNotifications();
         loadDashboardStats();
         updateClock();
-        
-        // Update clock every second
-        setInterval(updateClock, 1000);
+      })();
+
+      // Update clock every second
+      setInterval(updateClock, 1000);
+
+      // DEBUG: Check connection - REMOVED per user request
+      /*
+      (async () => {
+         // Debug overlay removed.
+      })();
+      */
     </script>
-</body>
+  </body>
 </html>

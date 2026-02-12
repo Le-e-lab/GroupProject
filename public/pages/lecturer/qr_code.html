@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generate QR Code - UPath</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <style>
         body {
             display: flex;
@@ -242,7 +242,7 @@
     <div class="qr-layout">
         <!-- QR Code Card -->
         <div class="qr-card">
-            <a href="/lecturer_dashboard.html" class="back-btn">← Back to Dashboard</a>
+            <a href="../../lecturer_dashboard.html" class="back-btn">← Back to Dashboard</a>
             
             <div class="class-info">
                 <div class="class-name" id="className">Introduction to Programming</div>
@@ -317,7 +317,7 @@
         </div>
     </div>
 
-    <script src="/js/api.js"></script>
+    <script src="../../js/api.js"></script>
     <script>
         // Init mobile nav if needed (though no nav here, but for completeness)
         // Main logic
@@ -332,18 +332,60 @@
             CS305: { name: 'Web Development', room: 'Lab 2B' }
         };
 
-        function generateCode() {
-            return Math.floor(100000 + Math.random() * 900000).toString();
+        async function fetchNewCode() {
+            try {
+                // Get Class ID from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const classCode = urlParams.get('class');
+                const className = urlParams.get('name');
+                
+                // Update UI
+                if (classCode) {
+                     document.getElementById('className').textContent = className || classCode;
+                     document.getElementById('classDetails').textContent = `${classCode} • In progress`;
+                }
+
+                // Call API to generate REAL session code
+                if (window.API && API.generateSessionCode) {
+                    const res = await API.generateSessionCode(classCode);
+                    if (res && res.code) {
+                        updateDisplay(res.code);
+                        // Update timer based on response if available, else default 5 min
+                        timeLeft = res.timeLeft ? Math.floor(res.timeLeft / 1000) : 300; 
+                    } else {
+                        // Show specific API error
+                        console.error("API Error:", res);
+                        updateDisplay(res.message || "API Error");
+                        document.querySelector('.timer').innerHTML = `<span style="color:red">Try going back to Dashboard and clicking 'Generate QR' again.</span>`;
+                    }
+                } else {
+                     console.error("API not available");
+                     updateDisplay("OFFLINE");
+                }
+            } catch (e) {
+                console.error("Error generating code", e);
+                updateDisplay("ERROR");
+                document.querySelector('.timer').textContent = e.message || "Connection Failed";
+            }
         }
         
         function updateDisplay(code) {
             document.getElementById('codeDisplay').textContent = code;
-            document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=UPATH-${classCode}-${code}`;
+            
+            // Encode the 6-digit code primarily, or a JSON if we prefer
+            // For simple scanning, let's encode the JSON with the code
+            const qrData = JSON.stringify({
+                app: "upath",
+                action: "attendance",
+                classId: classCode, 
+                code: code
+            });
+            
+            document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
         }
         
         function regenerateCode() {
-            updateDisplay(generateCode());
-            timeLeft = 300;
+            fetchNewCode();
         }
         
         function copyCode() {
@@ -352,7 +394,10 @@
             alert('Code copied: ' + code);
         }
 
+        // Notification logic remains same...
         function sendNotif(type, btn) {
+             // ... existing sendNotif logic ...
+             // (Copy existing logic here or ensure it's not deleted)
             const messages = {
                 late: 'Lecturer is running approximately 15 minutes late',
                 venue: 'Class venue has been changed',
@@ -376,13 +421,11 @@
             
             document.querySelectorAll('.notif-btn').forEach(b => b.classList.remove('sent'));
             btn.classList.add('sent');
-            
-            // Show toast or alert
-            const msg = messages[type];
-            alert(`Notification Sent: ${msg}`);
+            alert(`Notification Sent: ${messages[type]}`);
         }
 
         function sendCustom() {
+             // ... existing sendCustom logic ...
             const msg = document.getElementById('customMsg').value.trim();
             if (!msg) return alert('Please enter a message');
             
@@ -405,7 +448,7 @@
         }
         
         setInterval(() => {
-            if (timeLeft <= 0) regenerateCode();
+            if (timeLeft <= 0) fetchNewCode();
             else {
                 timeLeft--;
                 const mins = Math.floor(timeLeft / 60);
@@ -417,7 +460,9 @@
         const info = classData[classCode] || { name: classCode, room: 'TBD' };
         document.getElementById('className').textContent = info.name;
         document.getElementById('classDetails').textContent = `${classCode} • ${info.room} • In progress`;
-        updateDisplay(generateCode());
+        
+        // Initial load
+        fetchNewCode();
     </script>
 </body>
 </html>

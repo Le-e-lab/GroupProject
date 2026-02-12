@@ -5,13 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Schedule - UPath</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="../../css/theme.css">
+    <link rel="stylesheet" href="../../css/toast.css">
     <style>
+        /* Fixed Height Layout Reset */
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Prevent body scroll */
+            margin: 0;
+            padding: 0;
+        }
+        
+        .page {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding-bottom: 0;
+        }
+
+        .page-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 16px 24px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
         .schedule-info {
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
             gap: 16px;
         }
@@ -25,72 +57,81 @@
         }
 
         .schedule-grid {
+            flex: 1;
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(5, minmax(0, 1fr)); /* Force equal width */
+            gap: 12px;
+            overflow: hidden; /* Contain columns */
+            min-height: 0;
+            width: 100%;
         }
+
         .day-column {
-            background: transparent;
+            background: rgba(0,0,0,0.02);
+            border-radius: var(--radius);
             display: flex;
             flex-direction: column;
-            gap: 12px;
-        }
-        .day-header {
-            background: var(--surface);
-            color: var(--text);
-            padding: 12px;
-            font-weight: 700;
-            font-size: 0.95rem;
-            text-align: center;
-            border-radius: var(--radius);
+            gap: 8px;
+            height: 100%; 
+            overflow: hidden;
             border: 1px solid var(--border);
-            margin-bottom: 4px;
-            position: relative;
+            min-width: 0; /* Crucial for grid overflow */
+        }
+
+        .day-header {
+            flex-shrink: 0;
+            background: var(--surface);
+            color: var(--text-muted);
+            padding: 8px; 
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .day-header.today {
             background: #DC2626;
             color: white;
-            border-color: #DC2626;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-        }
-        .day-header.today::after {
-            content: 'Today';
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1F2937;
-            color: white;
-            font-size: 0.6rem;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
         }
 
-        .class-card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            padding: 16px;
-            border: 1px solid var(--border);
-            transition: all var(--transition);
-            position: relative;
-            overflow: hidden;
+        .day-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
+        /* Scrollbar Styling */
+        .day-content::-webkit-scrollbar { width: 4px; }
+        .day-content::-webkit-scrollbar-track { background: transparent; }
+        .day-content::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
+
+        .class-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            transition: all var(--transition);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-shrink: 0; /* No shrink */
+        }
         .class-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: var(--shadow);
             border-color: var(--primary-light);
+            z-index: 2;
         }
         
-        /* Status Styles */
         .class-card.status-live {
-            border-left: 4px solid var(--success);
-            border-color: var(--success-light);
-            background: linear-gradient(to right, #ecfdf5 0%, #ffffff 100%);
+            border-left: 3px solid var(--success);
+            background: #f0fdf4;
+            border-color: #bbf7d0;
         }
         .class-card.status-live::before {
             content: '';
@@ -102,144 +143,106 @@
             pointer-events: none;
         }
         .class-card.status-upcoming {
-            border-left: 4px solid var(--primary);
+            border-left: 3px solid var(--primary);
         }
         .class-card.status-done {
-            border-left: 4px solid var(--text-muted);
-            opacity: 0.7;
+            border-left: 3px solid var(--text-muted);
+            opacity: 0.6;
             background: var(--bg);
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
-            align-items: start;
-            margin-bottom: 4px;
+            align-items: center;
+            margin-bottom: 2px;
         }
         .card-time {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--primary);
-            background: var(--primary-light);
-            padding: 4px 8px;
-            border-radius: 6px;
-        }
-        .class-card.status-done .card-time {
-            background: var(--border);
-            color: var(--text-muted);
-        }
-
-        .card-title {
-            font-size: 0.9rem;
+            font-size: 0.7rem;
             font-weight: 700;
             color: var(--text);
-            line-height: 1.3;
+        }
+        .class-card.status-live .card-time { color: var(--success); }
+
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.2;
+            word-break: break-word; /* Prevent long words overflowing */
         }
         .card-code {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-muted);
-            font-family: monospace;
-            background: var(--bg);
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-            border: 1px solid var(--border);
         }
 
         .card-details {
             display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px solid var(--border);
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px dashed var(--border);
         }
         .detail-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.75rem;
+            gap: 4px;
+            font-size: 0.65rem;
             color: var(--text-secondary);
         }
-        .detail-icon {
-            width: 14px;
-            height: 14px;
-            stroke: var(--text-muted);
-        }
         .group-badge {
-            font-weight: 700;
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: var(--bg);
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-        }
-        .group-badge.y1 { color: #059669; background: #D1FAE5; border-color: #10B981; }
-        .group-badge.y2 { color: #4F46E5; background: #E0E7FF; border-color: #6366F1; }
-
-        /* Attendance Bar (Class Average) */
-        .attendance-stat {
-            margin-top: 8px;
-        }
-        .att-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            margin-bottom: 3px;
-        }
-        .att-bar {
-            height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .att-fill {
-            height: 100%;
-            background: var(--primary);
-            border-radius: 2px;
-        }
-        .att-fill.high { background: var(--success); }
-        .att-fill.med { background: var(--warning); }
-        .att-fill.low { background: #DC2626; }
-
-        .no-class {
-            text-align: center;
-            padding: 40px 16px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            background: var(--bg);
-            border-radius: var(--radius);
-            border: 2px dashed var(--border);
+            font-size: 0.6rem;
+            padding: 1px 4px;
+            border-radius: 3px;
         }
 
-        @media (max-width: 1200px) {
-            .schedule-grid { grid-template-columns: repeat(3, 1fr); }
+        .generate-btn {
+            margin-top: 6px;
+            width: 100%;
+            padding: 6px;
+            font-size: 0.75rem;
         }
+
         @media (max-width: 768px) {
-            .schedule-grid { grid-template-columns: 1fr; }
-            .day-column { margin-bottom: 24px; }
+            html, body { overflow: auto; height: auto; }
+            .page { height: auto; display: block; }
+            .page-container { height: auto; overflow: visible; padding: 16px; }
+            .schedule-grid {
+                display: flex;
+                flex-direction: column;
+                overflow: visible;
+            }
+            .day-column {
+                height: auto;
+                background: transparent;
+                border: none;
+                overflow: visible;
+                margin-bottom: 16px;
+            }
+            .day-content {
+                padding: 0;
+                overflow: visible;
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <a href="/lecturer_dashboard.html" class="navbar-brand">
+        <a href="../../lecturer_dashboard.html" class="navbar-brand">
             <div class="navbar-logo">U</div>
             <span class="navbar-title">UPath</span>
             <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
         </a>
         <div class="navbar-nav">
-            <a href="/lecturer_dashboard.html" class="navbar-link">Overview</a>
-            <a href="/pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
-            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link active">Schedule</a>
-            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
+            <a href="../../lecturer_dashboard.html" class="navbar-link">Overview</a>
+            <a href="../../pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
+            <a href="../../pages/lecturer/lecturer_schedule.html" class="navbar-link active">Schedule</a>
+            <a href="../../pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
         </div>
         <div class="navbar-actions">
-            <!-- Mobile toggle injected by api.js -->
-            <a href="/pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
+            <div class="navbar-avatar">LC</div>
             <button class="navbar-logout" onclick="logout()">Sign Out</button>
         </div>
     </nav>
@@ -249,168 +252,117 @@
             <div class="schedule-info">
                 <div>
                     <h1 class="page-title">My Teaching Schedule</h1>
-                    <p class="page-subtitle" id="lecturerName">Loading...</p>
+                    <div class="lecturer-name" id="lecturerNameDisplay">Dr. Tendai Zengeni</div>
                 </div>
-                <div class="lecturer-badge" id="classCount">Loading...</div>
+                <div class="lecturer-badge" id="statsDisplay">Loading...</div>
             </div>
 
-            <div class="schedule-grid" id="scheduleGrid">
-                <!-- Dynamically loaded -->
+            <div class="schedule-grid">
+                <!-- Days will be injected here -->
+                <div class="day-column" id="Monday">
+                    <div class="day-header">Monday</div>
+                    <div class="day-content"></div>
+                </div>
+                <div class="day-column" id="Tuesday">
+                    <div class="day-header">Tuesday</div>
+                    <div class="day-content"></div>
+                </div>
+                <div class="day-column" id="Wednesday">
+                    <div class="day-header">Wednesday</div>
+                    <div class="day-content"></div>
+                </div>
+                <div class="day-column" id="Thursday">
+                    <div class="day-header">Thursday</div>
+                    <div class="day-content"></div>
+                </div>
+                <div class="day-column" id="Friday">
+                    <div class="day-header">Friday</div>
+                    <div class="day-content"></div>
+                </div>
             </div>
         </div>
     </main>
 
-    <script src="/js/api.js"></script>
+    <script src="../../js/api.js"></script>
+    <script src="../../js/toast.js"></script>
     <script>
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        let lecturerId = '210101';
 
-        function loadUserData() {
-            const userStr = sessionStorage.getItem('upath_user');
-            if (userStr) {
-                const user = JSON.parse(userStr);
-                if (user.id) lecturerId = user.id;
-                
-                document.getElementById('lecturerName').textContent = user.fullName || 'Lecturer';
-                
-                if (user.fullName) {
-                    const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-                    document.getElementById('userAvatar').textContent = initials;
-                }
+        async function initSchedule() {
+            const user = API.getCurrentUser();
+            if (!user) {
+                window.location.href = '../../pages/auth.html';
+                return;
             }
-            loadSchedule();
-        }
 
-        async function loadSchedule() {
-            // Fetch live data first
-            await API.fetchTimetable();
-            const allClasses = API.getTimetable();
-            const myClasses = allClasses.filter(c => c.lecturerId === lecturerId);
+            document.getElementById('lecturerNameDisplay').innerText = user.fullName;
             
-            const todayDate = new Date();
-            const todayDay = todayDate.toLocaleDateString('en-US', { weekday: 'long' });
-            const currentHour = todayDate.getHours();
-            const currentMin = todayDate.getMinutes();
+            // Highlight Today
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+            const todayHeader = document.querySelector(`#${today} .day-header`);
+            if (todayHeader) todayHeader.classList.add('today');
 
-            // Update class count
-            const uniqueCodes = [...new Set(myClasses.map(c => c.code))];
-            document.getElementById('classCount').textContent = `${uniqueCodes.length} Course${uniqueCodes.length !== 1 ? 's' : ''} • ${myClasses.length} Sessions`;
-
-            // Pre-fetch stats (ASYNC)
-            const statsMap = {};
+            // Fetch Classes
             try {
-                const statsPromises = uniqueCodes.map(code => API.fetchCourseStats(code));
-                const statsResults = await Promise.all(statsPromises);
-                uniqueCodes.forEach((code, i) => {
-                    statsMap[code] = statsResults[i];
-                });
+                const classes = await API.getClassesByLecturer(user.id);
+                document.getElementById('statsDisplay').innerText = `${classes.length} Courses • ${classes.length * 2} Sessions`; // Approx estimate
+                renderSchedule(classes);
             } catch (e) {
-                console.error("Schedule stats failed", e);
+                console.error(e);
+                Toast.error('Failed to load schedule');
             }
+        }
 
-            // Group by day
-            const grouped = {};
-            days.forEach(d => grouped[d] = []);
-            myClasses.forEach(c => {
-                if (grouped[c.day]) grouped[c.day].push(c);
-            });
-
-            // Sort each day's classes by time
-            days.forEach(d => {
-                grouped[d].sort((a, b) => {
-                    const timeA = parseInt(a.time.split(':')[0]);
-                    const timeB = parseInt(b.time.split(':')[0]);
-                    return timeA - timeB;
-                });
-            });
-
-            // Render
-            const grid = document.getElementById('scheduleGrid');
-            let html = '';
-
+        function renderSchedule(classes) {
+            // Clear current content
             days.forEach(day => {
-                const isToday = day === todayDay;
-                html += `
-                    <div class="day-column">
-                        <div class="day-header ${isToday ? 'today' : ''}">${day}</div>
-                `;
-
-                if (grouped[day].length === 0) {
-                    html += `<div class="no-class">Free</div>`;
-                } else {
-                    grouped[day].forEach(c => {
-                        // Determine status
-                        let status = 'upcoming'; 
-                        if (isToday) {
-                            const [h, m] = c.time.split(':').map(Number);
-                            const classTime = h * 60 + m;
-                            const nowTime = currentHour * 60 + currentMin;
-                            
-                            if (nowTime > classTime + 60) status = 'done'; 
-                            else if (nowTime >= classTime) status = 'live'; 
-                        } else if (days.indexOf(day) < days.indexOf(todayDay)) {
-                            status = 'done';
-                        }
-
-                        // Get real class stats
-                        const s = statsMap[c.code] || { avgAttendance: 0 };
-                        let avg = s.avgAttendance;
-                        let barClass = 'high';
-                        if (avg < 80) barClass = 'med';
-                        if (avg < 60) barClass = 'low';
-
-                        html += `
-                            <div class="class-card status-${status}">
-                                <div class="card-header">
-                                    <div class="card-time">${c.time}</div>
-                                    ${status === 'live' ? '<span style="font-size:0.6rem; color:var(--success); font-weight:800; border:1px solid var(--success); padding:2px 6px; border-radius:10px;">LIVE</span>' : ''}
-                                </div>
-                                
-                                <div>
-                                    <div class="card-title">${c.name}</div>
-                                    <div class="card-code">${c.code}</div>
-                                </div>
-
-                                <div class="card-details">
-                                    <div class="detail-item">
-                                        <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                        ${c.room}
-                                    </div>
-                                    <div class="detail-item">
-                                        <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                        <span class="group-badge y${c.year}">Year ${c.year}</span>
-                                    </div>
-                                </div>
-
-                                <div class="attendance-stat">
-                                    <div class="att-label">
-                                        <span>Avg Attendance</span>
-                                        <span>${avg}%</span>
-                                    </div>
-                                    <div class="att-bar">
-                                        <div class="att-fill ${barClass}" style="width: ${avg}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-
-                html += `</div>`;
+                const col = document.querySelector(`#${day} .day-content`);
+                if (col) col.innerHTML = '';
             });
 
-            grid.innerHTML = html;
+            // Iterate and place classes
+            classes.forEach(c => {
+                const dayCol = document.querySelector(`#${c.day} .day-content`);
+                if (!dayCol) return; // Skip weekends or invalid days
+
+                const card = document.createElement('div');
+                card.className = `class-card ${getStatus(c)}`;
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="card-code">${c.code}</span>
+                        <span class="card-time">${c.time}</span>
+                    </div>
+                    <div class="card-title">${c.name}</div>
+                    <div class="card-details">
+                        <span class="detail-item">📍 ${c.room}</span>
+                        <span class="group-badge" style="background:${getYearColor(c.year)}">Y${c.year}</span>
+                    </div>
+                    <button class="btn btn-primary generate-btn" onclick="generateQR('${c.id}')">Generate QR</button>
+                `;
+                dayCol.appendChild(card);
+            });
         }
 
-        function logout() {
-            if (window.API) API.logout();
-            else {
-                sessionStorage.removeItem('upath_user');
-                window.location.href = '/pages/auth.html';
-            }
+        function getStatus(c) {
+            // Simple status logic based on time (Mock)
+            // In real app, check time vs Now
+            return 'status-upcoming';
         }
 
-        loadUserData();
+        function getYearColor(year) {
+             return year === 1 ? '#DBEAFE' : '#E0E7FF'; // Blue vs Indigo
+        }
+
+        function generateQR(classId) {
+            // Store class ID and redirect
+            localStorage.setItem('upath_active_class_id', classId);
+            window.location.href = 'active_session.html';
+        }
+
+        function logout() { sessionStorage.removeItem('upath_user'); window.location.href = '../../pages/auth.html'; }
+
+        document.addEventListener('DOMContentLoaded', initSchedule);
     </script>
 </body>
 </html>

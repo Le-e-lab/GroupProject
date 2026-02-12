@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analytics - UPath</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <style>
         /**
          * ========================================
@@ -155,19 +155,19 @@
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar">
-        <a href="/lecturer_dashboard.html" class="navbar-brand">
+        <a href="../../lecturer_dashboard.html" class="navbar-brand">
             <div class="navbar-logo">U</div>
             <span class="navbar-title">UPath</span>
             <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
         </a>
         <div class="navbar-nav">
-            <a href="/lecturer_dashboard.html" class="navbar-link">Overview</a>
-            <a href="/pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
-            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
-            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link active">Analytics</a>
+            <a href="../../lecturer_dashboard.html" class="navbar-link">Overview</a>
+            <a href="../../pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
+            <a href="../../pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
+            <a href="../../pages/lecturer/lecturer_reports.html" class="navbar-link active">Analytics</a>
         </div>
         <div class="navbar-actions">
-            <a href="/pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
+            <a href="../../pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
             <button class="navbar-logout" onclick="logout()">Sign Out</button>
         </div>
     </nav>
@@ -214,7 +214,7 @@
         </div>
     </main>
 
-    <script src="/js/api.js"></script>
+    <script src="../../js/api.js"></script>
     <script>
         /**
          * ========================================
@@ -253,8 +253,9 @@
             const userStr = sessionStorage.getItem('upath_user');
             const lecturerId = userStr ? JSON.parse(userStr).id : '210101';
 
-            const allClasses = API.getTimetable();
-            const myClasses = allClasses.filter(c => c.lecturerId === lecturerId);
+            // const allClasses = await API.getTimetable();
+            // const myClasses = allClasses.filter(c => c.lecturerId === lecturerId);
+            const myClasses = await API.getClassesByLecturer(lecturerId);
             
             const courses = {};
             
@@ -268,12 +269,15 @@
                 // Map results back to codes
                 const statsMap = {};
                 uniqueCodes.forEach((code, i) => {
-                    statsMap[code] = statsResults[i];
+                    statsMap[code] = statsResults[i] || { totalSessions: 0, avgAttendance: 0, presentCount: 0 };
                 });
                 
                 myClasses.forEach(c => {
                     if (!courses[c.code]) {
-                        const s = statsMap[c.code] || { totalSessions: 0, avgAttendance: 0, presentCount: 0 };
+                        const s = statsMap[c.code];
+                        // If session count is 0, backend might return 12 (baseline) or 1 (fallback) depending on logic.
+                        // We want to show REAL data, so if 0, show 0.
+                        
                         courses[c.code] = {
                             code: c.code,
                             name: c.name,
@@ -304,8 +308,15 @@
             document.getElementById('avgAttendance').textContent = globalAvg + '%';
             document.getElementById('sessionsWeek').textContent = Math.round(totalSessions / 12); // Approx weekly avg
             
-            // We can leave Total Students static or mock it for now since we don't have a full student DB count in API yet
-            document.getElementById('totalStudents').textContent = courseList.length * 40; 
+            // Fetch real student count
+            try {
+                const allStudents = await API.getAllStudents();
+                document.getElementById('totalStudents').textContent = allStudents.length;
+            } catch (e) {
+                console.error("Failed to fetch students", e);
+                document.getElementById('totalStudents').textContent = '0';
+            }
+
             document.getElementById('totalCourses').textContent = courseList.length;
 
             // Render Course Cards
@@ -344,8 +355,8 @@
                             <span>${course.presentCount} total check-ins</span>
                         </div>
                         <div class="course-actions">
-                            <a href="/pages/lecturer/qr_code.html?class=${course.code}" class="btn btn-primary">Generate QR</a>
-                            <a href="/pages/lecturer/manual_attendance.html?class=${course.code}" class="btn btn-secondary">View Details</a>
+                            <a href="qr_code.html?class=${course.code}" class="btn btn-primary">Generate QR</a>
+                            <a href="manual_attendance.html?class=${course.code}" class="btn btn-secondary">View Details</a>
                         </div>
                     </div>
                 `;
@@ -373,7 +384,8 @@
          */
         function logout() {
             sessionStorage.removeItem('upath_user');
-            window.location.href = '/pages/auth.html';
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '../../pages/auth.html';
         }
 
         // Initialize

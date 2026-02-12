@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Post Announcement - UPath</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="../../css/theme.css">
     <style>
         .form-card {
             background: var(--surface);
@@ -78,19 +78,19 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="/lecturer_dashboard.html" class="navbar-brand">
+        <a href="../../lecturer_dashboard.html" class="navbar-brand">
             <div class="navbar-logo">U</div>
             <span class="navbar-title">UPath</span>
             <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
         </a>
         <div class="navbar-nav">
-            <a href="/lecturer_dashboard.html" class="navbar-link">Overview</a>
-            <a href="/pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
-            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
-            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
+            <a href="../../lecturer_dashboard.html" class="navbar-link">Overview</a>
+            <a href="../../pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
+            <a href="../../pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
+            <a href="../../pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
         </div>
         <div class="navbar-actions">
-            <a href="/pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
+            <a href="../../pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
             <button class="navbar-logout" onclick="logout()">Sign Out</button>
         </div>
     </nav>
@@ -147,7 +147,7 @@
         Announcement Posted Successfully!
     </div>
 
-    <script src="/js/api.js"></script>
+    <script src="../../js/api.js"></script>
     <script>
         let lecturerId = '210101';
         let lecturerName = 'Lecturer';
@@ -272,7 +272,8 @@
 
         function logout() {
             sessionStorage.removeItem('upath_user');
-            window.location.href = '/pages/auth.html';
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '../../pages/auth.html';
         }
 
         loadUserData();

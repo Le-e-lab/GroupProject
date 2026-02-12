@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/toast.css?v=2">
     <style>
         .current-class-card {
             background: linear-gradient(135deg, var(--primary) 0%, #818CF8 100%);
@@ -295,7 +296,7 @@
         </div>
     </main>
 
-    <script src="/js/api.js"></script>
+    <script src="js/api.js"></script>
     <script>
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         let lecturerId = '210101';
@@ -328,8 +329,10 @@
             const currentHour = now.getHours();
             
             // Get timetable
-            const allClasses = await API.fetchTimetable();
-            const myClasses = allClasses.filter(c => c.lecturerId === lecturerId);
+            // FIX: Use dedicated lecturer endpoint
+            const myClasses = await API.getClassesByLecturer(lecturerId);
+            // const allClasses = await API.fetchTimetable();
+            // const myClasses = allClasses.filter(c => c.lecturerId === lecturerId);
             const todayClasses = myClasses.filter(c => c.day === today);
             
             // --- NEW: FETCH STATS FROM SERVER FOR CONSISTENCY ---
@@ -358,9 +361,9 @@
                     totalAvg = Math.round(weightedSum / validCourses);
                 }
                 
-                // Approximate total students (mock) or sum up if we had enrollment data
-                // For now, simple mock sum based on course count to match reports
-                document.getElementById('totalStudentsVal').textContent = uniqueCodes.length * 40; 
+                // Get total students
+                const allStudents = await API.getAllStudents();
+                document.getElementById('totalStudentsVal').textContent = allStudents.length || 0;
                 document.getElementById('avgAttendanceVal').textContent = totalAvg + '%';
                 
             } catch (err) {
@@ -415,12 +418,39 @@
                     </div>
                 `;
             } else {
-                container.innerHTML = `
-                    <div class="no-class-card">
-                        <h3>No More Classes Today</h3>
-                        <p>Enjoy your free time. Your next class is on ${getNextClassDay(myClasses)}.</p>
-                    </div>
-                `;
+                 // Try to find next upcoming class in future days
+                const nextDayName = getNextClassDay(myClasses);
+                let upcomingClass = null;
+                
+                if (nextDayName !== 'your next scheduled day') {
+                     const upcomingClasses = myClasses.filter(c => c.day === nextDayName);
+                     // Sort by time
+                     upcomingClasses.sort((a, b) => parseInt(a.time) - parseInt(b.time));
+                     upcomingClass = upcomingClasses[0];
+                }
+
+                if (upcomingClass) {
+                    container.innerHTML = `
+                        <div class="current-class-card" style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
+                            <div class="current-class-info">
+                                <h3>Upcoming: ${upcomingClass.name} (${nextDayName})</h3>
+                                <p>${upcomingClass.code} • ${upcomingClass.room}</p>
+                                <div class="class-details">
+                                    <span>${upcomingClass.time}</span>
+                                    <span>Year ${upcomingClass.year} Students</span>
+                                </div>
+                            </div>
+                            <a href="/pages/lecturer/qr_code.html?class=${upcomingClass.code}" class="start-btn">Prepare</a>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="no-class-card">
+                            <h3>No More Classes Today</h3>
+                            <p>Enjoy your free time. Your next class is on ${nextDayName}.</p>
+                        </div>
+                    `;
+                }
             }
             
             // Render unique classes
