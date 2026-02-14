@@ -6,6 +6,12 @@
     <title>Campus Map - UPath</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../css/theme.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
     <style>
         .map-layout {
             display: grid;
@@ -19,44 +25,16 @@
             border-radius: var(--radius-lg);
             overflow: hidden;
             position: relative;
+            z-index: 1; /* Ensure map is below dropdowns if any */
         }
-        .campus-map {
+        #map {
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
-            position: relative;
-            overflow: auto;
         }
-        .map-svg {
-            width: 100%;
-            height: 100%;
-            min-height: 500px;
-        }
-        .building {
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .building:hover {
-            filter: brightness(0.9);
-        }
-        .building.active {
-            filter: drop-shadow(0 0 8px var(--primary));
-        }
-        .building-label {
-            font-size: 9px;
-            font-weight: 600;
-            fill: white;
-            pointer-events: none;
-        }
-        .path-line {
-            stroke: var(--primary);
-            stroke-width: 4;
-            stroke-dasharray: 8 4;
-            fill: none;
-            animation: dash 1s linear infinite;
-        }
-        @keyframes dash {
-            to { stroke-dashoffset: -12; }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
         .sidebar-card {
             background: var(--surface);
@@ -64,11 +42,13 @@
             border-radius: var(--radius-lg);
             padding: 20px;
             height: fit-content;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
         .sidebar-title {
             font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 16px;
         }
         .building-list {
             max-height: 220px;
@@ -112,7 +92,6 @@
             color: var(--text-muted);
         }
         .nav-section {
-            margin-top: 20px;
             padding-top: 20px;
             border-top: 1px solid var(--border);
         }
@@ -129,6 +108,7 @@
             font-size: 0.85rem;
             margin-bottom: 12px;
             background: var(--surface);
+            color: var(--text);
         }
         .nav-select:focus {
             outline: none;
@@ -148,41 +128,28 @@
         .nav-btn:hover {
             background: var(--primary-hover);
         }
-        .directions-box {
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--bg);
-            border-radius: var(--radius);
+        
+        /* Offline Badge */
+        .offline-badge {
             display: none;
-        }
-        .directions-box.show {
-            display: block;
-        }
-        .directions-title {
+            background: #EF4444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-        .directions-steps {
-            font-size: 0.85rem;
-            line-height: 1.6;
-        }
-        .directions-steps li {
-            margin-bottom: 6px;
-            padding-left: 4px;
-        }
-        .walk-time {
-            display: flex;
             align-items: center;
-            gap: 8px;
-            margin-top: 12px;
-            padding: 10px 12px;
-            background: var(--primary-light);
-            border-radius: var(--radius);
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--primary);
+            gap: 6px;
         }
+        .offline-badge.visible {
+            display: flex;
+        }
+
+        /* Routing Control Overrides */
+        .leaflet-routing-container {
+            display: none !important; /* Hide default sidebar of routing machine */
+        }
+        
         @media (max-width: 900px) {
             .map-layout {
                 grid-template-columns: 1fr;
@@ -190,6 +157,9 @@
             }
             .map-container {
                 height: 400px;
+            }
+            .sidebar-card {
+                margin-bottom: 80px; 
             }
         }
     </style>
@@ -208,6 +178,18 @@
             <a href="../../pages/student/map.html" class="navbar-link active">Map</a>
         </div>
         <div class="navbar-actions">
+            <div class="offline-badge" id="offlineBadge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                    <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                    <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                    <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                    <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+                OFFLINE
+            </div>
             <a href="../../pages/student/profile.html" class="navbar-avatar" id="userAvatar">CB</a>
             <button class="navbar-logout" onclick="logout()">Sign Out</button>
         </div>
@@ -216,179 +198,64 @@
     <main class="page">
         <div class="page-container">
             <div class="page-header">
-                <h1 class="page-title">Campus Map</h1>
-                <p class="page-subtitle">Find lecture venues around campus</p>
+                <div>
+                    <h1 class="page-title">Campus Map</h1>
+                    <p class="page-subtitle">Navigation powered by OpenStreetMap</p>
+                </div>
+                <div id="nextClassHint" style="display:none; font-size: 0.9rem; color: var(--primary); font-weight: 500; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Next: <span id="nextClassName" style="cursor: pointer; text-decoration: underline;">Loading...</span>
+                </div>
             </div>
 
             <div class="map-layout">
-                <!-- Interactive Map -->
+                <!-- Leaflet Map -->
                 <div class="map-container">
-                    <svg class="map-svg" viewBox="0 0 800 600" id="campusMap">
-                        <!-- Background -->
-                        <rect x="0" y="0" width="800" height="600" fill="#E8F4E8"/>
-                        
-                        <!-- Main walkways -->
-                        <path d="M50 300 L750 300" stroke="#DDD" stroke-width="20" fill="none"/>
-                        <path d="M400 50 L400 550" stroke="#DDD" stroke-width="20" fill="none"/>
-                        <path d="M150 150 L650 150" stroke="#DDD" stroke-width="12" fill="none"/>
-                        <path d="M150 450 L650 450" stroke="#DDD" stroke-width="12" fill="none"/>
-                        
-                        <!-- Trees/Green areas -->
-                        <circle cx="80" cy="80" r="25" fill="#81C784" opacity="0.6"/>
-                        <circle cx="720" cy="80" r="20" fill="#81C784" opacity="0.6"/>
-                        <circle cx="80" cy="520" r="30" fill="#81C784" opacity="0.6"/>
-                        <circle cx="720" cy="520" r="25" fill="#81C784" opacity="0.6"/>
-                        
-                        <!-- Buildings - Real Venues from Timetable -->
-                        
-                        <!-- ICT Mai Mugabe Lab -->
-                        <g class="building" id="bldg-mai-mugabe" onclick="selectBuilding('mai-mugabe')">
-                            <rect x="100" y="70" width="130" height="80" rx="8" fill="#6366F1"/>
-                            <text x="165" y="105" text-anchor="middle" class="building-label">ICT Mai Mugabe</text>
-                            <text x="165" y="120" text-anchor="middle" class="building-label">Lab</text>
-                        </g>
-                        
-                        <!-- ICT Smart Classroom 1 & 4 -->
-                        <g class="building" id="bldg-smart-classroom" onclick="selectBuilding('smart-classroom')">
-                            <rect x="280" y="70" width="150" height="80" rx="8" fill="#8B5CF6"/>
-                            <text x="355" y="105" text-anchor="middle" class="building-label">ICT Smart</text>
-                            <text x="355" y="120" text-anchor="middle" class="building-label">Classroom 1 & 4</text>
-                        </g>
-                        
-                        <!-- ICT General Purpose Lab -->
-                        <g class="building" id="bldg-general-lab" onclick="selectBuilding('general-lab')">
-                            <rect x="480" y="70" width="140" height="80" rx="8" fill="#EC4899"/>
-                            <text x="550" y="105" text-anchor="middle" class="building-label">ICT General</text>
-                            <text x="550" y="120" text-anchor="middle" class="building-label">Purpose Lab</text>
-                        </g>
-                        
-                        <!-- TMLT -->
-                        <g class="building" id="bldg-tmlt" onclick="selectBuilding('tmlt')">
-                            <rect x="80" y="210" width="120" height="90" rx="8" fill="#F59E0B"/>
-                            <text x="140" y="255" text-anchor="middle" class="building-label">TMLT</text>
-                            <text x="140" y="270" text-anchor="middle" class="building-label">(Teaching Media)</text>
-                        </g>
-                        
-                        <!-- Old Library 1/2 -->
-                        <g class="building" id="bldg-old-library" onclick="selectBuilding('old-library')">
-                            <rect x="260" y="200" width="140" height="110" rx="8" fill="#10B981"/>
-                            <text x="330" y="250" text-anchor="middle" class="building-label">Old Library</text>
-                            <text x="330" y="265" text-anchor="middle" class="building-label">1/2</text>
-                        </g>
-                        
-                        <!-- AEG4 -->
-                        <g class="building" id="bldg-aeg4" onclick="selectBuilding('aeg4')">
-                            <rect x="460" y="200" width="120" height="110" rx="8" fill="#3B82F6"/>
-                            <text x="520" y="255" text-anchor="middle" class="building-label">AEG4</text>
-                            <text x="520" y="270" text-anchor="middle" class="building-label">(Lecture Hall)</text>
-                        </g>
-                        
-                        <!-- DHSG19 -->
-                        <g class="building" id="bldg-dhsg19" onclick="selectBuilding('dhsg19')">
-                            <rect x="620" y="210" width="100" height="90" rx="8" fill="#14B8A6"/>
-                            <text x="670" y="255" text-anchor="middle" class="building-label">DHSG19</text>
-                        </g>
-                        
-                        <!-- Cafeteria -->
-                        <g class="building" id="bldg-cafeteria" onclick="selectBuilding('cafeteria')">
-                            <rect x="80" y="380" width="120" height="90" rx="8" fill="#EF4444"/>
-                            <text x="140" y="430" text-anchor="middle" class="building-label">Cafeteria</text>
-                        </g>
-                        
-                        <!-- Student Center -->
-                        <g class="building" id="bldg-student" onclick="selectBuilding('student')">
-                            <rect x="260" y="380" width="140" height="100" rx="8" fill="#F97316"/>
-                            <text x="330" y="430" text-anchor="middle" class="building-label">Student Center</text>
-                        </g>
-                        
-                        <!-- Admin Block -->
-                        <g class="building" id="bldg-admin" onclick="selectBuilding('admin')">
-                            <rect x="460" y="380" width="130" height="100" rx="8" fill="#84CC16"/>
-                            <text x="525" y="430" text-anchor="middle" class="building-label">Admin Block</text>
-                        </g>
-                        
-                        <!-- Navigation path -->
-                        <path id="navPath" class="path-line" d="" style="display: none;"/>
-                        
-                        <!-- Current location marker -->
-                        <g id="currentMarker" style="display: none;">
-                            <circle r="12" fill="var(--primary)"/>
-                            <circle r="8" fill="white"/>
-                            <circle r="4" fill="var(--primary)"/>
-                        </g>
-                        
-                        <!-- Destination marker -->
-                        <g id="destMarker" style="display: none;">
-                            <path d="M0,-20 L-12,0 L0,-8 L12,0 Z" fill="#EF4444"/>
-                        </g>
-                        
-                        <!-- Entrance -->
-                        <g>
-                            <circle cx="400" cy="570" r="8" fill="#333"/>
-                            <text x="400" y="590" text-anchor="middle" font-size="10" fill="#333">Main Entrance</text>
-                        </g>
-                    </svg>
+                    <div id="map"></div>
                 </div>
 
                 <!-- Sidebar -->
                 <div class="sidebar">
                     <div class="sidebar-card">
-                        <h3 class="sidebar-title">Lecture Venues</h3>
+                        <h3 class="sidebar-title">Key Locations</h3>
                         <div class="building-list" id="buildingList">
-                            <div class="building-item" onclick="selectBuilding('mai-mugabe')">
+                            <!-- Items populated by JS or static -->
+                            <div class="building-item" onclick="panToBuilding('ict')">
                                 <div class="building-icon">ICT</div>
                                 <div class="building-info">
-                                    <h4>ICT Mai Mugabe Lab</h4>
-                                    <p>OS, Network Security, Group Project</p>
+                                    <h4>ICT Complex</h4>
+                                    <p>Mai Mugabe, Labs</p>
                                 </div>
                             </div>
-                            <div class="building-item" onclick="selectBuilding('smart-classroom')">
-                                <div class="building-icon">SC</div>
+                            <div class="building-item" onclick="panToBuilding('library')">
+                                <div class="building-icon">YL</div>
                                 <div class="building-info">
-                                    <h4>ICT Smart Classroom</h4>
-                                    <p>HCI, Network Security</p>
+                                    <h4>Yokyo Library</h4>
+                                    <p>Main Library</p>
                                 </div>
                             </div>
-                            <div class="building-item" onclick="selectBuilding('general-lab')">
-                                <div class="building-icon">GPL</div>
+                            <div class="building-item" onclick="panToBuilding('chapel')">
+                                <div class="building-icon">KNC</div>
                                 <div class="building-info">
-                                    <h4>ICT General Purpose Lab</h4>
-                                    <p>Object Oriented Programming</p>
+                                    <h4>Kwame Nkrumah Chapel</h4>
+                                    <p>Assembly Hall</p>
                                 </div>
                             </div>
-                            <div class="building-item" onclick="selectBuilding('tmlt')">
-                                <div class="building-icon">TM</div>
+                            <div class="building-item" onclick="panToBuilding('halls')">
+                                <div class="building-icon">HR</div>
                                 <div class="building-info">
-                                    <h4>TMLT</h4>
-                                    <p>French, English, Tech Comm, Ethics</p>
+                                    <h4>Halls of Residence</h4>
+                                    <p>Student Housing</p>
                                 </div>
                             </div>
-                            <div class="building-item" onclick="selectBuilding('old-library')">
-                                <div class="building-icon">OL</div>
+                             <div class="building-item" onclick="panToBuilding('union')">
+                                <div class="building-icon">SU</div>
                                 <div class="building-info">
-                                    <h4>Old Library 1/2</h4>
-                                    <p>AI & Critical Thinking, Tech Comm</p>
-                                </div>
-                            </div>
-                            <div class="building-item" onclick="selectBuilding('aeg4')">
-                                <div class="building-icon">AE</div>
-                                <div class="building-info">
-                                    <h4>AEG4</h4>
-                                    <p>Software Engineering, English</p>
-                                </div>
-                            </div>
-                            <div class="building-item" onclick="selectBuilding('dhsg19')">
-                                <div class="building-icon">DH</div>
-                                <div class="building-info">
-                                    <h4>DHSG19</h4>
-                                    <p>Portuguese, Ethics</p>
-                                </div>
-                            </div>
-                            <div class="building-item" onclick="selectBuilding('cafeteria')">
-                                <div class="building-icon">CF</div>
-                                <div class="building-info">
-                                    <h4>Cafeteria</h4>
-                                    <p>Food court, Dining</p>
+                                    <h4>Student Union</h4>
+                                    <p>Cafeteria & Shops</p>
                                 </div>
                             </div>
                         </div>
@@ -396,42 +263,20 @@
                         <div class="nav-section">
                             <p class="nav-label">Get Directions</p>
                             <select class="nav-select" id="fromSelect">
-                                <option value="">From: Your Location</option>
-                                <option value="entrance">Main Entrance</option>
-                                <option value="mai-mugabe">ICT Mai Mugabe Lab</option>
-                                <option value="smart-classroom">ICT Smart Classroom</option>
-                                <option value="general-lab">ICT General Purpose Lab</option>
-                                <option value="tmlt">TMLT</option>
-                                <option value="old-library">Old Library 1/2</option>
-                                <option value="aeg4">AEG4</option>
-                                <option value="dhsg19">DHSG19</option>
-                                <option value="cafeteria">Cafeteria</option>
+                                <option value="current">Current Location (GPS)</option>
+                                <option value="entrance">Main Gate</option>
+                                <option value="halls">Halls of Residence</option>
+                                <option value="library">Yokyo Library</option>
                             </select>
                             <select class="nav-select" id="toSelect">
-                                <option value="">To: Select destination</option>
-                                <option value="mai-mugabe">ICT Mai Mugabe Lab</option>
-                                <option value="smart-classroom">ICT Smart Classroom</option>
-                                <option value="general-lab">ICT General Purpose Lab</option>
-                                <option value="tmlt">TMLT</option>
-                                <option value="old-library">Old Library 1/2</option>
-                                <option value="aeg4">AEG4</option>
-                                <option value="dhsg19">DHSG19</option>
-                                <option value="cafeteria">Cafeteria</option>
-                                <option value="student">Student Center</option>
+                                <option value="">Select destination</option>
+                                <option value="ict">ICT Complex</option>
+                                <option value="library">Yokyo Library</option>
+                                <option value="chapel">Kwame Nkrumah Chapel</option>
+                                <option value="halls">Halls of Residence</option>
+                                <option value="union">Student Union</option>
                             </select>
-                            <button class="nav-btn" onclick="showDirections()">Show Route</button>
-
-                            <div class="directions-box" id="directionsBox">
-                                <div class="directions-title" id="dirTitle">Directions</div>
-                                <ol class="directions-steps" id="dirSteps"></ol>
-                                <div class="walk-time" id="walkTime">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="5" r="2"/>
-                                        <path d="M12 7v7m-3 3l3-3 3 3m-6-6l-2 5m6-5l2 5"/>
-                                    </svg>
-                                    <span id="walkTimeText">~3 min walk</span>
-                                </div>
-                            </div>
+                            <button class="nav-btn" onclick="calculateRoute()">Navigate</button>
                         </div>
                     </div>
                 </div>
@@ -439,85 +284,548 @@
         </div>
     </main>
 
+    <!-- Scripts -->
     <script src="../../js/api.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    
     <script>
-        const buildings = {
-            'mai-mugabe': { name: 'ICT Mai Mugabe Lab', x: 165, y: 110 },
-            'smart-classroom': { name: 'ICT Smart Classroom', x: 355, y: 110 },
-            'general-lab': { name: 'ICT General Purpose Lab', x: 550, y: 110 },
-            'tmlt': { name: 'TMLT', x: 140, y: 255 },
-            'old-library': { name: 'Old Library 1/2', x: 330, y: 255 },
-            'aeg4': { name: 'AEG4', x: 520, y: 255 },
-            'dhsg19': { name: 'DHSG19', x: 670, y: 255 },
-            'cafeteria': { name: 'Cafeteria', x: 140, y: 425 },
-            'student': { name: 'Student Center', x: 330, y: 430 },
-            'admin': { name: 'Admin Block', x: 525, y: 430 },
-            'entrance': { name: 'Main Entrance', x: 400, y: 570 }
+        // Africa University Coordinates (-18.897, 32.60137)
+        const AU_CENTER = [-18.897, 32.60137];
+        
+        let map;
+        let routingControl = null;
+        let markers = {};
+
+        // Venue Data - Finalized User Coordinates
+        const venues = {
+            "entrance": {
+                "name": "Main Gate",
+                "lat": -18.892745848625406,
+                "lng": 32.59328126020723,
+                "color": "#40E0D0"
+            },
+            "lecturers": {
+                "name": "Lecturer's Residences",
+                "lat": -18.894289025576768,
+                "lng": 32.59763751343177,
+                "color": "#FF0000"
+            },
+            "ceas": {
+                "name": "CEAS Building",
+                "lat": -18.895851798384186,
+                "lng": 32.60107600564337,
+                "color": "#AFEEEE"
+            },
+            "agric": {
+                "name": "Agriculture Building",
+                "lat": -18.89664375589273,
+                "lng": 32.60059293316647,
+                "color": "#FF007F"
+            },
+            "clinic": {
+                "name": "Clinic",
+                "lat": -18.89542545921493,
+                "lng": 32.601445891149154,
+                "color": "#800080"
+            },
+            "accommodation": {
+                "name": "Student Accommodation",
+                "lat": -18.89654224528654,
+                "lng": 32.602701151668725,
+                "color": "#008000"
+            },
+            "su": {
+                "name": "Dining Hall / Student Union",
+                "lat": -18.897191809225177,
+                "lng": 32.60175704512742,
+                "color": "#000000"
+            },
+            "admin": {
+                "name": "Main Office",
+                "lat": -18.89688735629566,
+                "lng": 32.60133330265095,
+                "color": "#000000"
+            },
+            "chapel": {
+                "name": "Chapel",
+                "lat": -18.89744049788367,
+                "lng": 32.60116125337488,
+                "color": "#6699CC"
+            },
+            "tmlt": {
+                "name": "TMLT",
+                "lat": -18.89719663879629,
+                "lng": 32.60015265633924,
+                "color": "#A52A2A"
+            },
+            "theology": {
+                "name": "Theology Building",
+                "lat": -18.897196912064043,
+                "lng": 32.60015845742081,
+                "color": "#A52A2A"
+            },
+            "health": {
+                "name": "Health Sciences",
+                "lat": -18.89759758791955,
+                "lng": 32.599771913436506,
+                "color": "#FFFFFF"
+            },
+            "ict": {
+                "name": "ICT Complex / Library",
+                "lat": -18.89773962194163,
+                "lng": 32.60066236249812,
+                "color": "#808080"
+            },
+            "ubuntu": {
+                "name": "Ubuntu Block",
+                "lat": -18.89805429731727,
+                "lng": 32.60130607049606,
+                "color": "#E6E6FA"
+            },
+            "law_library": {
+                "name": "Law Library",
+                "lat": -18.89778056851786,
+                "lng": 32.59903119373453,
+                "color": "#FFD700"
+            }
         };
 
-        let selectedBuilding = null;
+        // Venue Map from Schedule
+        const venueMap = {
+            // Existing Schedule Mappings
+            'Mai Mugabe': 'ict',
+            'Smart': 'ict',
+            'General': 'ict',
+            'Lab': 'ict',
+            'Library': 'ict', 
+            'Law Library': 'law_library',
+            'Chapel': 'chapel',
+            'TMLT': 'theology', 
+            'Entrance': 'entrance',
+            'Clinic': 'clinic',
+            'Health': 'health',
+            'Agric': 'agric',
+            'Theology': 'theology',
+            'Ubuntu': 'ubuntu',
 
-        function selectBuilding(id) {
-            document.querySelectorAll('.building').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.building-item').forEach(b => b.classList.remove('active'));
+            // Database Seed Data Mappings (from seed_data.js)
+            'Room 101': 'ict',       // Defaulting generic rooms to ICT for now
+            'Room 204': 'ict',
+            'Hall A': 'tmlt',        // Large halls likely TMLT or Great Hall
+            'Hall B': 'tmlt',
+            'ICT Lab': 'ict',
+            'Lab 2B': 'ict',
+            'Smart Class 4': 'smart_village' // Needs a location if it exists, else ICT
+        };
+
+        // Custom Manual Paths (Student Shortcuts)
+        const customRoutes = {
+            "accommodation_su": [[-18.89654224528654,32.602701151668725],[-18.896525436322353,32.602462895948406],[-18.896525436322353,32.6023501966219],[-18.896530513921405,32.602258963833776],[-18.896540669118977,32.60217309768023],[-18.896550824315952,32.602022831911555],[-18.89667268663147,32.601840366335274],[-18.896774238493283,32.60174913354715],[-18.896840247170438,32.60165790075902],[-18.896926566170503,32.601572034605475],[-18.89702811787829,32.601491535086545],[-18.897119514362615,32.60145396864435],[-18.89717029016567,32.60151300162493],[-18.897180445324413,32.60157740124005],[-18.897191809225177,32.60175704512742]],
+            "su_chapel": [[-18.899693313791378,32.60323565808177],[-18.897191809225177,32.60175704512742],[-18.897195163675057,32.6015505348186],[-18.897220551567056,32.60149150183802],[-18.8972662497629,32.60144856876125],[-18.897342413394956,32.6014002690499],[-18.897423654564243,32.60136270260774],[-18.89750489569413,32.60131976953097],[-18.89754551624431,32.601292936357964],[-18.89744049788367,32.60116125337488]],
+            "su_ict": [[-18.90072652215332,32.60467051782983],[-18.897191809225177,32.60175704512742],[-18.897127021130302,32.60149643180905],[-18.897121945845754,32.60136763257877],[-18.897147322266992,32.6012391126358],[-18.897137171698958,32.601115680040095],[-18.897192999815545,32.60101371398278],[-18.897258978474767,32.60096004763681],[-18.89733510766464,32.60091711456004],[-18.897380785161936,32.60089564802165],[-18.89747214011913,32.6008580815795],[-18.897543193940262,32.60085271494488],[-18.897593946651167,32.600777582060566],[-18.89773962194163,32.60066236249812]],
+            "su_admin": [[-18.899092307719954,32.603323463403264],[-18.897191809225177,32.60175704512742],[-18.897121945845754,32.60150971634608],[-18.897076268277814,32.601461416634734],[-18.897045816558933,32.60138628375037],[-18.897030590697405,32.601311150866024],[-18.896984913104532,32.60123601798168],[-18.896949386079243,32.6011930849049],[-18.896893557881402,32.60114478519354],[-18.89688735629566,32.60133330265095]],
+            "su_theology": [[-18.903467094384794,32.60595165585474],[-18.897191809225177,32.60175704512742],[-18.897096569420658,32.601514575387014],[-18.89708134356375,32.60138040952207],[-18.897096569420658,32.60129991000315],[-18.897157472834415,32.60116037750367],[-18.897218376226018,32.60104231154254],[-18.89731988182944,32.6009457121198],[-18.897390935715197,32.60088131250464],[-18.897426462646774,32.60082764615871],[-18.89744676374714,32.60073104673597],[-18.897426462646774,32.60063444731323],[-18.897380785161936,32.60055931442888],[-18.897324957107983,32.60050028144833],[-18.89728943015487,32.60044124846779],[-18.89734018294274,32.600366115583434],[-18.897370634608063,32.600307082602896],[-18.89733003238639,32.600226583083916],[-18.897196912064043,32.60015845742081]],
+            "su_agric": [[-18.90385512692268,32.605917983592],[-18.897191809225177,32.60175704512742],[-18.897116870561035,32.60148221155352],[-18.89708134356375,32.601396345399976],[-18.897045816558933,32.60131047924643],[-18.896989988393255,32.60123534636211],[-18.896949386079243,32.601154846843144],[-18.897040741271915,32.60106898068963],[-18.897040741271915,32.60099921443986],[-18.89703566598473,32.60093896678095],[-18.896984913104532,32.600869200531214],[-18.896949386079243,32.60079406764686],[-18.896898633172885,32.60072430139712],[-18.896842804958126,32.60065990178196],[-18.896776826134836,32.60062770197438],[-18.896695621393548,32.600595502166804],[-18.89664375589273,32.60059293316647]],
+            "su_health": [[-18.90045246246148,32.60429526568943],[-18.897191809225177,32.60175704512742],[-18.897116870561035,32.60149654928708],[-18.897116870561035,32.601389216595145],[-18.89717269868439,32.6012067510189],[-18.897198075097943,32.601051118615615],[-18.897314806550728,32.60097061909668],[-18.897461989570793,32.60086328640475],[-18.897492441213963,32.60074522044362],[-18.897426462646774,32.600670087559266],[-18.89740616154394,32.600584221405754],[-18.89733510766464,32.6005198217906],[-18.897314806550728,32.60046615544463],[-18.897304655992848,32.60039638919489],[-18.897375709885083,32.60034272284892],[-18.897441688472284,32.600294423137576],[-18.897522892851587,32.60021929025322],[-18.897593946651167,32.60016562390725],[-18.897665000420595,32.60006902448451],[-18.897593946651167,32.59997779169639],[-18.89757364556865,32.599902658812034],[-18.89759758791955,32.599771913436506]],
+            "su_law_library": [[-18.903895727561185,32.60610533956869],[-18.897191809225177,32.60175704512742],[-18.89710671999116,32.60145411715431],[-18.897121945845754,32.6013414178278],[-18.897137171698958,32.60118578542448],[-18.897177773967414,32.60108918600177],[-18.897228526789128,32.601003319848225],[-18.89731988182944,32.60090672042549],[-18.897411236819877,32.60084232081033],[-18.89742138737128,32.600713499414375],[-18.89738586043865,32.60061153335706],[-18.89733510766464,32.60051493393431],[-18.897294505434342,32.60044516768458],[-18.89733510766464,32.600364668165646],[-18.89741631209566,32.600300268550484],[-18.89747721539307,32.600214402396944],[-18.897538118668333,32.60013926951259],[-18.89751274230633,32.60003730345527],[-18.897487365940496,32.59992460412876],[-18.897390935715197,32.599806538167634],[-18.897401086267838,32.59970993874489],[-18.89743661319726,32.59965090576435],[-18.89747721539307,32.5995543063416],[-18.89750766703347,32.59942550711133],[-18.897619323000857,32.59933427432316],[-18.89774112942577,32.59924304153503],[-18.897746204691558,32.599146442112335],[-18.89778056851786,32.59903119373453]],
+            "su_ceas": [[-18.90385512692268,32.60797228117076],[-18.897191809225177,32.60175704512742],[-18.89715239755078,32.601480256542004],[-18.897066117705467,32.601453423369044],[-18.89697476252665,32.60154465615717],[-18.89690370846422,32.60161978904152],[-18.896827579078124,32.601711021829644],[-18.89674129906538,32.601721755098836],[-18.896649943709264,32.601721755098836],[-18.896553513001514,32.601651988849106],[-18.89651291058163,32.60154465615717],[-18.896482458760246,32.60138902375388],[-18.896421555100876,32.60127632442737],[-18.896375877341796,32.60115289183167],[-18.896314973643637,32.601061659043545],[-18.89626422054491,32.601050925774345],[-18.896172864928435,32.60103482587054],[-18.896071358629403,32.601045559139735],[-18.895995228864738,32.601045559139735],[-18.89587849649168,32.60107239231273],[-18.895851798384186,32.60107600564337]],
+            "accommodation_clinic": [[-18.900611289745893,32.60437103251172],[-18.89654224528654,32.602701151668725],[-18.896509527097827,32.60236629652571],[-18.896514602400952,32.60222676402619],[-18.89642832222686,32.602216030757],[-18.89635726793245,32.602194564218614],[-18.89626591236675,32.60218383094942],[-18.89617963206447,32.60217846431484],[-18.89607812576956,32.60218383094942],[-18.895976619413073,32.60218383094942],[-18.895870037672537,32.60218383094942],[-18.895763455864117,32.602194564218614],[-18.89566194931682,32.60218383094942],[-18.895606120689582,32.60210333143049],[-18.895606120689582,32.602022831911555],[-18.895606120689582,32.60192623248882],[-18.895595970028094,32.60185109960447],[-18.895585819365966,32.60176523345092],[-18.89557566870323,32.60168473393199],[-18.89554521671134,32.60159886777844],[-18.89550461404687,32.601534468163315],[-18.89542545921493,32.601445891149154]]
+
+        };
+        // Combine routes logic: A->B + B->C = A->C
+        function generateSmartRoutes() {
+            const keys = Object.keys(customRoutes);
+            const newRoutes = {};
+
+            keys.forEach(key1 => {
+                const [start1, end1] = key1.split('_');
+                const path1 = customRoutes[key1];
+
+                keys.forEach(key2 => {
+                    if (key1 === key2) return;
+                    const [start2, end2] = key2.split('_');
+                    const path2 = customRoutes[key2];
+
+                    // Case 1: A->B + B->C = A->C
+                    if (end1 === start2) {
+                        newRoutes[`${start1}_${end2}`] = [...path1, ...path2];
+                    }
+                    // Case 2: A->B + C->B (Reversed) = A->C
+                    else if (end1 === end2) {
+                        newRoutes[`${start1}_${start2}`] = [...path1, ...path2.slice().reverse()];
+                    }
+                    // Case 3: B->A + B->C = A->C
+                    else if (start1 === start2) {
+                        newRoutes[`${end1}_${end2}`] = [...path1.slice().reverse(), ...path2];
+                    }
+                });
+            });
+
+            // Merge inferred routes
+            Object.assign(customRoutes, newRoutes);
+            console.log("Inferred smart routes for student network:", Object.keys(newRoutes));
+        }
+
+        let isRecording = false;
+        let recordingPath = [];
+        let recordingMarkers = [];
+        let recordingStartKey = null;
+
+        function createCustomPin(color) {
+            // ... (same as before)
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" fill="${color}" stroke="black" stroke-width="1.5">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+            `;
+            return L.divIcon({
+                className: 'custom-pin-icon',
+                html: svg,
+                iconSize: [36, 36],
+                iconAnchor: [18, 36], // Bottom tip of the pin
+                popupAnchor: [0, -38]
+            });
+        }
+
+        // Custom Modal for Copying Data
+        function showCopyModal(title, text) {
+            let modal = document.getElementById('copyModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'copyModal';
+                modal.style.cssText = `
+                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    background: white; padding: 20px; border: 2px solid black; z-index: 10000;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 90%; width: 400px;
+                    text-align: center; font-family: sans-serif;
+                `;
+                document.body.appendChild(modal);
+            }
             
-            const bldg = document.getElementById('bldg-' + id);
-            if (bldg) bldg.classList.add('active');
+            modal.innerHTML = `
+                <h3>${title}</h3>
+                <p>Click inside, Select All (Ctrl+A), and Copy (Ctrl+C)</p>
+                <textarea id="copyArea" style="width: 100%; height: 100px; margin-bottom: 10px;">${text}</textarea>
+                <br>
+                <button onclick="document.getElementById('copyModal').style.display='none'" style="padding: 5px 10px; cursor: pointer;">Close</button>
+                <button onclick="copyToClipboard()" style="padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; margin-left: 10px;">Copy to Clipboard</button>
+            `;
+            modal.style.display = 'block';
+            document.getElementById('copyArea').select();
+        }
+
+        // Global helper for the modal button
+        window.copyToClipboard = function() {
+            const copyText = document.getElementById("copyArea");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); 
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                alert("Copied to clipboard!");
+            });
+        };
+
+        function finishRecording(endKey = null) {
+            isRecording = false;
+            document.getElementById('recordBtn').innerText = "⏺ Record Path";
+            document.getElementById('recordBtn').style.background = "white";
+            document.getElementById('savePathBtn').style.display = 'none';
+            document.getElementById('clearPathBtn').style.display = 'none';
             
-            const items = document.querySelectorAll('.building-item');
-            items.forEach(item => {
-                if (item.onclick.toString().includes(id)) {
-                    item.classList.add('active');
+            // Clean up markers
+            recordingMarkers.forEach(m => map.removeLayer(m));
+            recordingMarkers = [];
+
+            const start = recordingStartKey || prompt("Enter Start Location Key (e.g., entrance, ict):") || "start";
+            const end = endKey || prompt("Enter End Location Key (e.g., ict, chapel):") || "end";
+            
+            const routeKey = `${start}_${end}`;
+            const json = JSON.stringify(recordingPath);
+            
+            showCopyModal(`Path: ${routeKey}`, `"${routeKey}": ${json},`);
+            
+            // Reset
+            recordingStartKey = null;
+        }
+
+        function initMap() {
+            // Expanded bounds to include new Entrance location
+            const southWest = L.latLng(-18.905, 32.590);
+            const northEast = L.latLng(-18.890, 32.610);
+            const bounds = L.latLngBounds(southWest, northEast);
+
+            map = L.map('map', {
+                maxBounds: bounds,
+                maxBoundsViscosity: 1.0, 
+                minZoom: 15 // Allow slightly more zoom out to see full campus
+            }).setView(AU_CENTER, 16);
+
+            // Add OSM Tile Layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Add Custom Pin Markers with Recording Logic
+            Object.keys(venues).forEach(key => {
+                const v = venues[key];
+                const marker = L.marker([v.lat, v.lng], {
+                    icon: createCustomPin(v.color)
+                }).addTo(map);
+                
+                marker.bindPopup(`<b>${v.name}</b>`);
+
+                marker.on('click', function(e) {
+                    if (isRecording) {
+                        marker.closePopup();
+                        
+                        if (!recordingStartKey) {
+                            recordingStartKey = key;
+                            recordingPath.push([v.lat, v.lng]);
+                            L.popup()
+                                .setLatLng(e.latlng)
+                                .setContent(`<b>Started: ${v.name}</b><br>Click map points, then click another pin to finish.`)
+                                .openOn(map);
+                        } else if (key !== recordingStartKey) {
+                            // Finish
+                            recordingPath.push([v.lat, v.lng]);
+                            finishRecording(key);
+                        }
+                    }
+                });
+
+                markers[key] = marker;
+            });
+
+            // Path Recorder Tool
+            map.on('click', function(e) {
+                if (isRecording) {
+                    const coord = [e.latlng.lat, e.latlng.lng];
+                    recordingPath.push(coord);
+                    
+                    // Draw temporary dot with Right-Click Delete Support
+                    const dot = L.circleMarker(e.latlng, {
+                        radius: 5,
+                        color: 'orange',
+                        fillColor: '#f03',
+                        fillOpacity: 0.8,
+                        className: 'recording-dot' // Helper class
+                    }).addTo(map);
+                    
+                    // Allow deleting point by right-click
+                    dot.on('contextmenu', function() {
+                        map.removeLayer(dot);
+                        // Remove from path array
+                        const index = recordingPath.findIndex(p => p[0] === coord[0] && p[1] === coord[1]);
+                        if (index > -1) {
+                            recordingPath.splice(index, 1);
+                            console.log("Removed point:", coord);
+                        }
+                    });
+
+                    recordingMarkers.push(dot);
+                    console.log("Added point:", coord);
                 }
             });
 
-            selectedBuilding = id;
-            document.getElementById('toSelect').value = id;
+            // Add "Record Path" Button
+            const recordBtn = L.control({position: 'bottomright'});
+            recordBtn.onAdd = function (map) {
+                const div = L.DomUtil.create('div', 'record-control');
+                div.innerHTML = `
+                    <button id="recordBtn" style="padding: 10px; font-weight: bold; cursor: pointer; background: white; border: 2px solid orange; margin-bottom: 5px;">⏺ Record Path</button>
+                    <button id="savePathBtn" style="display:none; padding: 10px; font-weight: bold; cursor: pointer; background: #4CAF50; color: white; border: none;">💾 Save Path</button>
+                    <button id="clearPathBtn" style="display:none; padding: 10px; font-weight: bold; cursor: pointer; background: #f44336; color: white; border: none; margin-left: 5px;">❌ Clear</button>
+                `;
+                
+                div.querySelector('#recordBtn').onclick = function() {
+                    if (!isRecording) {
+                        isRecording = true;
+                        recordingPath = [];
+                        recordingStartKey = null;
+                        this.innerText = "Click Start Pin...";
+                        this.style.background = "#ffcccc";
+                        document.getElementById('savePathBtn').style.display = 'inline-block';
+                        document.getElementById('clearPathBtn').style.display = 'inline-block';
+                    }
+                };
+
+                div.querySelector('#clearPathBtn').onclick = function() {
+                    recordingMarkers.forEach(m => map.removeLayer(m));
+                    recordingMarkers = [];
+                    recordingPath = [];
+                    recordingStartKey = null;
+                    document.getElementById('recordBtn').innerText = "Click Start Pin...";
+                };
+
+                div.querySelector('#savePathBtn').onclick = function() {
+                    // Manual save (if user didn't click end pin)
+                    finishRecording(null); 
+                };
+
+                return div;
+            };
+            recordBtn.addTo(map);
         }
 
-        function showDirections() {
-            const from = document.getElementById('fromSelect').value || 'entrance';
-            const to = document.getElementById('toSelect').value;
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            generateSmartRoutes(); // Build the network from manual segments
+            loadUser();
+            checkOffline();
+            findNextClass();
+            populateDropdowns();
             
-            if (!to) {
-                alert('Please select a destination');
+            // Try to get user location immediately for better responsiveness
+            if (navigator.geolocation && document.getElementById('fromSelect').value === 'current') {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        window.userLocation = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                    },
+                    (err) => {
+                        console.log("Location access denied or error, falling back to manual input");
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            }
+            
+            window.addEventListener('online', checkOffline);
+            window.addEventListener('offline', checkOffline);
+        });
+
+        function populateDropdowns() {
+            const markup = Object.keys(venues).map(key => 
+                `<option value="${key}">${venues[key].name}</option>`
+            ).join('');
+            
+            // Keep "Current Location" as first option for From
+            const fromSelect = document.getElementById('fromSelect');
+            fromSelect.innerHTML = `<option value="current">Current Location (GPS)</option>` + markup;
+            
+            // Add "Select destination" for To
+            document.getElementById('toSelect').innerHTML = `<option value="">Select destination</option>` + markup;
+            
+            // Re-render sidebar list
+            const list = document.getElementById('buildingList');
+            list.innerHTML = Object.keys(venues).map(key => `
+                <div class="building-item" onclick="panToBuilding('${key}')">
+                    <div class="building-icon" style="color: ${venues[key].color}; background: #f0f0f0; border: 1px solid #ccc;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="black" stroke-width="1" width="16" height="16">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                    </div>
+                    <div class="building-info">
+                        <h4>${venues[key].name}</h4>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function calculateRoute() {
+            const startKey = document.getElementById('fromSelect').value;
+            const endKey = document.getElementById('toSelect').value;
+            
+            if (!endKey) {
+                alert("Please select a destination.");
                 return;
             }
 
-            const fromBldg = buildings[from];
-            const toBldg = buildings[to];
+            // Check for custom manual path first
+            const routeKey = `${startKey}_${endKey}`;
+            const reverseKey = `${endKey}_${startKey}`;
             
-            const path = document.getElementById('navPath');
-            path.setAttribute('d', `M${fromBldg.x} ${fromBldg.y} L${toBldg.x} ${toBldg.y}`);
-            path.style.display = 'block';
-            
-            const currentMarker = document.getElementById('currentMarker');
-            currentMarker.setAttribute('transform', `translate(${fromBldg.x}, ${fromBldg.y})`);
-            currentMarker.style.display = 'block';
-            
-            const destMarker = document.getElementById('destMarker');
-            destMarker.setAttribute('transform', `translate(${toBldg.x}, ${toBldg.y - 20})`);
-            destMarker.style.display = 'block';
-            
-            const distance = Math.sqrt(Math.pow(toBldg.x - fromBldg.x, 2) + Math.pow(toBldg.y - fromBldg.y, 2));
-            const walkTime = Math.max(1, Math.ceil(distance / 100));
-            
-            const dirBox = document.getElementById('directionsBox');
-            dirBox.classList.add('show');
-            
-            document.getElementById('dirTitle').textContent = `${fromBldg.name} → ${toBldg.name}`;
-            document.getElementById('walkTimeText').textContent = `~${walkTime} min walk`;
-            
-            const steps = [];
-            if (Math.abs(fromBldg.y - toBldg.y) > 50) {
-                steps.push(toBldg.y < fromBldg.y ? 'Head north along main walkway' : 'Head south along main walkway');
+            if (customRoutes[routeKey] || customRoutes[reverseKey]) {
+                const rawPath = customRoutes[routeKey] || customRoutes[reverseKey].slice().reverse();
+                
+                // Snap path to exact Start/End pins to avoid visual gaps
+                const startPin = [venues[startKey].lat, venues[startKey].lng];
+                const endPin = [venues[endKey].lat, venues[endKey].lng];
+                
+                // Prepend Start Pin and Append End Pin
+                const path = [startPin, ...rawPath, endPin];
+                
+                drawCustomRoute(path);
+                return;
             }
-            if (Math.abs(fromBldg.x - toBldg.x) > 50) {
-                steps.push(toBldg.x > fromBldg.x ? 'Continue east towards the building' : 'Continue west towards the building');
+
+            // Fallback to OSRM
+            let startCoords;
+            const endCoords = L.latLng(venues[endKey].lat, venues[endKey].lng);
+
+            if (startKey === 'current') {
+                if (window.userLocation) {
+                    drawRoute(window.userLocation, endCoords);
+                } else if (navigator.geolocation) {
+                    const btn = document.querySelector('.nav-btn');
+                    // ... (rest of geo logic)
+                    const originalText = btn.textContent;
+                    btn.textContent = "Locating...";
+                    btn.disabled = true;
+
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            window.userLocation = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                            drawRoute(window.userLocation, endCoords);
+                            btn.textContent = originalText;
+                            btn.disabled = false;
+                        }, 
+                        () => {
+                            alert("Could not get your location. Please select a starting point manually.");
+                            btn.textContent = originalText;
+                            btn.disabled = false;
+                            document.getElementById('fromSelect').focus();
+                        },
+                        { enableHighAccuracy: true, timeout: 5000 }
+                    );
+                } else {
+                    alert("Geolocation not supported. Please select a start point.");
+                }
+            } else {
+                startCoords = L.latLng(venues[startKey].lat, venues[startKey].lng);
+                drawRoute(startCoords, endCoords);
             }
-            steps.push(`Arrive at ${toBldg.name}`);
+        }
+
+        let customPolyline = null;
+        function drawCustomRoute(latlngs) {
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+            if (customPolyline) map.removeLayer(customPolyline);
+
+            // Draw the manual student path
+            customPolyline = L.polyline(latlngs, {
+                color: 'orange',
+                weight: 5,
+                dashArray: '10, 10',
+                opacity: 0.8
+            }).addTo(map);
             
-            document.getElementById('dirSteps').innerHTML = steps.map(s => `<li>${s}</li>`).join('');
+            map.fitBounds(customPolyline.getBounds(), {padding: [50, 50]});
+        }
+
+        function drawRoute(start, end) {
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+
+            routingControl = L.Routing.control({
+                waypoints: [
+                    start,
+                    end
+                ],
+                router: L.Routing.osrmv1({
+                    profile: 'foot' // Use walking profile for "person paths"
+                }),
+                routeWhileDragging: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                show: false, // Hide default instructions panel
+                lineOptions: {
+                    styles: [{color: 'blue', opacity: 0.8, weight: 6, dashArray: '1, 10'}] // Dotted walking line style
+                }
+            }).addTo(map);
         }
 
         function logout() {
@@ -525,13 +833,72 @@
             window.location.href = '../../pages/auth.html';
         }
 
-        // Load user avatar
-        const userStr = sessionStorage.getItem('upath_user');
-        if (userStr) {
-            const user = JSON.parse(userStr);
-            if (user.fullName) {
-                const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-                document.getElementById('userAvatar').textContent = initials;
+        function loadUser() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                if (user.fullName) {
+                    const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('userAvatar').textContent = initials;
+                }
+            }
+        }
+
+        function checkOffline() {
+            const badge = document.getElementById('offlineBadge');
+            if (navigator.onLine) {
+                badge.classList.remove('visible');
+            } else {
+                badge.classList.add('visible');
+            }
+        }
+
+        async function findNextClass() {
+            try {
+                const classes = await API.getClasses();
+                const now = new Date();
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const today = days[now.getDay()];
+                const currentTime = now.getHours() * 60 + now.getMinutes();
+
+                let nextClass = null;
+                let minDiff = Infinity;
+
+                classes.forEach(cls => {
+                    if (cls.day !== today) return;
+                    const [startStr] = cls.time.split(' - ');
+                    const [h, m] = startStr.split(':').map(Number);
+                    const classTime = h * 60 + (m || 0);
+                    
+                    if (classTime > currentTime) {
+                        const diff = classTime - currentTime;
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            nextClass = cls;
+                        }
+                    }
+                });
+
+                if (nextClass && minDiff < 180) { // 3 hours view
+                    const hintDiv = document.getElementById('nextClassHint');
+                    const hintText = document.getElementById('nextClassName');
+                    hintDiv.style.display = 'flex';
+                    hintText.textContent = `${nextClass.code} at ${nextClass.room}`;
+                    
+                    hintText.onclick = () => {
+                        let targetKey = 'ict';
+                        for (const [key, val] of Object.entries(venueMap)) {
+                            if (nextClass.room.includes(key)) {
+                                targetKey = val;
+                                break;
+                            }
+                        }
+                        document.getElementById('toSelect').value = targetKey;
+                        panToBuilding(targetKey);
+                    };
+                }
+            } catch (err) {
+                console.log("No schedule data");
             }
         }
     </script>
