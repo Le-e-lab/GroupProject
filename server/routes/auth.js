@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { User } = require('../models');
 const { Op } = require('sequelize');
+const bcrypt = require('bcrypt');
+const validator = require('validator');
 
 /**
  * ========================================
@@ -10,11 +12,16 @@ const { Op } = require('sequelize');
  */
 router.post('/register', async (req, res) => {
     try {
-        const { fullName, email, password, role, idNumber } = req.body;
+        let { fullName, email, password, role, idNumber } = req.body;
 
         if (!fullName || !email || !password || !role) {
             return res.status(400).json({ message: 'All fields are required' });
         }
+
+        // Sanitize inputs
+        fullName = validator.escape(validator.trim(fullName));
+        email = validator.normalizeEmail(validator.trim(email)) || email;
+        if (idNumber) idNumber = validator.escape(validator.trim(idNumber));
 
         // Check if user exists
         const existingUser = await User.findOne({
@@ -31,7 +38,7 @@ router.post('/register', async (req, res) => {
             id: idNumber || (role === 'lecturer' ? '21' : '25') + Math.floor(1000 + Math.random() * 9000), // Mock ID gen
             fullName,
             email,
-            password, // TODO: Use bcrypt
+            password, // Password hashed by User model hook
             role,
             department: role === 'lecturer' ? 'Computer Science' : undefined,
             year: role === 'student' ? 1 : undefined
@@ -71,7 +78,12 @@ router.post('/login', async (req, res) => {
             } 
         });
         
-        if (!user || user.password !== password) {
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 

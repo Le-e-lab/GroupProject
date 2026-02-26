@@ -142,6 +142,18 @@
             border-radius: var(--radius-lg);
             padding: 32px;
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .qr-layout {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 12px;
+                align-items: flex-start;
+            }
+        }
+        
         .notif-title {
             font-size: 1rem;
             font-weight: 600;
@@ -233,12 +245,87 @@
         .send-btn:hover {
             background: var(--primary-hover);
         }
+
+        /* ─── Fullscreen Maximize Overlay ─── */
+        .maximize-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.93);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 56px 32px 40px;
+            box-sizing: border-box;
+            animation: fadeIn 0.2s ease;
+        }
+        .maximize-overlay.active { display: flex; }
+        .maximize-close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--transition);
+        }
+        .maximize-close:hover { background: rgba(255,255,255,0.3); }
+        .maximize-qr {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            width: min(70vw, calc(100vh - 316px));
+            height: min(70vw, calc(100vh - 316px));
+            flex-shrink: 0;
+        }
+        .maximize-qr img { width: 100%; height: 100%; }
+        .maximize-code {
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 900;
+            letter-spacing: 16px;
+            color: white;
+            font-family: monospace;
+            text-shadow: 0 0 40px rgba(220, 38, 38, 0.5);
+        }
+        .maximize-label {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+        .maximize-timer {
+            font-size: 1.2rem;
+            color: #F59E0B;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
         @media (max-width: 768px) {
             .qr-layout { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+    <!-- ─── Maximize Overlay ─── -->
+    <div class="maximize-overlay" id="maximizeOverlay" onclick="closeMaximize(event)">
+        <button class="maximize-close" onclick="closeMaximize(null)">✕</button>
+        <div class="maximize-label">Enter this code</div>
+        <div class="maximize-code" id="maximizeCode">------</div>
+        <div class="maximize-qr">
+            <img id="maximizeQR" src="" alt="QR Code">
+        </div>
+        <div class="maximize-timer" id="maximizeTimer">Expires in 5:00</div>
+    </div>
     <div class="qr-layout">
         <!-- QR Code Card -->
         <div class="qr-card">
@@ -249,17 +336,18 @@
                 <div class="class-details" id="classDetails">CS101 • Lab 3A • In progress</div>
             </div>
 
-            <div class="qr-image">
+            <div class="qr-image" onclick="openMaximize()" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                 <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=UPATH-123456" alt="QR Code">
             </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Click QR code to enlarge</div>
 
             <p class="code-label">Students can also enter this code:</p>
             <div class="code-display" id="codeDisplay">123456</div>
             <div class="timer">Expires in <span id="countdown">5:00</span></div>
 
-            <div class="action-btns">
-                <button class="action-btn primary" onclick="regenerateCode()">Regenerate</button>
-                <button class="action-btn secondary" onclick="copyCode()">Copy Code</button>
+            <div class="action-btns" style="display: flex; gap: 12px;">
+                <button class="action-btn primary" id="regenBtn" onclick="regenerateCode()">Regenerate</button>
+                <button class="action-btn" style="background: var(--surface); border: 1px solid var(--border); color: var(--text);" onclick="copyCode()">Copy Code</button>
             </div>
         </div>
 
@@ -308,6 +396,15 @@
                         <div class="notif-btn-desc">Another lecturer covering</div>
                     </div>
                 </button>
+
+                <!-- NEW: Online Class Notif Button -->
+                <button class="notif-btn" id="notif-online" onclick="sendNotif('online', this)">
+                    <div class="notif-btn-icon" style="background:#D1FAE5; color:#059669;">💻</div>
+                    <div class="notif-btn-text">
+                        <div class="notif-btn-title">Online Class</div>
+                        <div class="notif-btn-desc">Remote session today</div>
+                    </div>
+                </button>
             </div>
 
             <div class="custom-msg">
@@ -332,7 +429,7 @@
             CS305: { name: 'Web Development', room: 'Lab 2B' }
         };
 
-        async function fetchNewCode() {
+        async function fetchNewCode(forceNew = false) {
             try {
                 // Get Class ID from URL
                 const urlParams = new URLSearchParams(window.location.search);
@@ -347,7 +444,7 @@
 
                 // Call API to generate REAL session code
                 if (window.API && API.generateSessionCode) {
-                    const res = await API.generateSessionCode(classCode);
+                    const res = await API.generateSessionCode(classCode, forceNew);
                     if (res && res.code) {
                         updateDisplay(res.code);
                         // Update timer based on response if available, else default 5 min
@@ -371,6 +468,7 @@
         
         function updateDisplay(code) {
             document.getElementById('codeDisplay').textContent = code;
+            document.getElementById('maximizeCode').textContent = code;
             
             // Encode the 6-digit code primarily, or a JSON if we prefer
             // For simple scanning, let's encode the JSON with the code
@@ -381,11 +479,13 @@
                 code: code
             });
             
-            document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
+            document.getElementById('qrImage').src = qrUrl;
+            document.getElementById('maximizeQR').src = qrUrl;
         }
         
         function regenerateCode() {
-            fetchNewCode();
+            fetchNewCode(true); // pass true to invalidate old session
         }
         
         function copyCode() {
@@ -394,57 +494,78 @@
             alert('Code copied: ' + code);
         }
 
-        // Notification logic remains same...
-        function sendNotif(type, btn) {
-             // ... existing sendNotif logic ...
-             // (Copy existing logic here or ensure it's not deleted)
+        // Notification logic
+        async function sendNotif(type, btn) {
+            const userStr = sessionStorage.getItem('upath_user');
+            const user = userStr ? JSON.parse(userStr) : { id: 'Unknown', fullName: 'Lecturer' };
+            const currentCode = document.getElementById('codeDisplay').textContent;
+            const className = document.getElementById('className').textContent;
+
             const messages = {
                 late: 'Lecturer is running approximately 15 minutes late',
-                venue: 'Class venue has been changed',
+                venue: 'Class venue has been changed – please check your schedule',
                 cancelled: 'Today\'s class has been cancelled',
-                substitute: 'A substitute lecturer will be covering this class'
+                substitute: 'A substitute lecturer will be covering this class',
+                online: `This class will be held online today. The attendance code is ${currentCode}. Please mark your presence.`
             };
             
+            let announcementType = 'info';
+            if (type === 'cancelled') announcementType = 'cancel';
+            else if (type === 'late') announcementType = 'delay';
+            else if (type === 'online') announcementType = 'online';
+
             const announcement = {
-                lecturerId: '210101',
-                lecturerName: 'Lecturer',
+                authorId: user.id,
+                authorName: user.fullName,
                 courseCode: classCode,
-                courseName: info.name,
-                year: 2,
-                type: type === 'cancelled' ? 'cancel' : type === 'late' ? 'delay' : 'info',
+                courseName: className,
+                type: announcementType,
                 message: messages[type]
             };
             
-            if (window.API) {
-                API.postAnnouncement(announcement);
+            try {
+                if (window.API && API.postAnnouncement) {
+                    const res = await API.postAnnouncement(announcement);
+                    if (res.error) throw new Error(res.error);
+                }
+                
+                document.querySelectorAll('.notif-btn').forEach(b => b.classList.remove('sent'));
+                btn.classList.add('sent');
+                alert(`✅ Notification Sent: ${messages[type]}`);
+            } catch (err) {
+                console.error("Notif Error:", err);
+                alert("❌ Failed to send notification.");
             }
-            
-            document.querySelectorAll('.notif-btn').forEach(b => b.classList.remove('sent'));
-            btn.classList.add('sent');
-            alert(`Notification Sent: ${messages[type]}`);
         }
 
-        function sendCustom() {
-             // ... existing sendCustom logic ...
+        async function sendCustom() {
             const msg = document.getElementById('customMsg').value.trim();
             if (!msg) return alert('Please enter a message');
             
+            const userStr = sessionStorage.getItem('upath_user');
+            const user = userStr ? JSON.parse(userStr) : { id: 'Unknown', fullName: 'Lecturer' };
+            const className = document.getElementById('className').textContent;
+
             const announcement = {
-                lecturerId: '210101',
-                lecturerName: 'Lecturer',
+                authorId: user.id,
+                authorName: user.fullName,
                 courseCode: classCode,
-                courseName: info.name,
-                year: 2,
+                courseName: className,
                 type: 'info',
                 message: msg
             };
             
-            if (window.API) {
-                API.postAnnouncement(announcement);
+            try {
+                if (window.API && API.postAnnouncement) {
+                    const res = await API.postAnnouncement(announcement);
+                    if (res.error) throw new Error(res.error);
+                }
+                alert('✅ Custom message sent to students!');
+                document.getElementById('customMsg').value = '';
+            } catch (err) {
+                console.error("Custom Notif Error:", err);
+                alert("❌ Failed to send custom message.");
             }
-            
-            alert('Custom message sent to students!');
-            document.getElementById('customMsg').value = '';
         }
         
         setInterval(() => {
@@ -453,9 +574,35 @@
                 timeLeft--;
                 const mins = Math.floor(timeLeft / 60);
                 const secs = timeLeft % 60;
-                document.getElementById('countdown').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                const timeString = `${mins}:${secs.toString().padStart(2, '0')}`;
+                
+                document.getElementById('countdown').textContent = timeString;
+                document.getElementById('maximizeTimer').textContent = `Expires in ${timeString}`;
             }
         }, 1000);
+
+        // ─── Maximize / Fullscreen Handlers ───
+        function openMaximize() {
+            document.getElementById('maximizeOverlay').classList.add('active');
+            requestAnimationFrame(() => {
+                const closeBtn = document.querySelector('.maximize-close');
+                if (closeBtn) closeBtn.focus();
+            });
+        }
+
+        function closeMaximize(e) {
+            // If event is null (close button) or target is the overlay background
+            if (!e || e.target.id === 'maximizeOverlay') {
+                document.getElementById('maximizeOverlay').classList.remove('active');
+            }
+        }
+        
+        // Add keyboard support to close overlay
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMaximize(null);
+            }
+        });
         
         const info = classData[classCode] || { name: classCode, room: 'TBD' };
         document.getElementById('className').textContent = info.name;

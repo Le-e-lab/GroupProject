@@ -305,7 +305,9 @@
             sessionStorage.setItem("upath_user", JSON.stringify(result.user));
 
             setTimeout(() => {
-              if (result.user.role === "lecturer") {
+              if (result.user.role === "admin") {
+                window.location.href = "/pages/admin/dashboard.html";
+              } else if (result.user.role === "lecturer") {
                 window.location.href = "/lecturer_dashboard.html"; 
               } else {
                 window.location.href = "/dashboard.html"; 

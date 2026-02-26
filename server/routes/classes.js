@@ -40,10 +40,19 @@ router.get('/', async (req, res) => {
         const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         const validClasses = classes.filter(c => validDays.includes(c.Day));
         
-        console.log(`[Classes API] Fetched ${classes.length} total, ${validClasses.length} with valid days`);
+        // Deduplicate: Ensure we only send one instance of a class per schedule block
+        const seen = new Set();
+        const uniqueClasses = validClasses.filter(c => {
+            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+        console.log(`[Classes API] Fetched ${classes.length} total, ${uniqueClasses.length} unique with valid days`);
         
         // Transform to Frontend Format
-        const formatted = validClasses.map(c => ({
+        const formatted = uniqueClasses.map(c => ({
             id: `${c.Course_Code}-${c.Day}-${c.From_Time}`, // Composite ID
             code: c.Course_Code,
             name: c.Course_Name,
@@ -96,7 +105,7 @@ router.get('/lecturer/:id', async (req, res) => {
         // if multiple conditions match (e.g. full name AND surname both match)
         const seen = new Set();
         const uniqueClasses = classes.filter(c => {
-            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}`;
+            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}`.toLowerCase();
             if (seen.has(key)) return false;
             seen.add(key);
             return true;

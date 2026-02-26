@@ -48,6 +48,43 @@ const API = {
 
     /**
      * ========================================
+     * GENERIC HELPERS (Added Phase 2)
+     * ========================================
+     */
+    async get(endpoint) {
+        const res = await fetch(this.baseUrl.replace('/api', '') + endpoint);
+        return res.json();
+    },
+
+    async post(endpoint, data) {
+        const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async put(endpoint, data) {
+        const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async delete(endpoint) {
+        const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, {
+            method: 'DELETE'
+        });
+        return res.json();
+    },
+
+
+
+    /**
+     * ========================================
      * AUTHENTICATION METHODS
      * ========================================
      */
@@ -379,12 +416,12 @@ const API = {
         }
     },
 
-    async generateSessionCode(classId) {
+    async generateSessionCode(classId, forceNew = false) {
         try {
             const response = await fetch(`${this.baseUrl}/attendance/generate-code`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ classId })
+                body: JSON.stringify({ classId, forceNew })
             });
             return response.json();
         } catch (e) {
@@ -419,6 +456,8 @@ const API = {
         const str = sessionStorage.getItem('upath_user');
         return str ? JSON.parse(str) : null;
     },
+
+
 
     async getAttendanceStats() {
         return this.getCached('stats', async () => {
@@ -547,31 +586,50 @@ const API = {
 
     /**
      * ========================================
-     * ANNOUNCEMENT METHODS
+     * ANNOUNCEMENT METHODS (Consolidated)
      * ========================================
      */
 
-    postAnnouncement(announcement) {
-        const announcements = JSON.parse(localStorage.getItem('upath_announcements') || '[]');
-        const newAnnouncement = {
-            id: Date.now().toString(),
-            timestamp: new Date().toISOString(),
-            ...announcement
-        };
-        announcements.unshift(newAnnouncement); // Add to top
-        localStorage.setItem('upath_announcements', JSON.stringify(announcements));
-        if (typeof Toast !== 'undefined') Toast.success('Announcement Posted');
-        return { success: true };
+    async postAnnouncement(announcement) {
+        try {
+            const res = await this.post('/api/announcements', announcement);
+            if (res.success && typeof Toast !== 'undefined') Toast.success('Announcement Posted');
+            return res;
+        } catch (e) {
+            console.warn('Server offline, saving to local storage');
+            const announcements = JSON.parse(localStorage.getItem('upath_announcements') || '[]');
+            const newAnnouncement = {
+                id: Date.now().toString(),
+                timestamp: new Date().toISOString(),
+                ...announcement
+            };
+            announcements.unshift(newAnnouncement);
+            localStorage.setItem('upath_announcements', JSON.stringify(announcements));
+            if (typeof Toast !== 'undefined') Toast.warning('Saved locally (Offline)');
+            return { success: true, local: true };
+        }
     },
 
-    getAnnouncementsForStudent(year) {
-        const announcements = JSON.parse(localStorage.getItem('upath_announcements') || '[]');
-        return announcements.filter(a => !a.year || a.year === year);
+    async getAnnouncementsForStudent(program, year) {
+        try {
+            const url = `/api/announcements?program=${encodeURIComponent(program || '')}&year=${year || ''}`;
+            const res = await this.get(url);
+            return res.announcements || [];
+        } catch (e) {
+            const local = JSON.parse(localStorage.getItem('upath_announcements') || '[]');
+            return local.filter(a => (!a.year || a.year === year) && (!program || a.program === program));
+        }
     },
 
-    getAnnouncementsByLecturer(lecturerId) {
-        const announcements = JSON.parse(localStorage.getItem('upath_announcements') || '[]');
-        return announcements.filter(a => a.lecturerId === lecturerId);
+    async getAnnouncementsByLecturer(lecturerId) {
+        try {
+            const res = await this.get('/api/announcements');
+            const list = res.announcements || [];
+            return list.filter(a => String(a.lecturerId) === String(lecturerId));
+        } catch (e) {
+            const local = JSON.parse(localStorage.getItem('upath_announcements') || '[]');
+            return local.filter(a => String(a.lecturerId) === String(lecturerId));
+        }
     },
 
     /**

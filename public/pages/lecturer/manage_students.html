@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Students & Reps - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/theme.css">
+    <style>
+        .page { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; }
+        .page-title { font-size: 1.6rem; font-weight: 800; color: var(--text); }
+        .page-subtitle { color: var(--text-muted); margin-top: 4px; }
+
+        .filter-bar {
+            display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+            padding: 16px; background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+            background: var(--bg); color: var(--text); font-size: 0.9rem; flex: 1; min-width: 140px;
+        }
+        .filter-bar button {
+            padding: 10px 20px; background: var(--primary); color: white;
+            border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;
+        }
+
+        .students-table {
+            width: 100%; border-collapse: collapse; background: var(--surface);
+            border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
+        }
+        .students-table th {
+            background: var(--bg); text-align: left; padding: 14px 16px;
+            font-weight: 600; font-size: 0.85rem; color: var(--text-muted);
+            border-bottom: 2px solid var(--border);
+        }
+        .students-table td {
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            font-size: 0.9rem; color: var(--text);
+        }
+        .students-table tr:hover { background: var(--primary-light); }
+
+        .role-badge {
+            display: inline-block; padding: 4px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+        }
+        .role-student { background: #DBEAFE; color: #2563EB; }
+        .role-student_rep { background: #D1FAE5; color: #059669; }
+        .role-lecturer { background: #FEE2E2; color: #DC2626; }
+
+        .btn-promote {
+            padding: 6px 14px; border: 1px solid #059669; background: #ECFDF5;
+            color: #059669; border-radius: var(--radius); cursor: pointer;
+            font-weight: 600; font-size: 0.8rem; transition: all 0.2s;
+        }
+        .btn-promote:hover { background: #059669; color: white; }
+        .btn-demote {
+            padding: 6px 14px; border: 1px solid #DC2626; background: #FEF2F2;
+            color: #DC2626; border-radius: var(--radius); cursor: pointer;
+            font-weight: 600; font-size: 0.8rem; transition: all 0.2s;
+        }
+        .btn-demote:hover { background: #DC2626; color: white; }
+        .btn-notify {
+            padding: 6px 14px; border: 1px solid #3B82F6; background: #EFF6FF;
+            color: #3B82F6; border-radius: var(--radius); cursor: pointer;
+            font-weight: 600; font-size: 0.8rem; transition: all 0.2s;
+        }
+        .btn-notify:hover { background: #3B82F6; color: white; }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--text-muted);
+            background: var(--surface); border-radius: var(--radius-lg);
+            border: 1px dashed var(--border);
+        }
+        .count-badge {
+            background: var(--primary); color: white; padding: 2px 10px;
+            border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-left: 8px;
+        }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--primary); text-decoration: none; font-weight: 600; margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .students-table th:nth-child(3), .students-table td:nth-child(3),
+            .students-table th:nth-child(4), .students-table td:nth-child(4) { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <a href="/lecturer_dashboard.html" class="back-link">← Back to Dashboard</a>
+
+        <div class="page-header">
+            <h1 class="page-title">Manage Students & Reps <span class="count-badge" id="totalCount">0</span></h1>
+            <p class="page-subtitle">Promote students to Student Reps. Reps can edit the timetable and send announcements for their year/program.</p>
+        </div>
+
+        <div class="filter-bar">
+            <!-- New: Filter by Course Code instead of generic Program -->
+            <select id="filterCourse" onchange="loadStudents()">
+                <option value="">All My Courses</option>
+            </select>
+            <select id="filterRole" onchange="loadStudents()">
+                <option value="">All Roles</option>
+                <option value="student">Students Only</option>
+                <option value="student_rep">Reps Only</option>
+            </select>
+            <input type="text" id="searchText" placeholder="🔍 Search by name or ID..." oninput="filterStudentsLocal()" style="padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem; min-width: 200px;">
+        </div>
+
+        <div id="tableContainer">
+            <div class="empty-state">
+                <div style="font-size: 2.5rem; margin-bottom: 12px;">⏳</div>
+                <h3>Loading students...</h3>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/api.js?v=2"></script>
+    <script>
+        const userStr = sessionStorage.getItem('upath_user');
+        if (!userStr) { window.location.href = '../auth.html'; }
+
+        loadPrograms();
+        loadStudents();
+
+        let lecturerClassesData = [];
+        let allStudentsData = []; // For client-side text filtering
+
+        async function loadPrograms() {
+            try {
+                const userStr = sessionStorage.getItem('upath_user');
+                const user = userStr ? JSON.parse(userStr) : null;
+                
+                // If it's a lecturer, only fetch classes they teach
+                const endpoint = (user && user.role === 'lecturer') 
+                    ? `/api/classes/lecturer/${user.id}` 
+                    : '/api/classes';
+                    
+                const data = await API.get(endpoint);
+                const classes = Array.isArray(data) ? data : (data.classes || []);
+                lecturerClassesData = classes;
+
+                // Build unique courses map (Code -> Name, Program, Year)
+                const courseMap = {};
+                classes.forEach(c => {
+                    const courseCode = c.code || c.Course_Code;
+                    const courseName = c.name || c.Course_Name;
+                    const courseProg = c.program || c.Program;
+                    let courseYear = c.year;
+                    if (!courseYear && c.Year_Semester) {
+                        const ym = c.Year_Semester.match(/Y(\d)/i);
+                        courseYear = ym ? parseInt(ym[1]) : '';
+                    }
+                    if (courseCode && !courseMap[courseCode]) {
+                        courseMap[courseCode] = {
+                            code: courseCode,
+                            name: courseName,
+                            program: courseProg,
+                            year: courseYear
+                        };
+                    }
+                });
+
+                const courses = Object.values(courseMap).sort((a,b) => a.code.localeCompare(b.code));
+                const sel = document.getElementById('filterCourse');
+                courses.forEach(c => {
+                    const opt = document.createElement('option');
+                    // Store the program and year in the value as JSON so we can query the backend
+                    opt.value = JSON.stringify({ program: c.program, year: c.year });
+                    opt.textContent = `${c.code} - ${c.name} (Year ${c.year})`;
+                    sel.appendChild(opt);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadStudents() {
+            const container = document.getElementById('tableContainer');
+            const courseVal = document.getElementById('filterCourse').value;
+            const role = document.getElementById('filterRole').value;
+
+            const userStr = sessionStorage.getItem('upath_user');
+            const user = userStr ? JSON.parse(userStr) : null;
+
+            let query = '?';
+            
+            // Parse the selected course's program and year requirements
+            let parsedProgram = "";
+            let parsedYear = "";
+            if (courseVal) {
+                try {
+                    const parsed = JSON.parse(courseVal);
+                    if (parsed.program) query += `program=${encodeURIComponent(parsed.program)}&`;
+                    if (parsed.year) query += `year=${parsed.year}&`;
+                    parsedProgram = parsed.program;
+                    parsedYear = parsed.year;
+                } catch(e) { console.error("Error parsing course value", e); }
+            }
+
+            if (role) query += `role=${role}&`;
+            else query += 'role=student&'; // Default: show only students + student_reps
+            
+            // Limit to lecturer's students if they are a lecturer
+            if (user && user.role === 'lecturer') query += `lecturerId=${user.id}&`;
+
+            try {
+                // Fetch students matching criteria
+                const data = await API.get('/api/users' + query);
+                let users = data.users || [];
+
+                // Secondary cleanup: If "All My Courses" is selected and no specific role, 
+                // we want to ensure we have BOTH students and reps
+                if (!role && !courseVal) {
+                    // Already includes reps in the main lecturerId query if role wasn't specified?
+                    // Actually, the backend might filter by role if provided.
+                    // Let's ensure we get everyone by NOT passing a role to the API if we want both.
+                    // But wait, the API default is 'student' if role is missing in some contexts? 
+                    // Let's re-fetch reps specifically to be 100% sure if we only got role=student.
+                    const repQuery = query.replace('role=student&', '') + 'role=student_rep';
+                    const repsData = await API.get('/api/users' + repQuery);
+                    const reps = repsData.users || [];
+                    const existingIds = new Set(users.map(u => u.id));
+                    reps.forEach(r => { if (!existingIds.has(r.id)) users.push(r); });
+                }
+
+                document.getElementById('totalCount').textContent = users.length;
+
+                if (users.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div style="font-size: 2.5rem; margin-bottom: 12px;">📭</div>
+                            <h3>No students found</h3>
+                            <p>Try adjusting your filters above.</p>
+                        </div>`;
+                    return;
+                }
+
+                let html = `<table class="students-table">
+                    <thead><tr>
+                        <th>ID</th><th>Full Name</th><th>Program</th><th>Year</th><th>Role</th><th>Actions</th>
+                    </tr></thead><tbody>`;
+
+                users.forEach(u => {
+                    const roleClass = u.role === 'student_rep' ? 'role-student_rep' : 'role-student';
+                    const promoteBtn = u.role === 'student_rep'
+                        ? `<button class="btn-demote" style="margin-right: 6px;" onclick="changeRole('${u.id}', 'student')">↓ Remove Rep</button>`
+                        : `<button class="btn-promote" style="margin-right: 6px;" onclick="changeRole('${u.id}', 'student_rep')">⬆ Make Rep</button>`;
+                    const notifyBtn = `<button class="btn-notify" onclick="notifyStudent('${u.id}', '${u.fullName}')">✉️ Notify</button>`;
+                    const actionBtn = promoteBtn + notifyBtn;
+
+                    html += `<tr>
+                        <td><strong>${u.id}</strong></td>
+                        <td>${u.fullName}</td>
+                        <td>${u.program || '—'}</td>
+                        <td>${u.year || '—'}</td>
+                        <td><span class="role-badge ${roleClass}">${u.role.replace('_', ' ')}</span></td>
+                        <td>${actionBtn}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                allStudentsData = users; // Store for local text filtering
+            } catch (err) {
+                console.error('Error loading students:', err);
+                container.innerHTML = `<div class="empty-state"><h3>⚠️ Error loading students</h3></div>`;
+            }
+        }
+
+        function filterStudentsLocal() {
+            const query = document.getElementById('searchText').value.toLowerCase();
+            if (!query) { renderStudentsTable(allStudentsData); return; }
+            const filtered = allStudentsData.filter(u => 
+                u.fullName.toLowerCase().includes(query) || u.id.toLowerCase().includes(query)
+            );
+            renderStudentsTable(filtered);
+        }
+
+        function renderStudentsTable(users) {
+            const container = document.getElementById('tableContainer');
+            document.getElementById('totalCount').textContent = users.length;
+            if (users.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div style="font-size:2.5rem;margin-bottom:12px;">📭</div><h3>No students found</h3><p>Try adjusting your filters above.</p></div>`;
+                return;
+            }
+            let html = `<table class="students-table"><thead><tr><th>ID</th><th>Full Name</th><th>Program</th><th>Year</th><th>Role</th><th>Actions</th></tr></thead><tbody>`;
+            users.forEach(u => {
+                const roleClass = u.role === 'student_rep' ? 'role-student_rep' : 'role-student';
+                const promoteBtn = u.role === 'student_rep'
+                    ? `<button class="btn-demote" style="margin-right: 6px;" onclick="changeRole('${u.id}', 'student')">↓ Remove Rep</button>`
+                    : `<button class="btn-promote" style="margin-right: 6px;" onclick="changeRole('${u.id}', 'student_rep')">⬆ Make Rep</button>`;
+                const notifyBtn = `<button class="btn-notify" onclick="notifyStudent('${u.id}', '${u.fullName}')">✉️ Notify</button>`;
+                html += `<tr><td><strong>${u.id}</strong></td><td>${u.fullName}</td><td>${u.program || '—'}</td><td>${u.year || '—'}</td><td><span class="role-badge ${roleClass}">${u.role.replace('_', ' ')}</span></td><td>${promoteBtn}${notifyBtn}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        async function changeRole(userId, newRole) {
+            if (!confirm(`Are you sure you want to ${newRole === 'student_rep' ? 'promote this student to Rep' : 'remove this student as Rep'}?`)) return;
+
+            try {
+                const res = await API.put(`/api/users/${userId}/role`, { role: newRole });
+                if (res.success) {
+                    alert(`✅ ${res.message}`);
+                    loadStudents();
+                } else {
+                    alert('❌ ' + (res.message || 'Failed'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('❌ Error changing role');
+            }
+        }
+
+        async function notifyStudent(studentId, studentName) {
+            const message = prompt(`Send direct notification to ${studentName} (${studentId}):\n\nExample: "Please come see me after class regarding your attendance."`);
+            if (!message || message.trim() === '') return;
+
+            const userStr = sessionStorage.getItem('upath_user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            if (!user) return;
+
+            try {
+                const res = await API.postAnnouncement({
+                    title: `Message from ${user.fullName}`,
+                    message: message,
+                    type: 'info',
+                    target: studentId,
+                    authorId: user.id,
+                    authorName: user.fullName
+                });
+                
+                if (res.error) throw new Error(res.error);
+                alert(`✅ Message successfully sent to ${studentName}`);
+            } catch (err) {
+                console.error("Notify Error:", err);
+                alert(`❌ Failed to send message to ${studentName}.`);
+            }
+        }
+    </script>
+</body>
+</html>

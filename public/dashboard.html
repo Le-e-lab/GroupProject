@@ -276,6 +276,16 @@
         .today-classes {
           grid-template-columns: 1fr;
         }
+        .navbar-nav {
+          display: flex;
+          overflow-x: auto;
+          white-space: nowrap;
+          padding-bottom: 5px; /* Prevent scrollbar clipping */
+        }
+        /* Hide scrollbar for cleaner look but keep scrolling functional */
+        .navbar-nav::-webkit-scrollbar {
+          display: none;
+        }
       }
     </style>
   </head>
@@ -284,7 +294,7 @@
       <a href="/dashboard.html" class="navbar-brand">
         <div class="navbar-logo">U</div>
         <span class="navbar-title">UPath</span>
-        <span class="navbar-role">Student</span>
+        <span class="navbar-role" id="navbarRole">Student</span>
       </a>
       <div class="navbar-nav">
         <a href="/dashboard.html" class="navbar-link active">Overview</a>
@@ -292,11 +302,18 @@
         <a href="/pages/student/reports.html" class="navbar-link">Attendance</a>
         <a href="/pages/student/map.html" class="navbar-link">Map</a>
       </div>
-      <div class="navbar-actions">
+      <div class="navbar-actions" style="display: flex; align-items: center; gap: 16px;">
+        <!-- New Notification Bell Icon -->
+        <a href="/pages/student/notifications.html" style="text-decoration: none; position: relative; color: var(--text-muted); transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">
+          <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+          <span id="notifBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #EF4444; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 0.65rem; font-weight: 700; align-items: center; justify-content: center;">0</span>
+        </a>
+        
         <a
           href="/pages/student/profile.html"
           class="navbar-avatar"
           id="userAvatar"
+          style="text-decoration: none"
           >CB</a
         >
         <button class="navbar-logout" onclick="logout()">Sign Out</button>
@@ -400,11 +417,11 @@
             <div class="quick-action-text">View Schedule</div>
           </a>
           <a href="/pages/student/reports.html" class="quick-action">
-            <div class="quick-action-icon">AT</div>
-            <div class="quick-action-text">Attendance Reports</div>
+            <div class="quick-action-icon">RE</div>
+            <div class="quick-action-text">My Reports</div>
           </a>
           <a href="/pages/student/map.html" class="quick-action">
-            <div class="quick-action-icon">MP</div>
+            <div class="quick-action-icon">📍</div>
             <div class="quick-action-text">Campus Map</div>
           </a>
           <a href="/pages/student/profile.html" class="quick-action">
@@ -530,6 +547,28 @@
             "Year:",
             userYear,
           );
+
+          // Update Role Badge and add Rep Console button if user is a student_rep
+          if (user.role === 'student_rep') {
+            const roleBadge = document.getElementById("navbarRole");
+            if (roleBadge) {
+               roleBadge.textContent = "STUDENT / REP";
+               roleBadge.style.background = "#F59E0B";
+               roleBadge.style.color = "white";
+               roleBadge.style.padding = "2px 8px";
+            }
+
+            const headerActions = document.querySelector('.page-header > div');
+            if (headerActions) {
+              const repBtn = document.createElement('a');
+              repBtn.href = '/pages/student/rep_console.html';
+              repBtn.className = 'btn btn-primary';
+              repBtn.innerHTML = '🎓 Open Rep Console';
+              repBtn.style.marginTop = '12px';
+              repBtn.style.display = 'inline-block';
+              headerActions.appendChild(repBtn);
+            }
+          }
         }
       }
 
@@ -703,9 +742,15 @@
           return startHour > currentHour && startHour <= currentHour + 2;
         });
 
+        // Load dismissed notifications from localStorage
+        const dismissedStr = localStorage.getItem('dismissed_notifs') || '[]';
+        const dismissedIds = new Set(JSON.parse(dismissedStr));
+        let activeNotifCount = 0;
+
         // If nothing, show nothing
         if (announcements.length === 0 && upcomingClasses.length === 0) {
           container.innerHTML = "";
+          document.getElementById('notifBadge').style.display = 'none';
           return;
         }
 
@@ -713,6 +758,10 @@
 
         // Render Announcements First
         announcements.forEach((a, i) => {
+          const notifId = `announcement${a.id || i}`;
+          if (dismissedIds.has(notifId)) return;
+          
+          activeNotifCount++;
           let colorClass = "#2563EB"; // Info blue
           let bgClass = "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)";
           let borderClass = "#93C5FD";
@@ -728,40 +777,68 @@
             bgClass = "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)";
             borderClass = "#FCD34D";
             iconText = "🕒";
+          } else if (a.type === "online") {
+            colorClass = "#059669";
+            bgClass = "linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)";
+            borderClass = "#6EE7B7";
+            iconText = "💻";
           }
 
+          let typeLabel = "UPDATE";
+          if (a.type === "cancel") typeLabel = "CANCELLED";
+          if (a.type === "delay") typeLabel = "DELAYED";
+          if (a.type === "online") typeLabel = "ONLINE CLASS";
+
           html += `
-                    <div class="notification-banner" id="announcement${i}" style="background: ${bgClass}; border: 1px solid ${borderClass};">
-                        <div class="notif-icon" style="background: ${colorClass};">${iconText}</div>
-                        <div class="notif-content">
-                            <div class="notif-title" style="color: #1F2937;">${a.courseName}: ${a.type === "cancel" ? "CANCELLED" : a.type === "delay" ? "DELAYED" : "UPDATE"}</div>
-                            <div class="notif-message" style="color: #374151;">${a.message}</div>
+                    <div class="notification-banner" id="${notifId}" style="background: ${bgClass}; border: 1px solid ${borderClass}; display: flex; flex-wrap: wrap;">
+                        <div style="display: flex; flex: 1; align-items: center; gap: 15px;">
+                            <div class="notif-icon" style="background: ${colorClass};">${iconText}</div>
+                            <div class="notif-content">
+                                <div class="notif-title" style="color: #1F2937;">${a.courseName}: ${typeLabel}</div>
+                                <div class="notif-message" style="color: #374151;">${a.message}</div>
+                            </div>
                         </div>
-                        <div class="notif-time" style="color: ${colorClass};">New</div>
-                        <button class="notif-dismiss" onclick="dismissNotif('announcement${i}')" style="color: ${colorClass};">×</button>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            ${a.type === 'online' ? `<a href="#" onclick="alert('Joining Microsoft Teams / Zoom Meeting...')" style="background: ${colorClass}; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">Join Class</a>` : ''}
+                            <div class="notif-time" style="color: ${colorClass};">New</div>
+                            <button class="notif-dismiss" onclick="dismissNotif('${notifId}')" style="color: ${colorClass};">×</button>
+                        </div>
                     </div>
                 `;
         });
 
         // Render Class Notifications
         upcomingClasses.forEach((c, i) => {
+          const notifId = `class_notif_${c.code}_${today}`;
+          if (dismissedIds.has(notifId)) return;
+          
+          activeNotifCount++;
           const startHour = parseInt(c.time.split(":")[0]);
           const minsUntil = (startHour - currentHour) * 60 - now.getMinutes();
 
           html += `
-                    <div class="notification-banner" id="notif${i}">
+                    <div class="notification-banner" id="${notifId}">
                         <div class="notif-icon">${c.code.substring(0, 2)}</div>
                         <div class="notif-content">
                             <div class="notif-title">${c.name} starting soon</div>
                             <div class="notif-message">${c.room} • ${c.lecturerName}</div>
                         </div>
-                        <div class="notif-time">In ~${minsUntil} min</div>
-                        <button class="notif-dismiss" onclick="dismissNotif('notif${i}')">×</button>
+                        <div class="notif-time">In ~${Math.max(1, minsUntil)} min</div>
+                        <button class="notif-dismiss" onclick="dismissNotif('${notifId}')">×</button>
                     </div>
                 `;
         });
 
         container.innerHTML = html;
+        
+        // Update notification badge on the bell icon
+        const badge = document.getElementById('notifBadge');
+        if (activeNotifCount > 0) {
+          badge.textContent = activeNotifCount;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
       }
 
       async function loadDashboardStats() {
@@ -800,8 +877,30 @@
       function dismissNotif(id) {
         const el = document.getElementById(id);
         if (el) {
+          // Save to localStorage so it doesn't come back on refresh
+          try {
+            const dismissedStr = localStorage.getItem('dismissed_notifs') || '[]';
+            const dismissedIds = new Set(JSON.parse(dismissedStr));
+            dismissedIds.add(id);
+            localStorage.setItem('dismissed_notifs', JSON.stringify(Array.from(dismissedIds)));
+          } catch(e) { console.error('Error saving dismissal state', e); }
+
+          // Animate and remove
           el.style.animation = "slideIn 0.2s ease reverse";
-          setTimeout(() => el.remove(), 200);
+          setTimeout(() => {
+            el.remove();
+            
+            // Update badge count dynamically
+            const badge = document.getElementById('notifBadge');
+            if (badge && badge.style.display !== 'none') {
+              const currentCount = parseInt(badge.textContent) - 1;
+              if (currentCount > 0) {
+                badge.textContent = currentCount;
+              } else {
+                badge.style.display = 'none';
+              }
+            }
+          }, 200);
         }
       }
 

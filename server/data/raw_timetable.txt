@@ -1,0 +1,1634 @@
+========================================================================================================================
+                              AFRICA UNIVERSITY
+                         COMPLETE ACADEMIC TIMETABLE
+                            JANUARY - JUNE 2026
+========================================================================================================================
+
+DOCUMENT INFORMATION:
+  - Total Schedule Entries: 895
+  - Colleges Covered: 7
+  - Programs Covered: 49
+  - Unique Courses: 307
+  - Lecturers: 178
+  - Venues: 54
+
+========================================================================================================================
+
+========================================================================================================================
+COLLEGE: CBMS
+Total Entries: 188 | Programs: 11 | Courses: 71
+========================================================================================================================
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BBS Honours in Management
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       2-3          Old Library 1/2           Dr R. Makoni
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Tuesday      8-10         Old Library 1/2           Dr R. Makoni
+  MGT1202         Maths for Business II                         A        Wednesday    2-4          REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Mr T. Makambwa
+  MGT1202         Maths for Business II                         A        Monday       12-1         REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Mr T. Makambwa
+  NMKT102         Marketing Principles                          A        Monday       3-4          Old Library 1/2           Mr. T. Nemaunga
+  NMKT102         Marketing Principles                          A        Thursday     10-12        DANRF38 1/2               Mr. T. Nemaunga
+  MGT1201         Management Theory and Practice 1              A        Tuesday      12-1         ICT General Purpose Lab   Mr T. Nemaunga
+  MGT1201         Management Theory and Practice 1              A        Thursday     2-4          Old Library 1/2           Mr T. Nemaunga
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMMS206         Management Theory and Practice 1              A        Tuesday      12-1         ICT General Purpose Lab   Mr T. Nemaunga
+  NMMS206         Management Theory and Practice 1              A        Thursday     2-4          Old Library 1/2           Mr T. Nemaunga
+  NMMS210         Company Law and Practice                      A        Wednesday    11-1         ICT General Purpose Lab   Dr S Phiri
+  NMMS210         Company Law and Practice                      A        Wednesday    9-10         ICT General Purpose Lab   Dr S Phiri
+  NMAC204         Business Finance/Corporate Finance            A        Thursday     12-1         AEG4                      Mr R Chihohwa
+  NMAC204         Business Finance/Corporate Finance            A        Friday       2-4          AEG4                      Mr R Chihohwa
+  NMMS211         Change Management                             A        Tuesday      10-12        ICT General Purpose Lab   Dr F. Chigora
+  NMMS211         Change Management                             A        Monday       12-1         ICT General Purpose Lab   Dr F. Chigora
+  NTEV200         Ethics and Christian Values                   A        Wednesday    2-4          TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       12-1         TMLT                      Dr. N. Chikwanha
+  NMMS201         Organizational Behaviour                      A        Monday       3-4          DHSG20                    Dr S Bigirimana
+  NMMS201         Organizational Behaviour                      A        Thursday     10-12        DANRG36                   Dr S Bigirimana
+  NMMS203         Business/Commercial Law                       A        Friday       8-9          DHSG20                    Mr. C. Munguma
+  NMMS203         Business/Commercial Law                       A        Monday       10-12        Old Library 1/2           Mr. C. Munguma
+  NMMS302         Human Resource Management                     A        Tuesday      8-10         ICT Smart Classroom 4     Dr. T. Nyikadzino
+  NMMS302         Human Resource Management                     A        Monday       8-9          ICT Smart Classroom 4     Dr. T. Nyikadzino
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMMS413         Business Ethics and Corporate Governance      A        Friday       11-1         AEG4                      Dr. S. Bigirimana
+  NMMS413         Business Ethics and Corporate Governance      A        Tuesday      2-3          AEG4                      Dr. S. Bigirimana
+  NMMS409         Operations Research                           A        Friday       10-11        ICT Smart Classroom 4     Mr. G. Mawocha
+  NMMS409         Operations Research                           A        Thursday     11-1         ICT Smart Classroom 3     Mr. G. Mawocha
+  NMMS411         Strategic Management                          A        Monday       9-11         ICT Smart Classroom 2     Dr. S. Bigirimana
+  NMMS411         Strategic Management                          A        Friday       3-4          ICT Smart Classroom 4     Dr. S. Bigirimana
+  NMMS401         Entrepreneurship and Small Business Management A        Tuesday      8-10         DANRF38 1/2               Dr T. Masese
+  NMMS401         Entrepreneurship and Small Business Management A        Thursday     2-3          DANRF38 1/2               Dr T. Masese
+  NMKT401         Marketing Management                          A        Friday       8-9          ICT Smart Classroom 3     Mr T. Nemaunga
+  NMKT401         Marketing Management                          A        Wednesday    9-11         ICT Mai Mugabe Lab        Mr T. Nemaunga
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BBS Honours in Marketing
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMKT209         Marketing Information Systems                 A        Monday       10-12        DHSF24                    Mrs J Muzamhindo
+  NMKT209         Marketing Information Systems                 A        Wednesday    11-12        DHSF24                    Mrs J Muzamhindo
+  NMKT211         Business To Business Marketing                A        Tuesday      8-10         DHSF23                    Dr F. Chigora
+  NMKT211         Business To Business Marketing                A        Thursday     2-3          DHSF23                    Dr F. Chigora
+  NMKT212         Brand Management                              A        Friday       2-4          DHSF23                    Dr F. Chigora
+  NMKT212         Brand Management                              A        Thursday     9-10         DHSF24                    Dr F. Chigora
+  NMKT303         Promotions and Advertising                    A        Monday       8-9          DANRG35                   Mr T. Nemaunga
+  NMKT303         Promotions and Advertising                    A        Wednesday    9-10         DANRG36                   Mr T. Nemaunga
+  NTEV200         Ethics and Christian Values                   A        Wednesday    2-4          TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       12-1         TMLT                      Dr. N. Chikwanha
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Honours in Economics
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMEC204         Intermediate Macroeconomics                   A        Monday       2-4          DHSF21                    Dr T. Masese
+  NMEC204         Intermediate Macroeconomics                   A        Tuesday      12-1         DANRG35                   Dr T. Masese
+  NMEC405         Monetary Economics                            A        Friday       11-1         DANRG35                   Mr. G. Mandewo
+  NMEC405         Monetary Economics                            A        Wednesday    12-1         DANRG35                   Mr. G. Mandewo
+  NMEC209         Computer and Statistical Analysis             A        Monday       11-1         DANRG35                   Mr. G. Mandewo
+  NMEC209         Computer and Statistical Analysis             A        Tuesday      8-9          DANRG35                   Mr. G. Mandewo
+  NMEC303         Introduction to Econometrics                  A        Thursday     12-1         DANRG35                   Mr. G. Mandewo
+  NMEC303         Introduction to Econometrics                  A        Monday       8-9          DHSF21                    Mr. G. Mandewo
+  NTEV200         Ethics and Christian Values                   A        Wednesday    2-4          TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       12-1         TMLT                      Dr. N. Chikwanha
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMEC408         International Economics                       A        Wednesday    9-10         DHSF24                    Dr T. Masese
+  NMEC408         International Economics                       A        Wednesday    2-4          DHSF24                    Dr T. Masese
+  NMEC407         Econometrics II                               A        Friday       8-10         DHSF24                    Mr G. Mandewo
+  NMEC407         Econometrics II                               A        Thursday     10-11        DHSF24                    Mr G. Mandewo
+  NMEC404         Resource and Environmental Economics          A        Monday       12-1         DHSF24                    Mr G. Mandewo
+  NMEC404         Resource and Environmental Economics          A        Thursday     9-11         DHSF23                    Mr G. Mandewo
+  NMEC406         Advanced Macroeconomic Theory                 A        Tuesday      11-1         DHSF24                    Mr G. Mandewo
+  NMEC406         Advanced Macroeconomic Theory                 A        Friday       2-4          DHSF24                    Mr G. Mandewo
+  NMMS401         Entrepreneurship and Small Business Management A        Tuesday      8-10         DHSF24                    Dr T. Masese
+  NMMS401         Entrepreneurship and Small Business Management A        Thursday     2-3          DHSF24                    Dr T. Masese
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Honours in Human Resources Management
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHRM402         Human Resources Development                   A        Thursday     12-1         DHSF24                    Ms Bvakacha
+  NHRM402         Human Resources Development                   A        Monday       8-9          DHSF24                    Ms Bvakacha
+  NHRM403         Employee Mentoring and Talent Management      A        Monday       11-1         DHSF23                    Mrs E Bere
+  NHRM403         Employee Mentoring and Talent Management      A        Tuesday      12-1         DHSF23                    Mrs E Bere
+  NHRM405         Performance Management                        A        Wednesday    12-1         DHSF23                    Dr K. Maregere
+  NHRM405         Performance Management                        A        Friday       9-11         DHSF23                    Dr K. Maregere
+  NHRM404         Payroll and Reward Management                 A        Wednesday    10-11        DHSF23                    Ms Bvakacha
+  NHRM404         Payroll and Reward Management                 A        Friday       8-9          DHSF23                    Ms Bvakacha
+  NMMS411         Strategic Management                          A        Monday       9-11         ICT Smart Classroom 2     Dr. S. Bigirimana
+  NMMS411         Strategic Management                          A        Friday       3-4          ICT Smart Classroom 4     Dr. S. Bigirimana
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Honours in Public Administration
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       2-3          Old Library 1/2           Dr R. Makoni
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Tuesday      8-10         Old Library 1/2           Dr R. Makoni
+  PBL1202         Constitutional law                            A        Thursday     2-3          ICT Smart Classroom 2     Mrs. T. Magwagwa
+  PBL1202         Constitutional law                            A        Thursday     8-9          ICT Smart Classroom 2     Mrs. T. Magwagwa
+  PAM1101         Fundamentals of Public Finance                A        Monday       3-4          ICT Smart Classroom 2     Dr. K. Maregere
+  PAM1201         Fundamentals of Public Finance                A        Tuesday      11-1         ICT Smart Classroom 3     Dr. K. Maregere
+  PAM1202         Administrative Principles and Ethics          A        Tuesday      2-4          ICT Smart Classroom 2     Mrs. E. Bere
+  PAM1202         Administrative Principles and Ethics          A        Monday       8-10         ICT Genaral Purpose Lab   Mrs. E. Bere
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMPM218         Public Sector Development and Management      A        Monday       12-1         DOTSR 1/2                 Dr K Maregere
+  NMPM218         Public Sector Development and Management      A        Wednesday    12-1         DOTG16                    Dr K Maregere
+  NMPM210         Strategic Planning and Management in the Public Sector A        Friday       9-11         DOTG16                    Dr K Maregere
+  NMPM210         Strategic Planning and Management in the Public Sector A        Wednesday    9-11         DANRF38 1/2               Dr K Maregere
+  NMPM225         International Organizations                   A        Friday       11-1         DANRG36                   Mrs E. Bere
+  NMPM225         International Organizations                   A        Thursday     8-9          DHSG20                    Mrs E. Bere
+  NMPM227         Public Enterprise Management                  A        Friday       3-4          DHSF20                    Mrs E. Bere
+  NMPM227         Public Enterprise Management                  A        Tuesday      11-12        DANRF38 1/2               Mrs E. Bere
+  NTEV200         Ethics and Christian Values                   A        Wednesday    2-4          TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       12-1         TMLT                      Dr. N. Chikwanha
+  NMMS302         Human Resource Management                     A        Tuesday      8-10         ICT Smart Classroom 4     Dr. T. Nyikadzino
+  NMMS302         Human Resource Management                     A        Monday       8-9          ICT Smart Classroom 4     Dr. T. Nyikadzino
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMPM321         Project Planning and Management               A        Friday       8-9          DANRG35                   Mrs E. Bere
+  NMPM321         Project Planning and Management               A        Wednesday    9-11         DANRG35                   Mrs E. Bere
+  NMPM319         Organisational Development and Change Management A        Friday       10-11        DANRG35                   Mrs E. Bere
+  NMPM319         Organisational Development and Change Management A        Thursday     11-1         DANRG36                   Mrs E. Bere
+  NMPM413         Public Sector Corporate Governance            A        Friday       11-1         AEG4                      Dr S Bigirimana
+  NMPM413         Public Sector Corporate Governance            A        Tuesday      2-3          AEG4                      Dr S Bigirimana
+  NMPM320         Public Sector Finance and Budgeting           A        Monday       12-1         DANRG35                   Dr N Chirima
+  NMPM320         Public Sector Finance and Budgeting           A        Wednesday    2-3          AEG5                      Dr N Chirima
+  NMPM309         E-governance                                  A        Wednesday    10-11        DANRG36                   Mr J Chinzvende
+  NMPM309         E-governance                                  A        Thursday     8-10         DANRG35                   Mr J Chinzvende
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Accounting (Honours)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       2-3          Old Library 1/2           Dr R. Makoni
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Tuesday      8-10         Old Library 1/2           Dr R. Makoni
+  ACC1201         Foundations of Accounting II                  A        Tuesday      2-4          AEG4                      Dr N. Chirima
+  ACC1201         Foundations of Accounting II                  A        Thursday     10-11        Old Library 1/2           Dr N. Chirima
+  ECO1201         Macroeconomic Principles                      A        Monday       12-1         Old Library 1/2           Dr T Masese
+  ECO1201         Macroeconomic Principles                      A        Thursday     8-10         Old Library 1/2           Dr T Masese
+  ACC1203         Accounting Information Systems                A        Tuesday      11-1         Old Library 1/2           Mr R. Chihowa
+  ACC1203         Accounting Information Systems                A        Monday       8-9          Old Library 1/2           Mr R. Chihowa
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMAC203         Intermediate Accounting II                    A        Monday       9-11         ICT Smart Classroom 4     Mr R. Chihowa
+  NMAC203         Intermediate Accounting II                    A        Wednesday    9-10         ICT Smart Classroom 4     Mr R Chihowa
+  NMAC204         Business Finance/Corporate Finance            A        Thursday     12-1         AEG4                      Mr R Chihowa
+  NMAC204         Business Finance/Corporate Finance            A        Friday       2-4          AEG4                      Mr R Chihowa
+  NMAC205         Company Law                                   A        Thursday     8-10         ICT Smart Classroom 4     Dr S Phiri
+  NMAC205         Company Law                                   A        Monday       12-1         ICT Smart Classroom 4     Dr S Phiri
+  NMAC209         Audit Process                                 A        Thursday     2-4          ICT Smart Classroom 4     Dr N Chirima
+  NMAC209         Audit Process                                 A        Monday       2-3          ICT Smart Classroom 2     Dr N Chirima
+  NTEV200         Ethics and Christian Values                   A        Wednesday    2-4          TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       12-1         TMLT                      Dr. N. Chikwanha
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NMAC408         Advanced Auditing, Theory and Practice        A        Monday       9-11         ICT Smart Classroom 3     Dr N. Chirima
+  NMAC408         Advanced Auditing, Theory and Practice        A        Wednesday    9-10         ICT Smart Classroom 3     Dr N. Chirima
+  NMAC402         Tax and Law Practice                          A        Thursday     8-10         ICT Smart Classroom 3     Dr. P. Korera
+  NMAC402         Tax and Law Practice                          A        Tuesday      2-3          ICT Smart Classroom 3     Dr. P. Korera
+  NMAC307         Strategic Management Accounting               A        Wednesday    11-12        ICT Smart Classroom 3     Dr. P. Korera
+  NMAC307         Strategic Management Accounting               A        Friday       2-4          ICT Smart Classroom 3     Dr. P. Korera
+  NMAC411         Advanced Financial Accounting                 A        Tuesday      8-10         ICT Smart Classroom 3     Mr R Chihowa
+  NMAC411         Advanced Financial Accounting                 A        Thursday     2-3          ICT Smart Classroom 3     Mr R Chihowa
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Executive Master in Business Administration (Global)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MBA5201         Project Analysis & Management                 A        Monday       6pm-7pm      Online/Evening            Prof S. Murairwa
+  MBA5201         Project Analysis & Management                 A        Wednesday    5pm-6pm      Online/Evening            Prof S. Murairwa
+  MBA5202         Human Resource Management & Industrial Relations A        Tuesday      5pm-7pm      Online/Evening            Dr. F Tsvangirai
+  MBA5202         Human Resource Management & Industrial Relations A        Monday       7pm-8pm      Online/Evening            Dr. F Tsvangirai
+  MBA5203         Production and Operations Management          A        Tuesday      7pm-8pm      Online/Evening            Dr. G. Muridzi
+  MBA5203         Production and Operations Management          A        Friday       5pm-6pm      Online/Evening            Dr. G. Muridzi
+  MBA5204         Marketing Management                          A        Monday       4pm-6pm      Online/Evening            Dr F. Chigora
+  MBA5204         Marketing Management                          A        Wednesday    7pm-8pm      Online/Evening            Dr F. Chigora
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: MSc Entrepreneurship, Innovation and Creativity (Conventional)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MEC5201         Innovation, Creativity and Technological Change A        Monday       9-11         IPLG3                     Dr S Bigirimana
+  MEC5201         Innovation, Creativity and Technological Change A        Wednesday    12-1         IPLG3                     Dr S Bigirimana
+  MEC5203         Corporate Governance and Entrepreneurial Ethics A        Monday       12-1         IPLG3                     Dr S Bigirimana
+  MEC5203         Corporate Governance and Entrepreneurial Ethics A        Friday       8-9          IPLG3                     Dr S Bigirimana
+  MEC5202         Entrepreneurship Capstone Project             A        Thursday     10-12        IPLG3                     Dr F Chigora
+  MEC5202         Entrepreneurship Capstone Project             A        Friday       3-4          IPLG3                     Dr F Chigora
+  MEC5204         Business/Project Decision Management          A        Wednesday    3-4          IPLG3                     Dr T Masese
+  MEC5204         Business/Project Decision Management          A        Friday       11-1         IPLG3                     Dr T Masese
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: MSc Entrepreneurship, Innovation and Creativity (Global)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MEC5201         Innovation, Creativity and Technological Change A        Monday       4pm-6pm      Online/Evening            Dr S Bigirimana
+  MEC5201         Innovation, Creativity and Technological Change A        Thursday     5pm-7pm      Online/Evening            Dr S Bigirimana
+  MEC5203         Corporate Governance and Entrepreneurial Ethics A        Wednesday    5pm-6pm      Online/Evening            Dr S Bigirimana
+  MEC5203         Corporate Governance and Entrepreneurial Ethics A        Tuesday      5pm-7pm      Online/Evening            Dr S Bigirimana
+  MEC5202         Entrepreneurship Capstone Project             A        Monday       7pm-8pm      Online/Evening            Dr F Chigora
+  MEC5202         Entrepreneurship Capstone Project             A        Friday       7pm-8pm      Online/Evening            Dr F Chigora
+  MEC5204         Business/Project Decision Management          A        Thursday     7pm-8pm      Online/Evening            Dr T Masese
+  MEC5204         Business/Project Decision Management          A        Tuesday      7pm-8pm      Online/Evening            Dr T Masese
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master in Public Policy and Governance (Conventional)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MPP5204         Foundations of Development Policy             A        Tuesday      10-12        IPLG 1/2                  Prof P Machakanja
+  MPP5204         Foundations of Development Policy             A        Tuesday      2-3          IPLG 1/2                  Prof P Machakanja
+  MPP5203         Local Governance and Policy Development       A        Wednesday    2-3          IPLG 1/2                  Dr K Maregere
+  MPP5203         Local Governance and Policy Development       A        Wednesday    3-4          IPLG 1/2                  Dr K Maregere
+  MPP5202         Economic Analysis and Public Policy           A        Thursday     2-4          IPLG 1/2                  Dr Mutongoreni
+  MPP5202         Economic Analysis and Public Policy           A        Wednesday    9-10         IPLG 1/2                  Dr Mutongoreni
+  MPP5201         Public Policy Analysis                        A        Thursday     12-1         IPLG 1/2                  Prof P Machakanja
+  MPP5201         Public Policy Analysis                        A        Friday       9-11         IPLG 1/2                  Prof P Machakanja
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master in Public Policy and Governance (Global)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MPP5204         Foundations of Development Policy             A        Monday       5pm-7pm      Online/Evening            Dr D Makwerere
+  MPP5204         Foundations of Development Policy             A        Wednesday    5pm-6pm      Online/Evening            Dr D Makwerere
+  MPP5203         Local Governance and Policy Development       A        Tuesday      5pm-7pm      Online/Evening            Dr A. Gwiza
+  MPP5203         Local Governance and Policy Development       A        Monday       7pm-8pm      Online/Evening            Dr A. Gwiza
+  MPP5202         Economic Analysis and Public Policy           A        Friday       7pm-8pm      Online/Evening            Dr A. Gwiza
+  MPP5202         Economic Analysis and Public Policy           A        Thursday     5pm-7pm      Online/Evening            Dr A. Gwiza
+  MPP5201         Public Policy Analysis                        A        Tuesday      7pm-8pm      Online/Evening            Dr T Nyikadzino
+  MPP5201         Public Policy Analysis                        A        Friday       5pm-6pm      Online/Evening            Dr T Nyikadzino
+
+
+========================================================================================================================
+COLLEGE: CEAS
+Total Entries: 128 | Programs: 4 | Courses: 29
+========================================================================================================================
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Honours in Artificial Intelligence
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    12-1         TMLT                      Dr. M. Kayembe
+  HUM1202         French for Beginners II                       A        Friday       9-11         TMLT                      Dr. M. Kayembe
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       2-3          Old Library 1/2           Dr R. Makoni
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Tuesday      8-10         Old Library 1/2           Dr R. Makoni
+  AIN1201         Human AI Interactions                         A        Tuesday      9-11         AEG4                      Mr. Joseph Chinzvende
+  AIN1201         Human AI Interactions                         A        Thursday     2-4          AEG4                      Mr. Joseph Chinzvende
+  CIS1215         Object Oriented Programming                   A        Thursday     9-11         ICT General Purpose Lab   Mr. L. Dhlakama
+  CIS1215         Object Oriented Programming                   A        Monday       3-4          ICT General Purpose Lab   Mr. L. Dhlakama
+  CSC1201         Technical Communication                       A        Tuesday      10-12        TMLT                      Mr. Makambwa
+  CSC1201         Technical Communication                       A        Thursday     11-12        Old Library 1/2           Mr. Makambwa
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NCSC312         Operating Systems                             A        Monday       8-10         ICT Mai Mugabe Lab        Mr. Makambwa
+  NCSC312         Operating Systems                             A        Tuesday      3-4          ICT Mai Mugabe Lab        Mr. Makambwa
+  NHAI210         Design of Cyber-Physical Systems              A        Thursday     11-1         ICT Mai Mugabe Lab        Mr D Nday
+  NHAI210         Design of Cyber-Physical Systems              A        Wednesday    2-3          ICT General Purpose Lab   Mr D Nday
+  NCSE303         Software Project Management                   A        Tuesday      8-10         ICT Mai Mugabe Lab        Ms. Elizabeth Mafu
+  NCSE303         Software Project Management                   A        Thursday     2-3          ICT Mai Mugabe Lab        Ms. Elizabeth Mafu
+  NCIS210         Group Project                                 A        Monday       2-4          ICT Mai Mugabe Lab        Mr. Joseph Chinzvende
+  NCIS210         Group Project                                 A        Thursday     9-10         ICT Mai Mugabe Lab        Mr. Joseph Chinzvende
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         DHSG19                    Rev. N. Bondo
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Rev. N. Bondo
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Honours in Computer Information Systems
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    12-1         TMLT                      Dr. M. Kayembe
+  HUM1202         French for Beginners II                       A        Friday       9-11         TMLT                      Dr. M. Kayembe
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       2-3          Old Library 1/2           Dr R. Makoni
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Tuesday      8-10         Old Library 1/2           Dr R. Makoni
+  CIS1204         Object Oriented Programming                   A        Thursday     9-11         ICT General Purpose Lab   Mr. L. Dhlakama
+  CIS1204         Object Oriented Programming                   A        Monday       3-4          ICT General Purpose Lab   Mr. L. Dhlakama
+  CIS1202         Software Engineering                          A        Monday       9-11         AEG4                      Prof Yogesh Awasthi
+  CIS1202         Software Engineering                          A        Tuesday      2-3          AEG4                      Prof Yogesh Awasthi
+  CSC103          Calculus                                      A        Thursday     2-4          ICT General Purpose Lab   Mr. Makambwa
+  CSC103          Calculus                                      A        Friday       8-9          AEG5                      Mr. Makambwa
+  CSC1201         Technical Communication                       A        Tuesday      10-12        TMLT                      Mr. Makambwa
+  CSC1201         Technical Communication                       A        Thursday     11-12        Old Library 1/2           Mr. Makambwa
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NCIS210         Group Project                                 A        Monday       2-4          ICT Mai Mugabe Lab        Mr. Joseph Chinzvende
+  NCIS210         Group Project                                 A        Thursday     9-10         ICT Mai Mugabe Lab        Mr. Joseph Chinzvende
+  NCSC312         Network Security                              A        Wednesday    11-1         ICT Smart Classroom 4     Dr. Tendai Zengeni
+  NCSC312         Network Security                              A        Tuesday      2-3          ICT Mai Mugabe Lab        Dr. Tendai Zengeni
+  NCSC211         Operating Systems                             A        Monday       8-10         ICT Mai Mugabe Lab        Mr. Makambwa
+  NCSC211         Operating Systems                             A        Tuesday      3-4          ICT Mai Mugabe Lab        Mr. Makambwa
+  NCSC209         Software Project Management                   A        Tuesday      8-10         ICT Mai Mugabe Lab        Ms. Elizabeth Mafu
+  NCSC209         Software Project Management                   A        Thursday     2-3          ICT Mai Mugabe Lab        Ms. Elizabeth Mafu
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         DHSG19                    Rev. N. Bondo
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Rev. N. Bondo
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NCIS403         Web Application Development                   A        Monday       8-10         ICT Smart Classroom 1     Ms. Elizabeth Mafu
+  NCIS403         Web Application Development                   A        Thursday     12-1         ICT Smart Classroom 1     Ms. Elizabeth Mafu
+  NCSC303         Human Computer Interactions                   A        Tuesday      9-11         ICT Smart Classroom 1     Mr. Joseph Chinzvende
+  NCSC303         Human Computer Interactions                   A        Friday       8-9          ICT Smart Classroom 1     Mr. Joseph Chinzvende
+  NCIS404         Capstone Project                              A        Tuesday      11-1         AEG4                      Mr. Lorence Dhlakama
+  NCIS404         Capstone Project                              A        Wednesday    3-4          AEG4                      Mr. Lorence Dhlakama
+  NCSC301         Artificial Intelligence                       A        Wednesday    10-12        IPLG Lab                  Mr. Lorence Dhlakama
+  NCSC301         Artificial Intelligence                       A        Thursday     8-9          ICT General Purpose Lab   Mr. Lorence Dhlakama
+  NCIS408         Management Information Systems                A        Monday       10-12        ICT Smart Classroom 1     Mr. Makambwa
+  NCIS408         Management Information Systems                A        Wednesday    12-1         ICT Smart Classroom 1     Mr. Makambwa
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Honours in Computer Sciences
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    12-1         TMLT                      Dr. M. Kayembe
+  HUM1202         French for Beginners II                       A        Friday       9-11         TMLT                      Dr. M. Kayembe
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       2-3          Old Library 1/2           Dr R. Makoni
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Tuesday      8-10         Old Library 1/2           Dr R. Makoni
+  CIS1204         Object Oriented Programming                   A        Thursday     9-11         ICT General Purpose Lab   Mr. L. Dhlakama
+  CIS1204         Object Oriented Programming                   A        Monday       3-4          ICT General Purpose Lab   Mr. L. Dhlakama
+  CIS1201         Software Engineering                          A        Monday       9-11         AEG4                      Prof Yogesh Awasthi
+  CIS1201         Software Engineering                          A        Tuesday      2-3          AEG4                      Prof Yogesh Awasthi
+  CSC1201         Technical Communication                       A        Tuesday      10-12        TMLT                      Mr. Makambwa
+  CSC1201         Technical Communication                       A        Thursday     11-12        Old Library 1/2           Mr. Makambwa
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NCSC211         Operating Systems                             A        Monday       8-10         ICT Mai Mugabe Lab        Mr. Makambwa
+  NCSC211         Operating Systems                             A        Tuesday      3-4          ICT Mai Mugabe Lab        Mr. Makambwa
+  NCSC312         Network Security                              A        Wednesday    11-1         ICT Smart Classroom 4     Dr. Tendai Zengeni
+  NCSC312         Network Security                              A        Tuesday      2-3          ICT Mai Mugabe Lab        Dr. Tendai Zengeni
+  NCIS210         Group Project                                 A        Monday       2-4          ICT Mai Mugabe Lab        Mr. Joseph Chinzvende
+  NCIS210         Group Project                                 A        Thursday     9-10         ICT Mai Mugabe Lab        Mr. Joseph Chinzvende
+  NCSC303         Human Computer Interactions                   A        Tuesday      9-11         ICT Smart Classroom 1     Mr. Joseph Chinzvende
+  NCSC303         Human Computer Interactions                   A        Friday       8-9          ICT Smart Classroom 1     Mr. Joseph Chinzvende
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         DHSG19                    Rev. N. Bondo
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Rev. N. Bondo
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NCSC411         Data Structures and Algorithms                A        Wednesday    9-11         ICT Smart Classroom 2     Mr D Nday
+  NCSC411         Data Structures and Algorithms                A        Thursday     8-9          ICT Mai Mugabe Lab        Mr D Nday
+  NCSC301         Simulation and Modelling                      A        Thursday     10-12        ICT Smart Classroom 2     Dr. Tendai Zengeni
+  NCSC301         Simulation and Modelling                      A        Wednesday    2-3          ICT Smart Classroom 2     Dr. Tendai Zengeni
+  NCIS404         Capstone Project                              A        Tuesday      11-1         AEG4                      Mr. Lorence Dhlakama
+  NCIS404         Capstone Project                              A        Wednesday    3-4          AEG4                      Mr. Lorence Dhlakama
+  NCSC413         Software Engineering II                       A        Monday       2-4          ICT Smart Classroom 4     Ms. Elizabeth Mafu
+  NCSC413         Software Engineering II                       A        Thursday     9-10         ICT Smart Classroom 2     Ms. Elizabeth Mafu
+  NCIS403         Web Application Development                   A        Monday       8-10         ICT Smart Classroom 1     Ms. Elizabeth Mafu
+  NCIS403         Web Application Development                   A        Thursday     12-1         ICT Smart Classroom 1     Ms. Elizabeth Mafu
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Honours in Software Engineering
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    12-1         TMLT                      Dr. M. Kayembe
+  HUM1202         French for Beginners II                       A        Friday       9-11         TMLT                      Dr. M. Kayembe
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       2-3          Old Library 1/2           Dr R. Makoni
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Tuesday      8-10         Old Library 1/2           Dr R. Makoni
+  CIS1215         Object Oriented Programming                   A        Thursday     9-11         ICT General Purpose Lab   Mr. L. Dhlakama
+  CIS1215         Object Oriented Programming                   A        Monday       3-4          ICT General Purpose Lab   Mr. L. Dhlakama
+  SOE1201         Introduction to Software Engineering          A        Monday       9-11         AEG4                      Prof Yogesh Awasthi
+  SOE1201         Introduction to Software Engineering          A        Tuesday      2-3          AEG4                      Prof Yogesh Awasthi
+  CSC1201         Technical Communication                       A        Tuesday      10-12        TMLT                      Mr. Makambwa
+  CSC1201         Technical Communication                       A        Thursday     11-12        Old Library 1/2           Mr. Makambwa
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NCSC303         Human Computer Interactions                   A        Tuesday      9-11         ICT Smart Classroom 1     Mr. Joseph Chinzvende
+  NCSC303         Human Computer Interactions                   A        Friday       8-9          ICT Smart Classroom 1     Mr. Joseph Chinzvende
+  NCSC211         Operating Systems                             A        Monday       8-10         ICT Mai Mugabe Lab        Mr. Makambwa
+  NCSC211         Operating Systems                             A        Tuesday      3-4          ICT Mai Mugabe Lab        Mr. Makambwa
+  NCIS210         Group Project                                 A        Monday       2-4          ICT Mai Mugabe Lab        Mr. Joseph Chinzvende
+  NCIS210         Group Project                                 A        Thursday     9-10         ICT Mai Mugabe Lab        Mr. Joseph Chinzvende
+  NCSC312         Network Security                              A        Wednesday    11-1         ICT Smart Classroom 4     Dr. Tendai Zengeni
+  NCSC312         Network Security                              A        Tuesday      2-3          ICT Mai Mugabe Lab        Dr. Tendai Zengeni
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         DHSG19                    Rev. N. Bondo
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Rev. N. Bondo
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NCSE401         Software Evolution and Re-Engineering         A        Tuesday      11-1         ICT Smart Classroom 1     Ms. Elizabeth Mafu
+  NCSE401         Software Evolution and Re-Engineering         A        Thursday     8-9          ICT Smart Classroom 1     Ms. Elizabeth Mafu
+  NCIS404         Capstone Project                              A        Tuesday      11-1         AEG4                      Mr. Lorence Dhlakama
+  NCIS404         Capstone Project                              A        Wednesday    3-4          AEG4                      Mr. Lorence Dhlakama
+  NCSE411         Cloud Infrastructure and Services             A        Friday       9-11         ICT Smart Classroom 2     Mr L Dhlakama
+  NCSE411         Cloud Infrastructure and Services             A        Monday       11-12        ICT Smart Classroom 2     Mr L Dhlakama
+  NCSE412         Data Mining and Business Intelligence         A        Monday       9-11         AEG5                      Mr. Joseph Chinzvende
+  NCSE412         Data Mining and Business Intelligence         A        Wednesday    9-10         AEG5                      Mr. Joseph Chinzvende
+  NCSC301         Simulation and Modelling                      A        Thursday     10-12        ICT Smart Classroom 2     Dr. Tendai Zengeni
+  NCSC301         Simulation and Modelling                      A        Wednesday    2-3          ICT Smart Classroom 2     Dr. Tendai Zengeni
+
+
+========================================================================================================================
+COLLEGE: CHANS
+Total Entries: 219 | Programs: 11 | Courses: 89
+========================================================================================================================
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Agribusiness Management
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT                      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  AGM1203         Rural Development                             A        Monday       9-11         Lecture Theatre 1         Ms. B. Bolo
+  AGM1203         Rural Development                             A        Tuesday      2-4          Soil Science lab          Ms. B. Bolo
+  AGM1202         Entrepreneurship and Business Development in Africa A        Thursday     10-12        Lecture Theatre 1         Dr. J. Mutambara
+  AGM1202         Entrepreneurship and Business Development in Africa A        Thursday     2-4          Crop Science Lab          Dr. J. Mutambara
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NAEC401         Farm Management and Farm Planning             A        Thursday     8-9          Lecture Theatre 1         Dr. S. Tatsvarei
+  NAEC401         Farm Management and Farm Planning             A        Friday       3-4          Lecture Theatre 1         Dr. S. Tatsvarei
+  NAEC403         Production Economics                          A        Wednesday    2-4          Lecture Theatre 1         Dr. S. Tatsvarei
+  NAEC403         Production Economics                          A        Thursday     12-1         Lecture Theatre 1         Dr. S. Tatsvarei
+  NAEC405         Agribusiness Strategy                         A        Monday       11-1         Lecture Theatre 1         Dr. J. Mutambara
+  NAEC405         Agribusiness Strategy                         A        Tuesday      10-11        Lecture Theatre 1         Dr. J. Mutambara
+  NAEC212         Agricultural Education and Extension          A        Wednesday    11-1         Lecture Theatre 2         Dr. S. Chakeredza
+  NAEC212         Agricultural Education and Extension          A        Monday       12-1         Lecture Theatre 2         Dr. S. Chakeredza
+  NAEC407         Entrepreneurship and Small Business Development in Agriculture A        Tuesday      3-4          Lecture Theatre 2         Dr. J. Mutambara
+  NAEC407         Entrepreneurship and Small Business Development in Agriculture A        Friday       8-9          Lecture Theatre 2         Dr. J. Mutambara
+  NMMS302         Human Resource Management                     A        Tuesday      8-10         ICT Smart Classroom 4     Dr. T. Nyikadzino
+  NMMS302         Human Resource Management                     A        Monday       8-9          ICT Smart Classroom 4     Dr. T. Nyikadzino
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Agriculture and Natural Resources - Animal Science
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         DHSG19                    Rev. N. Bondo
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Rev. N. Bondo
+  NAAS127         Microbiology and Parasitology                 A        Tuesday      8-9          Lecture Theatre 1         Dr. Chikwanda
+  NAAS127         Microbiology and Parasitology                 A        Wednesday    9-12         Crop Science Lab          Dr. Chikwanda
+  NESN205         Remote Sensing and GIS                        A        Monday       2-4          Lecture Theatre 1         Ms. B. Bolo
+  NESN205         Remote Sensing and GIS                        A        Thursday     2-4          AEG5                      Ms. B. Bolo
+  NACP214         Research Methods                              A        Tuesday      11-1         Lecture Theatre 2         Dr. S. Chakeredza
+  NACP214         Research Methods                              A        Thursday     10-12        Lecture Theatre 2         Dr. S. Chakeredza
+  NACP213         Principles of Crop Production                 A        Monday       8-9          Lecture Theatre 2         Prof. W. Ngezimana
+  NACP213         Principles of Crop Production                 A        Tuesday      9-11         Lecture Theatre 1         Prof. W. Ngezimana
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NAEC401         Farm Management and Farm Planning             A        Thursday     8-9          Lecture Theatre 1         Dr. S. Tatsvarei
+  NAEC401         Farm Management and Farm Planning             A        Friday       2-3          Lecture Theatre 1         Dr. S. Tatsvarei
+  NAAS417         Dairy Management                              A        Monday       9-11         Lecture Theatre 2         Dr. D. Chikwanda
+  NAAS417         Dairy Management                              A        Tuesday      11-1         Animal Science Lab        Dr. D. Chikwanda
+  NAAS310         Beef and Small Ruminants Production           A        Wednesday    11-12        Lecture Theatre 2         Dr. S. Chakeredza
+  NAAS310         Beef and Small Ruminants Production           A        Tuesday      2-4          Animal Science Lab        Dr. S. Chakeredza
+  NAEC212         Agricultural Education and Extension          A        Monday       2-4          Lecture Theatre 2         Dr. S. Chakeredza
+  NAEC212         Agricultural Education and Extension          A        Wednesday    9-11         Lecture Theatre 2         Dr. S. Chakeredza
+  NAEC407         Entrepreneurship and Small Business Development in Agriculture A        Tuesday      3-4          Lecture Theatre 2         Dr. J. Mutambara
+  NAEC407         Entrepreneurship and Small Business Development in Agriculture A        Friday       8-9          Lecture Theatre 2         Dr. J. Mutambara
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Agriculture and Natural Resources - Crop Production
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         DHSG19                    Rev. N. Bondo
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Rev. N. Bondo
+  NACP211         Crop Physiology                               A        Wednesday    2-4          DANRG35                   Mr. N. Banalya
+  NACP211         Crop Physiology                               A        Monday       2-3          Crop Science Lab          Mr. N. Banalya
+  NACP209         Soil Fertility and Plant Nutrition            A        Monday       11-12        Lecture Theatre 2         Dr. T. P. Tauro
+  NACP209         Soil Fertility and Plant Nutrition            A        Tuesday      2-4          Crop Science Lab          Dr. T. P. Tauro
+  NACP214         Research Methods                              A        Tuesday      11-1         Lecture Theatre 2         Dr. S. Chakeredza
+  NACP214         Research Methods                              A        Thursday     10-12        Lecture Theatre 2         Dr. S. Chakeredza
+  NACP213         Principles of Crop Production                 A        Monday       8-9          Lecture Theatre 2         Prof. W. Ngezimana
+  NACP213         Principles of Crop Production                 A        Tuesday      9-11         Lecture Theatre 1         Prof. W. Ngezimana
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NAHC304         Fruit Production                              A        Wednesday    9-10         Lecture Theatre 1         Prof. W. Ngezimana
+  NAHC304         Fruit Production                              A        Friday       2-4          Crop Science Lab          Prof. W. Ngezimana
+  NAAE402         Irrigation and Water Management               A        Friday       10-11        Lecture Theatre 1         Ms. M. Kurehwatira
+  NAAE402         Irrigation and Water Management               A        Thursday     12-1         Crop Science Lab          Ms. M. Kurehwatira
+  NACP404         Plant Pathology                               A        Monday       2-4          Lecture Theatre 2         Dr. K. Simango
+  NACP404         Plant Pathology                               A        Monday       8-9          Lecture Theatre 2         Dr. K. Simango
+  NACP406         Seed Science and Technology                   A        Thursday     2-4          Animal Science Lab        Dr. K. Simango
+  NACP406         Seed Science and Technology                   A        Thursday     8-10         Lecture Theatre 2         Dr. K. Simango
+  NAEC407         Entrepreneurship and Small Business Development in Agriculture A        Tuesday      3-4          Lecture Theatre 2         Dr. J. Mutambara
+  NAEC407         Entrepreneurship and Small Business Development in Agriculture A        Friday       8-9          Lecture Theatre 2         Dr. J. Mutambara
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Agriculture and Natural Resources - Natural Resources Management
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NESN308         Integrated Solid Waste Management             A        Monday       2-4          DANRG35                   Ms. M. Kurehwatira
+  NESN308         Integrated Solid Waste Management             A        Wednesday    11-12        DANRG35                   Ms. M. Kurehwatira
+  NESN305         Safety, Health and Environmental Management   A        Tuesday      11-1         Lecture Theatre 1         Eng. Dr. Sigauke
+  NESN305         Safety, Health and Environmental Management   A        Thursday     2-3          Lecture Theatre 1         Eng. Dr. Sigauke
+  NESN309         Environmental Policy and Natural Resources Management A        Friday       9-11         Lecture Theatre 2         Mr. G. Miti
+  NESN309         Environmental Policy and Natural Resources Management A        Thursday     3-4          Lecture Theatre 2         Mr. G. Miti
+  NESN307         Climate Change, Impacts, Response and Mitigation Strategies A        Monday       10-12        DANRG35                   Mr. G. Miti
+  NESN307         Climate Change, Impacts, Response and Mitigation Strategies A        Tuesday      9-10         DANRG35                   Mr. G. Miti
+  NAEC407         Entrepreneurship and Small Business Development in Agriculture A        Tuesday      3-4          Lecture Theatre 2         Dr. J. Mutambara
+  NAEC407         Entrepreneurship and Small Business Development in Agriculture A        Friday       8-9          Lecture Theatre 2         Dr. J. Mutambara
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: BSc Honours in Environmental Studies and Natural Resources Management
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    12-1         TMLT                      Dr. C. Kayembe
+  HUM1202         French for Beginners II                       A        Friday       9-11         TMLT                      Dr. C. Kayembe
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  NESN1201        Hydrology                                     A        Monday       2-4          DANRG36                   Ms. M. Kurehwatira
+  NESN1201        Hydrology                                     A        Thursday     2-3          DANRG35                   Ms. M. Kurehwatira
+  ESN1202         Ecological Biogeography                       A        Tuesday      11-12        DANRG35                   Dr. T. Tauro
+  ESN1202         Ecological Biogeography                       A        Monday       8-10         DANRG36                   Dr. T. Tauro
+  ESN1203         Research Methods in Environmental Sciences    A        Tuesday      2-3          Lecture Theatre 2         Dr. T. Tauro
+  ESN1203         Research Methods in Environmental Sciences    A        Friday       2-4          DANRG36                   Dr. T. Tauro
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         DHSG19                    Rev. N. Bondo
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Rev. N. Bondo
+  NESN205         Remote Sensing and GIS                        A        Monday       2-4          Lecture Theatre 1         Ms. B. Bolo
+  NESN205         Remote Sensing and GIS                        A        Thursday     2-4          DANRG35                   Ms. B. Bolo
+  NESN208         Renewable Energy                              A        Tuesday      3-4          DANRG36                   Eng. Dr. Sigauke
+  NESN208         Renewable Energy                              A        Thursday     8-10         DANRG36                   Eng. Dr. Sigauke
+  NESN206         Environmental Quality Management              A        Friday       9-11         AEG5                      Ms. M. Kurehwatira
+  NESN206         Environmental Quality Management              A        Tuesday      2-3          DANRG36                   Ms. M. Kurehwatira
+  NESN210         Environmental Justice and Equity              A        Wednesday    11-1         DANRG36                   Mr. G. Miti
+  NESN210         Environmental Justice and Equity              A        Monday       9-10         DANRG35                   Mr. G. Miti
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  ESN3205         Project Planning and Management               A        Tuesday      10-12        DANRG36                   Pro. J. Madzimure
+  ESN3205         Project Planning and Management               A        Wednesday    10-11        DANRG36                   Pro. J. Madzimure
+  NESN305         Safety, Health and Environmental Management   A        Tuesday      11-1         Lecture Theatre 1         Eng. Dr. Sigauke
+  NESN305         Safety, Health and Environmental Management   A        Thursday     2-3          Lecture Theatre 1         Eng. Dr. Sigauke
+  NESN307         Climate Change, Impacts, Responses and Mitigation A        Monday       10-12        DANRG36                   Mr. G. Miti
+  NESN307         Climate Change, Impacts, Responses and Mitigation A        Tuesday      3-4          Lecture Theatre 1         Mr. G. Miti
+  NESN308         Integrated Solid Waste Management             A        Monday       11-1         ICT Smart Classroom 3     Ms. M. Kurehwatira
+  NESN308         Integrated Solid Waste Management             A        Tuesday      3-4          DHSF20                    Ms. M. Kurehwatira
+  NESN309         Environmental Policy and Natural Resource Management A        Friday       9-11         Lecture Theatre 2         Mr. G. Miti
+  NESN309         Environmental Policy and Natural Resource Management A        Thursday     2-3          Lecture Theatre 2         Mr. G. Miti
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Health Services Management Honours
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HSM2102         Healthcare Quality Management                 A        Wednesday    2-4          DHSF23                    Mr.T.Dzvairo
+  HSM2102         Healthcare Quality Management                 A        Thursday     2-3          DHSF23                    Mr.T.Dzvairo
+  HSM2202         Family Health                                 A        Monday       2-4          DHSF23                    Dr.S.Chituku
+  HSM2202         Family Health                                 A        Thursday     9-10         DHSG20                    Dr.S.Chituku
+  HSM2205         Research Methods & Ethics in Health Care      A        Tuesday      8-9          DHSF20                    Mr.E.Chikaka
+  HSM2205         Research Methods & Ethics in Health Care      A        Wednesday    11-1         DHSF23                    Mr.E.Chikaka
+  HSM2104         Health Law                                    A        Tuesday      11-12        DHSF23                    Mr.C.Uzande
+  HSM2104         Health Law                                    A        Monday       11-1         DHSF23                    Mr.C.Uzande
+  NCIS102         Microcomputer applications                    A        Tuesday      2-4          DHSF24                    CEAS TBA
+  NCIS102         Microcomputer applications                    A        Monday       8-9          DHSF23                    CEAS TBA
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NSHA308         Healthcare Entrepreneurship                   A        Monday       9-10         DHSF24                    Mr.T.Dzvairo
+  NSHA308         Healthcare Entrepreneurship                   A        Thursday     8-9          DHSF21                    Mr.T.Dzvairo
+  NSHA307         Strategic Management in Healthcare            A        Tuesday      2-4          DHSF21                    Mr.T.Dzvairo
+  NSHA307         Strategic Management in Healthcare            A        Thursday     3-4          DHSF21                    Mr.T.Dzvairo
+  NSHS210         Environmental and Occupational Health         A        Tuesday      9-11         DHSF21                    Dr.T.Goto
+  NSHS210         Environmental and Occupational Health         A        Wednesday    12-1         DHSF24                    Dr.T.Goto
+  MGT1201         Management Theory and Practice I              A        Tuesday      12-1         DHSF20                    Dr Kapfunde
+  MGT1201         Management Theory and Practice I              A        Friday       9-11         DHSF20                    Dr Kapfunde
+  NCIS301         Database systems                              A        Friday       2-4          DHSF21                    Mr.A.Muzenda
+  NCIS301         Database systems                              A        Wednesday    9-10         DHSF23                    Mr.A.Muzenda
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Medical Laboratory Sciences Honours
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    12-1         TMLT                      Dr. M. Kayembe
+  HUM1202         French for Beginners II                       A        Friday       9-11         TMLT                      Dr. M. Kayembe
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  MLS1202         Clinical Chemistry                            A        Monday       9-11         DHSG19                    Mr G. Malunga
+  MLS1202         Clinical Chemistry                            A        Tuesday      2-3          DHSG19                    Mr G. Malunga
+  MLS1203         Immunology                                    A        Wednesday    3-4          DHSG19                    Mr Z. Chiwodza
+  MLS1203         Immunology                                    A        Tuesday      9-11         DHSG19                    Mr Z. Chiwodza
+  MLS1201         Clinical Chemistry Practical                  A        Thursday     9-12         DHS LAB                   Mr G. Malunga
+  MLS1201         Clinical Chemistry Practical                  B        Thursday     2-4          DHS LAB                   Mr G. Malunga
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NSLS206         Parasitology, Mycology and Virology           A        Monday       9-11         DHSF21                    Dr S. Mutambu
+  NSLS206         Parasitology, Mycology and Virology           A        Friday       9-10         DHSF20                    Dr S. Mutambu
+  NSLS207         Parasitology, Mycology and Virology Practical A        Wednesday    9-11         DHS LAB                   Dr S. Mutambu
+  NSLS207         Parasitology, Mycology and Virology Practical B        Wednesday    2-5          DHS LAB                   Dr S. Mutambu
+  NSLS208         Immunology                                    A        Monday       12-1         DHSF20                    Mr Z. Chiwodza
+  NSLS208         Immunology                                    A        Thursday     2-4          DHSF20                    Mr Z. Chiwodza
+  NSLS210         Histology                                     A        Thursday     9-11         DHSF20                    Prof M. Salissou
+  NSLS210         Histology                                     A        Monday       11-12        DHSG20                    Prof M. Salissou
+  NSLS211         Histology Practical                           A        Tuesday      9-12         DHS LAB                   Prof M. Salissou
+  NSLS211         Histology Practical                           B        Tuesday      2-5          DHS LAB                   Prof M. Salissou
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NSLS403         Clinical Chemistry II                         A        Tuesday      9-11         DHSG19                    Mr G. Malunga
+  NSLS403         Clinical Chemistry II                         A        Wednesday    2-3          DHSF21                    Mr G. Malunga
+  NSLS405         Histopathology                                A        Wednesday    9-11         DHSF21                    Prof M. Salissou
+  NSLS405         Histopathology                                A        Thursday     2-3          DHSG20                    Prof M. Salissou
+  NSLS406         Blood Bank II                                 A        Monday       9-11         DHSG20                    Prof E. Obeagu
+  NSLS406         Blood Bank II                                 A        Wednesday    12-1         DHSF21                    Prof E. Obeagu
+  NSLS404         Microbiology II                               A        Thursday     11-12        DHSF20                    Mr Z. Chiwodza
+  NSLS404         Microbiology II                               A        Monday       2-4          DHSF20                    Mr Z. Chiwodza
+  NSLS407         Haematology II                                A        Tuesday      2-3          DHSF20                    Prof E. Obeagu
+  NSLS407         Haematology II                                A        Friday       9-11         DHSG20                    Prof E. Obeagu
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Nursing Sciences (Honours)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT                      Mr. G. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-10         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-12        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  SNS1203         Fundamentals of Nursing                       A        Tuesday      8-10         DHSG20                    Dr Kapfunde
+  SNS1203         Fundamentals of Nursing                       A        Wednesday    3-4          DHSG20                    Dr Kapfunde
+  SNS1204         Biophysics                                    A        Monday       9-11         DHSF20                    Dr H Nyakotyo
+  SNS1204         Biophysics                                    A        Tuesday      12-1         DHSG20                    Dr H Nyakotyo
+  SNS1208         Biochemistry and Nutrition                    A        Thursday     8-9          DHSF20                    Dr.S.Chituku
+  SNS1208         Biochemistry and Nutrition                    A        Thursday     12-1         DHSF20                    Dr.S.Chituku
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master in Public Health
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MPH6100         Research Methods                              A        Monday       5-7          Evening/Online            Dr P Kawale
+  MPH6100         Research Methods                              A        Tuesday      7-8          Evening/Online            Dr P kawale
+  MPH6201         Health Systems Management                     A        Tuesday      5-6          Evening/Online            Dr P Kawale
+  MPH6201         Health Systems Management                     A        Wednesday    6-8          Evening/Online            Dr P Kawale
+  MPH6202         Family, Reproductive & Child Health           A        Monday       7-8          Evening/Online            Dr A Kapfunde
+  MPH6202         Family, Reproductive & Child Health           A        Thursday     5-7          Evening/Online            Dr A Kapfunde
+  MPH6203         Fundamentals Disease Prevention and control   A        Tuesday      7-8          Evening/Online            Dr F Mutseyekwa
+  MPH6203         Fundamentals Disease Prevention and control   A        Friday       6-7          Evening/Online            Dr F Mutseyekwa
+  MPH6204         Health Promotion                              A        Wednesday    7-8          Evening/Online            Dr P Kawale
+  MPH6204         Health Promotion                              A        Thursday     4-6          Evening/Online            Dr P Kawale
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NSPH507         Health Promotion                              A        Monday       5-7          Evening/Online            Dr P Kawale
+  NSPH507         Health Promotion                              A        Tuesday      7-8          Evening/Online            Dr P Kawale
+  NSPH537         Occupational Health                           A        Wednesday    5-7          Evening/Online            Dr S Ngwenya
+  NSPH537         Occupational Health                           A        Thursday     7-8          Evening/Online            Dr S Ngwenya
+  NSPH536         Environmental Health                          A        Monday       4-5          Evening/Online            Dr G Kambondo
+  NSPH536         Environmental Health                          A        Friday       5-7          Evening/Online            Dr G Kambondo
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MPH7201         Public health Practice                        A        Monday       Ongoing-Ongoing Field                     Dr S Chituku
+  MPH7201         Public health Practice                        A        Friday       Ongoing-Ongoing Field                     Dr S Chituku
+  MPH7202         Research & Dissertation                       A        Thursday     6-8          Evening/Online            Prof E Mugomeri
+  MPH7202         Research & Dissertation                       A        Monday       4-6          Evening/Online            Prof E Mugomeri
+  NSPH551         Investigation Outbreak                        A        Tuesday      6-7          Evening/Online            Dr A Kapfunde
+  NSPH551         Investigation Outbreak                        A        Wednesday    4-6          Evening/Online            Dr A Kapfunde
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master of Science in Agribusiness
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MAC5201         Financial Accounting                          A        Tuesday      10-12        DANRG4                    TBA/ CBMS
+  MAC5201         Financial Accounting                          A        Tuesday      2-3          DANRG4                    TBA/ CBMS
+  MAC5202         International Trade and Finance               A        Wednesday    2-3          DANRG4                    Prof L. Dube
+  MAC5202         International Trade and Finance               A        Wednesday    3-4          DANRG4                    Prof L. Dube
+  MAC5203         Financial Management                          A        Thursday     2-4          DANRG4                    TBA/ CBMS
+  MAC5203         Financial Management                          A        Wednesday    9-10         DANRG4                    TBA/ CBMS
+  MBA5204         Marketing Management                          A        Thursday     12-1         DANRG4                    Prof L. Dube
+  MBA5204         Marketing Management                          A        Friday       9-11         DANRG4                    Prof L. Dube
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Post-Basic BSc Honours in Nursing
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: BLOCK 3 Cohort 8
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NSHS203         Epidemiology and Biostatistics                A        2-7/02/2026  8-4          Block Session             Mr E Chikaka
+  NHAC100         African studies and Culture                   A        26-31/01/2026 8-4          Block Session             Mrs Rapando
+  NSNS322         Biosciences                                   A        12-17/01/2026 8-4          Block Session             Dr S Chituku
+  NSNS319         Pharmacology for Nurses                       A        19-24/01/2025 8-4          Block Session             Dr A Kapfunde
+  NSNS318         Nurse management and Administration 1         A        5-10/01/2025 8-4          Block Session             Dr VK Chikanya
+
+  YEAR/SEMESTER: BLOCK 3 Cohort 8 (June-July)
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NSNS416         Research Project                              A        January-May  Ongoing-Ongoing Field/Research            Mr Chikaka
+
+  YEAR/SEMESTER: BLOCK 4 Cohort 9
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1201         French for Beginners II                       A        12-17/01/2026 8-4          Block Session             Dr Kayembe
+  NSNS401         Medical Surgical Nursing II                   A        19-24/1/2026 8-4          Block Session             Ms A Dube
+  NSNS221         Paediatric Nursing I                          A        26-31/01/2026 8-4          Block Session             Ms E Mwanza
+  NSNS305         Communication Skills in Health Care           A        05-10/01/2026 8-4          Block Session             Dr VK Chikanya
+  NHCT100         Critical Thinking, Logic and Problem Solving  A        26-31/1/2025 8-4          Block Session             Mr J Chitakatira
+
+  YEAR/SEMESTER: Electives
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NSNS414         Nursing Education Practice /360 12 weeks      A        January-May  Ongoing-Ongoing Field/Practice            Dr S Chituku
+  NSNS415         Management and Administration Practice 360 (12 weeks) A        January-May  Ongoing-Ongoing Field/Practice            Dr A Kapfunde
+
+
+========================================================================================================================
+COLLEGE: CSSTHE
+Total Entries: 268 | Programs: 14 | Courses: 106
+========================================================================================================================
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Arts in English and Communication Studies
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHEC412         Communication and Leadership                  A        Tuesday      11-1         ICT Mai Mugabe Lab        Ms J Muzamhindo
+  NHEC412         Communication and Leadership                  A        Monday       9-10         DHSF23                    Ms J Muzamhindo
+  NHEC422         Health Communication                          A        Tuesday      2-4          DHSG20                    Ms J Muzamhindo
+  NHEC422         Health Communication                          A        Monday       10-12        DOTSR1/2                  Ms J Muzamhindo
+  NHEC402         Intercultural Communication                   A        Wednesday    9-10         DHSF20                    Mr J Chitakatira
+  NHEC402         Intercultural Communication                   A        Thursday     11-1         DHSF23                    Mr J Chitakatira
+  NHEC452         Video Production and Editing                  A        Friday       8-10         DOTSR1/2                  Mr W Mukono
+  NHEC452         Video Production and Editing                  A        Friday       2-3          DANRG35                   Mr W Mukono
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Arts in Media and Journalism Studies
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  MJS1201         Media in Africa and Beyond                    A        Monday       10-11        DHSF23                    Dr W Gadzikwa
+  MJS1201         Media in Africa and Beyond                    A        Friday       2-4          DOTSR1/2                  Dr W Gadzikwa
+  MJS1202         Democracy, Human Rights and the media         A        Monday       2-4          DHSF24                    Dr W Gadzikwa
+  MJS1202         Democracy, Human Rights and the media         A        Thursday     11-12        DOTG9                     Dr W Gadzikwa
+  NHMJ107         Development Communication                     A        Tuesday      11-12        DOTSR1/2                  Dr W Gadzikwa
+  NHMJ107         Development Communication                     A        Thursday     2-4          DHSF24                    Dr W Gadzikwa
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHMJ205         Feature Writing                               A        Tuesday      9-11         AEG5                      Dr W. Gadzikwa
+  NHMJ205         Feature Writing                               A        Thursday     8-9          AEG5                      Dr W. Gadzikwa
+  NHMJ209         Corporate Communications and Public relations A        Monday       10-11        DANRG35                   Dr W. Gadzikwa
+  NHMJ209         Corporate Communications and Public relations A        Friday       8-10         DOTSR1/2                  Dr W. Gadzikwa
+  NHMJ207         Digital Journalism                            A        Wednesday    11-1         ICT Mai Mugabe Lab        Mr W. Mukono
+  NHMJ207         Digital Journalism                            A        Tuesday      12-1         AEG5                      Mr W. Mukono
+  NHMJ208         Documentary and Video production              A        Wednesday    2-3          DOTG9                     Mr W. Mukono
+  NHMJ208         Documentary and Video production              A        Friday       2-4          DANRF38 1/2               Mr W. Mukono
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Dr. N. Chikwanha
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Divinity (Honours)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  DIV1201         Homiletics                                    A        Thursday     8-10         DOTG9                     Dr Achar
+  DIV1201         Homiletics                                    A        Monday       8-10         DOTG9                     Dr Achar
+  DIV1202         Jesus and the Gospels                         A        Tuesday      10-12        DOTG9                     Dr Mwandayi
+  DIV1202         Jesus and the Gospels                         A        Monday       2-3          DOTG9                     Dr Mwandayi
+  DIV1203         Christian Worship in Contemporary settings    A        Thursday     10-11        DOTG9                     Dr Mwandayi
+  DIV1203         Christian Worship in Contemporary settings    A        Tuesday      2-3          DOTG9                     Dr Mwandayi
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  DIV1201         Homiletics                                    A        Thursday     8-10         DOTG9                     Dr Achar
+  DIV1201         Homiletics                                    A        Monday       8-10         DOTG9                     Dr Achar
+  DIV1202         Jesus and the Gospels                         A        Tuesday      10-12        DOTG9                     Dr Mwandayi
+  DIV1202         Jesus and the Gospels                         A        Monday       2-3          DOTG9                     Dr Mwandayi
+  DIV1203         Christian Worship in Contemporary settings    A        Thursday     10-11        DOTG9                     Dr Mwandayi
+  DIV1203         Christian Worship in Contemporary settings    A        Tuesday      2-3          DOTG9                     Dr Mwandayi
+  Ministerial formation Ministerial formation                         All      Thursday     2-3.3        ITRS Chapel               All
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NTBS205         Biblical Greek 1                              A        Thursday     12-1         DOTG16                    Dr Mwandayi
+  NTBS205         Biblical Greek 1                              A        Friday       2-4          DOTG16                    Dr Mwandayi
+  NTPT202         Ministry of Evangelism                        A        Monday       12-1         DOTG9                     Dr Achar
+  NTPT202         Ministry of Evangelism                        A        Tuesday      8-10         DOTG9                     Dr Achar
+  NTPT200         Field Education                               A        Wednesday    11-1         DOTSR1/2                  Rev Bondo
+  NTPT200         Field Education                               A        Wednesday    2-4          DOTSR1/2                  Rev Bondo
+  NTST208         Theology II                                   A        Friday       9-11         DOTG9                     Dr Mutambara
+  NTST208         Theology II                                   A        Monday       9-10         DOTSR1/2                  Dr Mutambara
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         TMLT                      Rev Bondo
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Rev Bondo
+  Ministerial formation Ministerial formation                         All      Thursday     2-3.3        ITRS Chapel               All
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NTPT205         Christian Education                           A        Monday       8-10         DOTG16                    Rev Sign
+  NTPT205         Christian Education                           A        Monday       3-4          DOTG16                    Rev Sign
+  NTPT311         Advanced Studies in Pastoral Care and counselling A        Tuesday      8-10         DOTG16                    Dr Shemsanga
+  NTPT311         Advanced Studies in Pastoral Care and counselling A        Monday       2-3          DOTG16                    Dr Shemsanga
+  NTST205         Theology and Land Praxis                      A        Tuesday      10-12        DOTG16                    Mr Muzorewa
+  NTST205         Theology and Land Praxis                      A        Tuesday      12-1         DOTG16                    Mr Muzorewa
+  NTPT309         UMC Polity                                    A        Thursday     9-11         DOTG16                    Rev Bondo
+  NTPT309         UMC Polity                                    A        Friday       2-3          DOTG9                     Rev Bondo
+  NTRM100         Research Methods                              A        Friday       11-1         DOTG16                    Dr Mwandayi
+  NTRM100         Research Methods                              A        Wednesday    11-12        DOTG16                    Dr Mwandayi
+  Ministerial formation Ministerial formation                         All      Thursday     2-3.3        ITRS Chapel               All
+
+  YEAR/SEMESTER: Y4 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NTPT321         Evangelism Through the Local Church           A        Monday       12-1         DOTG16                    Rev Sign
+  NTPT321         Evangelism Through the Local Church           A        Monday       2-4          DOTSR1/2                  Rev Sign
+  NTBS319         Biblical Foundations for leadership Conflict Transformation and Peace Building A        Tuesday      11-1         DOTSR1/2                  Dr Mwandayi
+  NTBS319         Biblical Foundations for leadership Conflict Transformation and Peace Building A        Wednesday    9-10         DOTG16                    Dr Mwandayi
+  NTHC313         Contemporary Issues in Ecumenical Studies     A        Monday       11-12        DOTSR1/2                  Dr Mwandayi
+  NTHC313         Contemporary Issues in Ecumenical Studies     A        Friday       2-3          DOTSR1/2                  Dr Mwandayi
+  NTCS319         Ethical issues in Contemporary Africa         A        Wednesday    2-3          DOTG16                    Dr. Mutambara
+  NTCS319         Ethical issues in Contemporary Africa         A        Friday       11-1         DOTSR1/2                  Dr. Mutambara
+  NTRP320         Research paper                                A        Thursday     12-1         DOTG9                     All
+  NTRP320         Research paper                                A        Tuesday      2-4          DOTSR1/2                  All
+  Ministerial formation Ministerial formation                         All      Thursday     2-3.3        ITRS Chapel               All
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Education Honours in French (Global)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HAC2101         African Studies and Culture                   A        Monday       5pm-7pm      Online/Evening            Dr R Makoni
+  HAC2101         African Studies and Culture                   A        Wednesday    5pm-6pm      Online/Evening            Dr R Makoni
+  EDU1202         Measurement and Evaluation                    A        Tuesday      5pm-7pm      Online/Evening            Mr T Mukando
+  EDU1202         Measurement and Evaluation                    A        Monday       7pm-8pm      Online/Evening            Mr T Mukando
+  FRN1201         French language Introduction to Applied Linguistic A        Friday       7pm-8pm      Online/Evening            Dr M Kayembe
+  FRN1201         French language Introduction to Applied Linguistic A        Thursday     5pm-7pm      Online/Evening            Dr M Kayembe
+  FRN1202         Text Analysis-Practical Criticism             A        Tuesday      7pm-8pm      Online/Evening            Mr G Mzite
+  FRN1202         Text Analysis-Practical Criticism             A        Friday       5pm-6pm      Online/Evening            Mr G Mzite
+  FRN1203         Translation 1-Translation to and from French  A        Tuesday      7pm-8pm      Online/Evening            Mr G Mzite
+  FRN1203         Translation 1-Translation to and from French  A        Friday       5pm-6pm      Online/Evening            Mr G Mzite
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Science Honours in International Relations
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  IRD1201         Modern African Political Thought              A        Thursday     8-10         DOTSR1/2                  Dr N Pinduka
+  IRD1201         Modern African Political Thought              A        Wednesday    3-4          DANRF38 1/2               Dr N Pinduka
+  IRD1202         European Political Thought                    A        Tuesday      11-1         ICT Smart Classroom 2     Mr L T Chirozva
+  IRD1202         European Political Thought                    A        Thursday     12-1         ICT Smart Classroom 2     Mr L T Chirozva
+  IRD1203         Comparative Development in Africa             A        Monday       8-10         DANRF38 1/2               Dr K T Zengeni
+  IRD1203         Comparative Development in Africa             A        Tuesday      2-3          DANRF38 1/2               Dr K T Zengeni
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHIR221         NGOs and World Politics                       A        Tuesday      8-10         ICT Smart Classroom 2     Dr N Pinduka
+  NHIR221         NGOs and World Politics                       A        Friday       12-1         ICT Smart Classroom 1     Dr N Pinduka
+  NHIR222         Evolution of Africa Diplomacy and Practice    A        Tuesday      2-4          REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Mr L T Chirozva
+  NHIR222         Evolution of Africa Diplomacy and Practice    A        Monday       2-3          ICT Smart Classroom 3     Mr L T Chirozva
+  NHIR224         Political Leadership in Africa                A        Monday       11-1         DHSG19                    Dr F Mararire
+  NHIR224         Political Leadership in Africa                A        Tuesday      12-1         DANRF38 1/2               Dr F Mararire
+  NHIR225         Research Methods                              A        Friday       9-11         ICT Smart Classroom 1     Dr K T Zengeni
+  NHIR225         Research Methods                              A        Wednesday    12-1         REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Dr K T Zengeni
+  NTEV200         Ethics and Christian Values                   A        Wednesday    9-11         TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       11-12        TMLT                      Dr. N. Chikwanha
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHIR421         Law and Politics                              A        Monday       12-1         ICT Smart Classroom 1     Mr L T Chirozva
+  NHIR421         Law and Politics                              A        Tuesday      3-4          ICT Smart Classroom 1     Mr L T Chirozva
+  NHIR422         Constitutional Rights and Social Change       A        Thursday     2-4          ICT Smart Classroom 1     Dr N Pinduka
+  NHIR422         Constitutional Rights and Social Change       A        Friday       9-10         ICT Smart Classroom 4     Dr N Pinduka
+  NHIR423         Women, Power and African Political Systems    A        Friday       2-4          ICT Smart Classroom 2     Dr K T Zengeni
+  NHIR423         Women, Power and African Political Systems    A        Wednesday    3-4          ICT Smart Classroom 3     Dr K T Zengeni
+  NHIR424         Gender and the State                          A        Tuesday      10-12        ICT Smart Classroom 4     Dr F Maraire
+  NHIR424         Gender and the State                          A        Wednesday    2-3          ICT Smart Classroom 4     Dr F Maraire
+  NHIR426         Government and Politics in Global Perspectives A        Monday       8-9          ICT Smart Classroom 3     Dr A M Rusero
+  NHIR426         Government and Politics in Global Perspectives A        Thursday     11-1         ICT Smart Classroom 4     Dr A M Rusero
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Science Honours in Social Work
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  SWK1201         Ethics and professional social work practice  A        Monday       2-4          REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Mr. W. M Moyo
+  SWK1201         Ethics and professional social work practice  A        Thursday     11-12        REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Mr. W. M Moyo
+  PSY1201         Introduction to social psychology             A        Monday       10-11        REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Dr M.J Kapesa
+  PSY1201         Introduction to social psychology             A        Tuesday      12-1         REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Dr M.J Kapesa
+  SOC1103         Introduction to social anthropology           A        Thursday     9-11         REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Dr P Munasirei
+  SOC1103         Introduction to social anthropology           A        Tuesday      8-9          AEG4                      Dr P Munasirei
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHSW208         Advanced social work with individuals and families A        Thursday     12-1         REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Dr. B. Chikwaiwa
+  NHSW208         Advanced social work with individuals and families A        Thursday     8-10         DANRF38 1/2               Dr. B. Chikwaiwa
+  NHSW209         Advanced social work with groups              A        Monday       8-10         REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Ms. K. Nyapokoto
+  NHSW209         Advanced social work with groups              A        Tuesday      11-12        REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Ms. K. Nyapokoto
+  NHSW206         Advanced social work with communities         A        Monday       2-4          DANRF38 1/2               Mr. J Magocha
+  NHSW206         Advanced social work with communities         A        Tuesday      10-11        REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Mr. J Magocha
+  NHSW221         Rehabilitation principles and practice        A        Tuesday      8-10         REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Mr. W. M Moyo
+  NHSW221         Rehabilitation principles and practice        A        Monday       10-11        DANRF38 1/2               Mr. W. M Moyo
+  NTEV200         Ethics and Christian Values                   A        Wednesday    2-4          TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       12-1         TMLT                      Dr. N. Chikwanha
+
+  YEAR/SEMESTER: Y4 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHSW428         Child protection                              A        Thursday     11-1         TMLT                      Ms. K. Nyapokoto
+  NHSW428         Child protection                              A        Thursday     8-10         TMLT                      Ms. K. Nyapokoto
+  NHSW429         Project planning and management               A        Tuesday      12-1         TMLT                      Dr. R Taruvinga
+  NHSW429         Project planning and management               A        Monday       2-3          TMLT                      Dr. R Taruvinga
+  NHSW427         Humanitarian, risk, and disaster management   A        Thursday     2-3          TMLT                      Dr. B. Chikwaiwa
+  NHSW427         Humanitarian, risk, and disaster management   A        Monday       10-12        TMLT                      Dr. B. Chikwaiwa
+  NHSW422         Monitoring and Evaluation of Social Work Programmes A        Monday       8-10         TMLT                      Mr. J Magocha
+  NHSW422         Monitoring and Evaluation of Social Work Programmes A        Tuesday      8-10         TMLT                      Mr. J Magocha
+  NHSW407         Research project                              A        Friday       8-9          TMLT                      ALL
+  NHSW407         Research project                              A        Wednesday    9-11         Old library 1/2           ALL
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Science Honours in Sociology
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y4 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHSA407         Sociology and Anthropology of Money           A        Monday       8-9          AEG5                      Dr. P. Munasirei
+  NHSA407         Sociology and Anthropology of Money           A        Wednesday    11-1         DOTG9                     Dr. P. Munasirei
+  NHSA415         Society, Disorder and Disasters               A        Tuesday      8-9          DOTSR1/2                  Mrs C. Rapando
+  NHSA415         Society, Disorder and Disasters               A        Wednesday    9-11         DOTSR1/2                  Mrs C. Rapando
+  NHSA417         Sociology of the Environment                  A        Friday       11-1         DANRF381/2                Mrs C. Rapando
+  NHSA417         Sociology of the Environment                  A        Thursday     3-4          DOTG16                    Mrs C. Rapando
+  NHSA420         Sociology and Anthropology of Sport           A        Tuesday      2-4          AEG5                      Dr. P. Munasirei
+  NHSA420         Sociology and Anthropology of Sport           A        Monday       12-1         ICT Smart Classroom 2     Dr. P. Munasirei
+  NHSA421         Sociology of Science and Technology           A        Wednesday    12-1         Lecture Theatre 2         Mrs C. Rapando
+  NHSA421         Sociology of Science and Technology           A        Friday       8-9          DHSF21                    Mrs C. Rapando
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Social Science Honours in Psychology
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       A        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  PSY1201         Introduction to Social Psychology             A        Monday       10-11        REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Dr M.J Kapesa
+  PSY1201         Introduction to Social Psychology             A        Tuesday      12-1         REEVES WESLEY FELLOWSHIP FOUNDATION CENTRE Dr M.J Kapesa
+  PSY1202         Research Methods in Psychology                A        Monday       2-3          ICT General Purpose Lab   Dr M.J.Kapesa
+  PSY1202         Research Methods in Psychology                A        Thursday     2-4          DOTSR1/2                  Dr M.J.Kapesa
+  PSY1203         Statistics in Psychology and Social Sciences  A        Thursday     8-9          DOTG16                    Dr M. Kwembeya
+  PSY1203         Statistics in Psychology and Social Sciences  A        Tuesday      3-4          DOTG16                    Dr M. Kwembeya
+
+  YEAR/SEMESTER: Y2 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHPS147         Research Methods in Psychology                A        Monday       2-4          DOTSR1/2                  Dr H.Wasosa
+  NHPS147         Research Methods in Psychology                A        Friday       9-10         DHSF24                    Dr H.Wasosa
+  NHPS148         Statistics in Psychology and Social Sciences  A        Friday       11-1         DHSF24                    Dr M. Kwembeya
+  NHPS148         Statistics in Psychology and Social Sciences  A        Thursday     12-1         DHSF24                    Dr M. Kwembeya
+  NHPS246         Psychology of Counselling and Psychotherapy   A        Tuesday      11-12        DHSF21                    Dr. Ngugi Shemsanga
+  NHPS246         Psychology of Counselling and Psychotherapy   A        Wednesday    2-4          DHSF24                    Dr. Ngugi Shemsanga
+  NHPS249         Psychology of Personality and Motivation      A        Tuesday      2-3          DHSF24                    Mr D. Gwasira
+  NHPS249         Psychology of Personality and Motivation      A        Thursday     2-4          DANRG4                    Mr D. Gwasira
+  NHPS248         Organizational psychology                     A        Wednesday    9-11         DANRG4                    Dr M.J.Kapesa
+  NHPS248         Organizational psychology                     A        Wednesday    12-1         DHSF24                    Dr M.J.Kapesa
+
+  YEAR/SEMESTER: Y3 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHPS442         Psychology of Family Processes and Dynamics   A        Monday       10-11        DOTG9                     Dr M.J.Kapesa
+  NHPS442         Psychology of Family Processes and Dynamics   A        Thursday     2-4          AEG5                      Dr M.J.Kapesa
+  NHPS443         Psychology of trauma and Humanitarian Intervention A        Monday       2-4          AEG5                      Dr M.J.Kapesa
+  NHPS443         Psychology of trauma and Humanitarian Intervention A        Wednesday    2-3          DOTG16                    Dr M.J.Kapesa
+  NHPS447         Health Psychology                             A        Tuesday      10-12        DHSG20                    Dr H.Wasosa
+  NHPS447         Health Psychology                             A        Tuesday      2-3          DOTG16                    Dr H.Wasosa
+  NHPS448         Contemporary Critical Psychology              A        Wednesday    3-4          DOTG9                     Mr D. Gwasira
+  NHPS448         Contemporary Critical Psychology              A        Wednesday    11-1         AEG5                      Mr D. Gwasira
+  NHPS243         Psychology of Gender                          A        Friday       8-9          DOTG9                     Dr H.Wasosa
+  NHPS243         Psychology of Gender                          A        Friday       2-4          AEG5                      Dr H.Wasosa
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master of Arts in Religious Studies
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NTCS504         Major themes in the study of Christian ethics A        Monday       2-4          DOTSR 1/2                 Dr Achar
+  NTCS504         Major themes in the study of Christian ethics A        Thursday     8-9          DOTG16                    Dr Achar
+  NTCS512         Conflict Management                           A        Wednesday    3-4          DOTG9                     Dr Achar
+  NTCS512         Conflict Management                           A        Friday       11-1         DOTG9                     Dr Achar
+  NTPT514         Dynamics of Pastoral Leadership               A        Tuesday      11-1         DOTSR1/2                  Dr Shemsanga
+  NTPT514         Dynamics of Pastoral Leadership               A        Thursday     3-4          DOTG9                     Dr Shemsanga
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master of Science in Clinical Social Work
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MCSW507         Complex behaviour and environmental change    A        Monday       4pm-6pm      Evening/Online            Dr. BK Chikwaiwa
+  MCSW507         Complex behaviour and environmental change    A        Thursday     5pm-7pm      Evening/Online            Dr. BK Chikwaiwa
+  MCSW509         Religion, spirituality, and clinical social work A        Wednesday    5pm-7pm      Evening/Online            Prof V Mabvurira
+  MCSW509         Religion, spirituality, and clinical social work A        Tuesday      5pm-7pm      Evening/Online            Prof V Mabvurira
+  MCSW508         Clinical assessment, diagnosis and therapy    A        Monday       6pm-8pm      Evening/Online            Mr WM Moyo
+  MCSW508         Clinical assessment, diagnosis and therapy    A        Friday       7pm-8pm      Evening/Online            Mr WM Moyo
+  MCSW510         Mental health and clinical social work        A        Thursday     7pm-8pm      Evening/Online            Mr WM Moyo
+  MCSW510         Mental health and clinical social work        A        Tuesday      7pm-8pm      Evening/Online            Mr WM Moyo
+  MCSW506         Forensic social work                          A        Friday       4pm-6pm      Evening/Online            Ms Netsai Risinamhodzi
+  MCSW506         Forensic social work                          A        Thursday     4pm-5pm      Evening/Online            Ms Netsai Risinamhodzi
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master of Science in International Relations and Diplomacy
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  PIR510          Contemporary Issues in African Politics       A        Monday       5pm-7pm      Evening/Online            Dr N Pinduka
+  PIR510          Contemporary Issues in African Politics       A        Wednesday    5pm-6pm      Evening/Online            Dr N Pinduka
+  PIR516          International Protocol and Etiquette          A        Tuesday      5pm-7pm      Evening/Online            Mr L T Chirozva
+  PIR516          International Protocol and Etiquette          A        Monday       7pm-8pm      Evening/Online            Mr L T Chirozva
+  PDP513          International Diplomacy and the Resource Curse in Africa A        Tuesday      7pm-8pm      Evening/Online            Dr A M Rusero
+  PDP513          International Diplomacy and the Resource Curse in Africa A        Friday       5pm-6pm      Evening/Online            Dr A M Rusero
+  PIR515          Globalisation, Human Security and the Information Age A        Monday       4pm-6pm      Evening/Online            Dr K T Zengeni
+  PIR515          Globalisation, Human Security and the Information Age A        Wednesday    5pm-6pm      Evening/Online            Dr K T Zengeni
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master of Science in Migration, Citizenship and Refugee Protection
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MRP523          Integrated Border Management and Governance   A        Monday       4pm-6pm      Evening/Online            Dr. A. M. Rusero
+  MRP523          Integrated Border Management and Governance   A        Thursday     5pm-7pm      Evening/Online            Dr. A. M. Rusero
+  CHS522          Citizenship, State and Human Security         A        Wednesday    5pm-6pm      Evening/Online            TBA
+  CHS522          Citizenship, State and Human Security         A        Tuesday      4pm-6pm      Evening/Online            TBA
+  MRP510          Forced Migration and Internal Displacement in Africa A        Monday       6pm-8pm      Evening/Online            Dr. N. Pinduka
+  MRP510          Forced Migration and Internal Displacement in Africa A        Friday       7pm-8pm      Evening/Online            Dr. N. Pinduka
+  MRP521          Migration, Law and Criminology                A        Thursday     7pm-8pm      Evening/Online            Mr. L. Chirozva
+  MRP521          Migration, Law and Criminology                A        Tuesday      7pm-8pm      Evening/Online            Mr. L. Chirozva
+  PPD512          Research Proposal & Defense                   A        Friday       4pm-6pm      Evening/Online            All
+  PPD512          Research Proposal & Defense                   A        Thursday     4pm-5pm      Evening/Online            All
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master of Science in Negotiation and Mediation
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NPLN511         Trade and Business negotiation in Africa      A        Tuesday      7pm-8pm      Evening/Online            Dr. A. M. Rusero
+  NPLN511         Trade and Business negotiation in Africa      A        Thursday     7pm-8pm      Evening/Online            Dr. A. M. Rusero
+  NPLN505         Applied Negotiation and Mediation:- Implications for Conflict A        Monday       4pm-6pm      Evening/Online            TBA
+  NPLN505         Applied Negotiation and Mediation:- Implications for Conflict A        Thursday     5pm-7pm      Evening/Online            TBA
+  NPLN513         State and None State Actors in Mediation and Nation Building in Africa A        Wednesday    5pm-6pm      Evening/Online            Dr. N. Pinduka
+  NPLN513         State and None State Actors in Mediation and Nation Building in Africa A        Tuesday      5pm-7pm      Evening/Online            Dr. N. Pinduka
+  NPLN506         Multi-Track Diplomacy in African Contexts     A        Friday       6pm-7pm      Evening/Online            Dr. F. Maraire
+  NPLN506         Multi-Track Diplomacy in African Contexts     A        Thursday     7pm-8pm      Evening/Online            Dr. F. Maraire
+  NPPD512         Research Proposal Defense                     A        Friday       4pm-6pm      Evening/Online            All
+  NPPD512         Research Proposal Defense                     A        Thursday     4pm-5pm      Evening/Online            All
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master of Science in Organizational Psychology
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NHPS508         Leadership and Ethics in Organizations        A        Monday       5pm-7pm      Evening/Online            Dr. M.J. Kapesa
+  NHPS508         Leadership and Ethics in Organizations        A        Wednesday    5pm-6pm      Evening/Online            Dr. M.J. Kapesa
+  NHPS505         Advanced Psychometrics                        A        Tuesday      5pm-7pm      Evening/Online            Dr. M. Kwembeya
+  NHPS505         Advanced Psychometrics                        A        Monday       7pm-8pm      Evening/Online            Dr. M. Kwembeya
+  NHPS506         Ergonomics and Workplace Design               A        Friday       7pm-8pm      Evening/Online            Dr M. Matika
+  NHPS506         Ergonomics and Workplace Design               A        Thursday     5pm-7pm      Evening/Online            Dr M. Matika
+  NHPS507         Organizational Psychology Consulting          A        Tuesday      7pm-8pm      Evening/Online            Dr M. Matika
+  NHPS507         Organizational Psychology Consulting          A        Friday       5pm-6pm      Evening/Online            Dr M. Matika
+
+
+========================================================================================================================
+COLLEGE: INTENSIVE ENGLISH
+Total Entries: 18 | Programs: 1 | Courses: 1
+========================================================================================================================
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: HUM2100 Intensive English II
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: All Groups
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM2100         Intensive English II - G1                     GI       9am - 11am   9-11         AEG3                      Dr. E. Mvundura
+  HUM2100         Intensive English II - G1                     G1       11am - 12pm  11-12        Old Computer Lab          Mr G Thompson
+  HUM2100         Intensive English II - G2                     G2       9am - 11am   9-11         OC Lab                    Mr G Thompson
+  HUM2100         Intensive English II - G2                     G2       11am - 12pm  11-12        AEG3                      Dr. E. Mvundura
+  HUM2100         Intensive English II - G1                     G1       9am - 11am   9-11         OC Lab                    Mr G Thompson
+  HUM2100         Intensive English II - G1                     G1       11am - 12pm  11-12        AEG3                      Dr. E. Mvundura
+  HUM2100         Intensive English II - G2                     G2       9am - 11am   9-11         AEG3                      Dr. E. Mvundura
+  HUM2100         Intensive English II - G2                     G2       11am - 12pm  11-12        Old Computer Lab          Mr G Thompson
+  HUM2100         Intensive English II - GI                     GI       9am - 11am   9-11         AEG3                      Mr F Rafomoyo
+  HUM2100         Intensive English II - G2                     G2       11am - 12pm  11-12        Old Computer Lab          Mr F Rafomoyo
+  HUM2100         Intensive English II - G2                     G2       9am - 11am   9-11         OC Lab                    Mr G Thompson
+  HUM2100         Intensive English II - G1                     G1       11am - 12pm  11-12        AEG3                      Mr G Thompson
+  HUM2100         Intensive English II - G1                     G1       9am - 11am   9-11         OC Lab                    Mr G Thompson
+  HUM2100         Intensive English II - G1                     G1       11am - 12pm  11-12        AEG3                      Dr. E. Mvundura
+  HUM2100         Intensive English II - G2                     G2       9am - 11am   9-11         AEG3                      Mr F Rafomoyo
+  HUM2100         Intensive English II - G2                     G2       11am - 12pm  11-12        Old Computer Lab          Mr F Rafomoyo
+  HUM2100         Research/Rosetta                              All      2pm - 3pm    2-3          Research Lab              Self Study
+  HUM2100         Movie/Projects                                All      2pm - 3pm    2-3          Movie Room                Activity
+
+
+========================================================================================================================
+COLLEGE: SCHOOL OF LAW
+Total Entries: 56 | Programs: 3 | Courses: 30
+========================================================================================================================
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Bachelor of Laws (LLB)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  PBL1201         Criminal Law                                  A        Monday       8-9          Moot Court                Dr. Phiri
+  PBL1201         Criminal Law                                  A        Monday       2-4          Moot Court                Dr. Phiri
+  PBL1202         Constitutional Law                            A        Monday       10-12        Moot Court                Dr. Masekesa
+  PBL1202         Constitutional Law                            A        Thursday     9-10         Moot Court                Dr. Masekesa
+  PVL1201         Law of Contract                               A        Tuesday      8-10         Moot Court                Mr Munguma
+  PVL1201         Law of Contract                               A        Friday       2-3          Moot Court                Mr Munguma
+  PBL1203         Interpretation of Statutes                    A        Tuesday      10-12        Moot Court                Ms Hamadziripi
+  PBL1203         Interpretation of Statutes                    A        Tuesday      3-4          Moot Court                Ms Hamadziripi
+  PBL1204         Legal Research Methods                        A        Tuesday      12-1         Moot Court                Dr. Phiri
+  PBL1204         Legal Research Methods                        A        Tuesday      2-4          Moot Court                Dr. Phiri
+  Mooting Clinic  Mooting Clinic                                A        Friday       9-11         Moot Court                Ms Hamadziripi/Dr Masekesa
+
+  YEAR/SEMESTER: Y2 S1
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NLLB205         Criminal Procedure                            A        Monday       10-12        Admin Block G11           Mr Tandiri
+  NLLB205         Criminal Procedure                            A        Tuesday      2-4          Admin Block G11           Mr Tandiri
+  NLLB206         Law of Property                               A        Monday       9-11         Admin Block G11           Mr Nkiwane
+  NLLB206         Law of Property                               A        Friday       2-3          Admin Block G11           Mr Nkiwane
+  NLLB207         Administrative Law                            A        Thursday     9-11         Admin Block G11           Ms Hamadziripi
+  NLLB207         Administrative Law                            A        Thursday     8-9          Admin Block G11           Ms Hamadziripi
+  NLLB208         Civil Procedure: Inferior Courts              A        Monday       2-3          Admin Block G11           Ms Lin Manyika
+  NLLB208         Civil Procedure: Inferior Courts              A        Thursday     2-4          Admin Block G11           Ms Lin Manyika
+  NLLB308         Labour Law                                    A        Tuesday      8-10         Admin Block G11           Dr Masekesa
+  NLLB308         Labour Law                                    A        Tuesday      11-12        Admin Block G11           Dr Masekesa
+  Mooting Clinic  Mooting Clinic                                A        Friday       9-11         Moot Court                Ms Hamadziripi/Dr Masekesa
+
+  YEAR/SEMESTER: Y3 S1
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NLLB524         Conveyancing                                  A        Saturday     8-10         Admin Block G11           Mr Phiri
+  NLLB524         Conveyancing                                  A        Saturday     12-1         Admin Block G11           Mr Phiri
+  NLLB525         Conveyancing                                  A        Friday       9-12         Admin Block G11           Mr Phiri
+  NLLB526         Conveyancing                                  A        Saturday     2-4          Admin Block G12           Mr Phiri
+  NLLB309         Legal Ethics & Professional Training          A        Tuesday      10-11        Admin Block G11           Mr Nkiwane
+  NLLB309         Legal Ethics & Professional Training          A        Tuesday      2-4          Admin Block G11           Mr Nkiwane
+  NLLB312         Clinical and Practical Skills                 A        Monday       3-4          Admin Block G11           Ms Manyika
+  NLLB312         Clinical and Practical Skills                 A        Friday       3-4          Admin Block G11           Ms Manyika
+  NLLB531         International Humanitarian Law                A        Thursday     11-1         Admin Block G11           Dr. Nhenga
+  NLLB531         International Humanitarian Law                A        Friday       11-12        Admin Block G11           Dr. Nhenga
+  NLLB311         Civil Procedure: Superior Courts              A        Tuesday      11-1         Moot Court                Mr. Munguma
+  NLLB311         Civil Procedure: Superior Courts              A        Tuesday      9-10         Moot Court                Mr. Munguma
+  NLLB510         Mining and Natural Resources Law              A        Saturday     8-10         Admin Block G11           Mr Bore
+  NLLB511         Mining and Natural Resources Law              A        Saturday     12-1         Admin Block G11           Mr Bore
+  NLLB512         Mining and Natural Resources Law              A        Friday       9-12         Admin Block G11           Mr Bore
+  NLLB513         Mining and Natural Resources Law              A        Saturday     2-4          Admin Block G12           Mr Bore
+  NLLB525         Mining and Natural Resources Law              A        Thursday     2-4          Moot Court                Mr Bore
+  NLLB312         Clinical and Practical Skills (Law Clinic)    A        Wednesday    8-4          Admin Block G11           Ms Manyika/Hamadziripi
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master in Child Rights and Childhood Studies (Global)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MCR1201         Child Rights Advocacy and Public Policy       A        Monday       5pm-7pm      Evening/Online            Dr Masekesa
+  MCR1201         Child Rights Advocacy and Public Policy       A        Wednesday    5pm-6pm      Evening/Online            Dr Masekesa
+  MCR1202         Child Rights Programming                      A        Tuesday      5pm-7pm      Evening/Online            Dr. N. Mutanana
+  MCR1202         Child Rights Programming                      A        Monday       7pm-8pm      Evening/Online            Dr. N. Mutanana
+  MCR1203         Child rights and climate change               A        Wednesday    6pm-8pm      Evening/Online            TBA
+  MCR1203         Child rights and climate change               A        Thursday     5pm-6pm      Evening/Online            TBA
+  MCR6204         Child Rights and Psychosocial Support         A        Tuesday      7pm-8pm      Evening/Online            Dr. N. Mutanana
+  MCR6204         Child Rights and Psychosocial Support         A        Friday       6pm-8pm      Evening/Online            Dr. N. Mutanana
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Master in Human Rights, Peace and Development (Global)
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: Y1 S2
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  MHR6207         The Rights of Women and Children              A        Monday       4pm-6pm      Evening/Online            Dr. Sithole
+  MHR6207         The Rights of Women and Children              A        Thursday     5pm-7pm      Evening/Online            Dr. Sithole
+  MHR6217         Human Rights and Civil Society in Africa      A        Wednesday    5pm-6pm      Evening/Online            TBA
+  MHR6217         Human Rights and Civil Society in Africa      A        Tuesday      5pm-7pm      Evening/Online            TBA
+  MHR6212         Culture, Conflict and Human Rights Law        A        Monday       7pm-8pm      Evening/Online            TBA
+  MHR6212         Culture, Conflict and Human Rights Law        A        Friday       7pm-8pm      Evening/Online            TBA
+  MHR620          The African Human Rights System               A        Thursday     7pm-8pm      Evening/Online            Dr Ndlovu
+  MHR620          The African Human Rights System               A        Tuesday      7pm-8pm      Evening/Online            Dr Ndlovu
+
+
+========================================================================================================================
+COLLEGE: UNIVERSITY WIDE
+Total Entries: 18 | Programs: 5 | Courses: 5
+========================================================================================================================
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: AI, Critical Thinking, and Problem Solving
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: All Years
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Wednesday    2-3          DANRF38 1/2               Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    A        Monday       11-1         TMLT                      Mr. J. Chitakatira
+  HUM1204         AI, Critical Thinking, and Problem Solving    B        Monday       2-3          Old Library 1/2           Dr R. Makoni
+  HUM1204         AI, Critical Thinking, and Problem Solving    B        Tuesday      8-10         Old Library 1/2           Dr R. Makoni
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: English as a Second Language II
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: All Years
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1203         English as a Second Language II               A        Wednesday    9-11         TMLT                      Ms. J. Muzamhindo
+  HUM1203         English as a Second Language II               A        Friday       10-11        AEG4                      Ms. J. Muzamhindo
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Ethics and Christian Values
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: All Years
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  NTEV200         Ethics and Christian Values                   A        Wednesday    2-4          TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   A        Friday       12-1         TMLT                      Dr. N. Chikwanha
+  NTEV200         Ethics and Christian Values                   B        Wednesday    9-11         DHSG19                    Rev. N. Bondo
+  NTEV200         Ethics and Christian Values                   B        Friday       11-12        TMLT                      Rev. N. Bondo
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: French for Beginners II
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: All Years
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1202         French for Beginners II                       A        Wednesday    12-1         TMLT                      Dr. C. Kayembe
+  HUM1202         French for Beginners II                       A        Friday       9-11         TMLT                      Dr. C. Kayembe
+  HUM1202         French for Beginners II                       B        Wednesday    11-1         MOOT COURT                Dr. C. Kayembe
+  HUM1202         French for Beginners II                       B        Friday       12-1         MOOT COURT                Dr. C. Kayembe
+  HUM1202         French for Beginners II                       C        Wednesday    11-12        TMLT                      Mr. G. Mzite
+  HUM1202         French for Beginners II                       C        Friday       2-4          TMLT/Old Library 1/2      Mr. G. Mzite
+
+
+----------------------------------------------------------------------------------------------------
+PROGRAM: Portuguese for Beginners II
+----------------------------------------------------------------------------------------------------
+
+  YEAR/SEMESTER: All Years
+  ==========================================================================================
+  Course Code     Course Name                                   Section  Day          Time         Venue                     Lecturer
+  --------------- --------------------------------------------- -------- ------------ ------------ ------------------------- ------------------------------
+  HUM1201         Portuguese for Beginners II                   A        Wednesday    11-1         DHSG19                    Dr. M. Mzite
+  HUM1201         Portuguese for Beginners II                   A        Friday       9-10         DHSG19                    Dr. M. Mzite
+
+
+========================================================================================================================
+END OF TIMETABLE
+========================================================================================================================

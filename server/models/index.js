@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+const bcrypt = require('bcrypt');
 
 // 1. User Model
 const User = sequelize.define('User', {
@@ -7,11 +8,24 @@ const User = sequelize.define('User', {
     fullName: { type: DataTypes.STRING, allowNull: false },
     email: { type: DataTypes.STRING, unique: true },
     password: { type: DataTypes.STRING, allowNull: false }, // Store hashed in prod
-    role: { type: DataTypes.ENUM('student', 'lecturer'), allowNull: false },
+    role: { type: DataTypes.ENUM('student', 'student_rep', 'lecturer', 'admin'), allowNull: false },
     year: { type: DataTypes.INTEGER, allowNull: true },     // 1, 2, 3, 4
     department: { type: DataTypes.STRING, allowNull: true }, // e.g., 'Computing'
     program: { type: DataTypes.STRING, allowNull: true },    // e.g., 'NCSC'
     college: { type: DataTypes.STRING, allowNull: true }     // e.g., 'CBMS'
+}, {
+    hooks: {
+        beforeCreate: async (user) => {
+            if (user.password) {
+                user.password = await bcrypt.hash(user.password, 10);
+            }
+        },
+        beforeUpdate: async (user) => {
+            if (user.changed('password')) {
+                user.password = await bcrypt.hash(user.password, 10);
+            }
+        }
+    }
 });
 
 // 2. Class Model
@@ -50,7 +64,9 @@ const Attendance = sequelize.define('Attendance', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     date: { type: DataTypes.STRING, allowNull: false }, // '2023-10-25'
     status: { type: DataTypes.ENUM('present', 'absent', 'late'), defaultValue: 'present' },
-    method: { type: DataTypes.STRING, defaultValue: 'manual' } // 'manual', 'qr', 'totp'
+    method: { type: DataTypes.STRING, defaultValue: 'manual' }, // 'manual', 'qr', 'totp'
+    classId: { type: DataTypes.STRING, allowNull: false },
+    userId: { type: DataTypes.STRING, allowNull: false }
 });
 
 // 4. Session Model (For TOTP / Active Classes)
@@ -65,6 +81,20 @@ const Session = sequelize.define('Session', {
     lecturerIp: { type: DataTypes.STRING, allowNull: true } // Capture IP of creator
 });
 
+// 5. Announcement Model
+const Announcement = sequelize.define('Announcement', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    lecturerId: { type: DataTypes.STRING, allowNull: false },
+    lecturerName: { type: DataTypes.STRING, allowNull: false },
+    courseCode: { type: DataTypes.STRING, allowNull: false },
+    courseName: { type: DataTypes.STRING, allowNull: false },
+    year: { type: DataTypes.INTEGER, allowNull: true },
+    program: { type: DataTypes.STRING, allowNull: true },
+    type: { type: DataTypes.ENUM('info', 'delay', 'cancel', 'venue', 'online'), defaultValue: 'info' },
+    message: { type: DataTypes.TEXT, allowNull: false },
+    timestamp: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
 // Associations
 User.hasMany(Attendance, { foreignKey: 'userId' });
 Attendance.belongsTo(User, { foreignKey: 'userId' });
@@ -77,7 +107,7 @@ Attendance.belongsTo(User, { foreignKey: 'userId' });
 
 // Link Attendance to Class logic is handled manually via Composite ID string matching.
 // We disable the FK constraint because ClassId in Attendance (Composite) != Course_Code in Timetable (Simple)
-Attendance.belongsTo(Class, { foreignKey: 'classId', targetKey: 'Course_Code', constraints: false });
+// Attendance.belongsTo(Class, { foreignKey: 'classId', targetKey: 'Course_Code', constraints: false });
 
 User.hasMany(Session, { foreignKey: 'userId' });
 Session.belongsTo(User, { foreignKey: 'userId' });
@@ -90,5 +120,6 @@ module.exports = {
     User, 
     Class, 
     Attendance,
-    Session
+    Session,
+    Announcement
 };

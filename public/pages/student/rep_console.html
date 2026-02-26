@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Rep Console - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/theme.css">
+    <link rel="stylesheet" href="../../css/toast.css?v=2">
+    <style>
+        .page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 1.6rem; font-weight: 800; color: var(--text); }
+        .page-subtitle { color: var(--text-muted); margin-top: 4px; }
+        .role-badge { background: #D1FAE5; color: #059669; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-left: 8px; }
+
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .tab { padding: 10px 20px; border: none; background: none; color: var(--text-muted); font-weight: 600; cursor: pointer; border-radius: var(--radius) var(--radius) 0 0; font-size: 0.9rem; }
+        .tab.active { background: var(--primary); color: white; }
+        .tab:hover:not(.active) { background: var(--primary-light); color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Timetable Calendar */
+        .calendar-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+        .calendar-header { display: grid; grid-template-columns: 80px repeat(5, 1fr); background: var(--bg); border-bottom: 2px solid var(--border); }
+        .calendar-header div { padding: 12px; text-align: center; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); border-right: 1px solid var(--border); }
+        .calendar-header div:last-child { border-right: none; }
+        
+        .calendar-body { display: grid; grid-template-columns: 80px repeat(5, 1fr); background: var(--surface); position: relative; }
+        .time-col { border-right: 1px solid var(--border); background: var(--bg); }
+        .time-slot-label { height: 60px; padding: 5px; text-align: right; font-size: 0.75rem; color: var(--text-muted); border-bottom: 1px solid var(--border); padding-right: 8px; }
+        
+        .day-col { border-right: 1px solid var(--border); position: relative; background: linear-gradient(to bottom, transparent 59px, var(--border) 60px); background-size: 100% 60px; }
+        .day-col:last-child { border-right: none; }
+        
+        .class-block { position: absolute; left: 4px; right: 4px; border-radius: 6px; padding: 8px; font-size: 0.75rem; overflow: hidden; cursor: pointer; border-left: 4px solid; box-shadow: var(--shadow-sm); z-index: 10; transition: transform 0.1s; display: flex; flex-direction: column; gap: 2px; }
+        .class-block:hover { transform: scale(1.02); z-index: 20; box-shadow: var(--shadow); }
+        
+        .class-code { font-weight: 700; color: var(--text); }
+        .class-name { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .class-detail { font-size: 0.7rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: auto; }
+        
+        /* Edit Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal { background: var(--surface); padding: 24px; border-radius: var(--radius-lg); width: 90%; max-width: 400px; box-shadow: var(--shadow-xl); }
+        .modal-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 16px; color: var(--text); }
+
+        .btn-edit { padding: 5px 12px; border-radius: var(--radius); cursor: pointer; font-weight: 600; font-size: 0.8rem; }
+        .editable-input { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); font-size: 0.9rem; width: 100%; margin-bottom: 12px; }
+
+        /* Quick notifications */
+        .notif-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .notif-btn { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.2s; text-align: left; }
+        .notif-btn:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .notif-btn-icon { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; background: var(--primary-light); }
+        .notif-btn-title { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+        .notif-btn-desc { font-size: 0.75rem; color: var(--text-muted); }
+
+        .custom-msg textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; resize: vertical; min-height: 80px; }
+        .custom-msg button { margin-top: 10px; padding: 10px 24px; background: var(--primary); color: white; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); text-decoration: none; font-weight: 600; margin-bottom: 16px; }
+        .info-banner { background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); border: 1px solid #6EE7B7; border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; display: flex; gap: 12px; align-items: center; }
+        .info-banner-icon { font-size: 1.5rem; }
+        .info-banner-text { font-size: 0.9rem; color: #065F46; font-weight: 500; }
+
+        @media (max-width: 768px) {
+            .tt-table th:nth-child(n+5), .tt-table td:nth-child(n+5) { display: none; }
+            .tabs { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <a href="../../dashboard.html" class="back-link">← Back to Dashboard</a>
+
+        <div class="page-header">
+            <h1 class="page-title">Rep Console <span class="role-badge">STUDENT REP</span></h1>
+            <p class="page-subtitle" id="repInfo">Loading your program timetable...</p>
+        </div>
+
+        <div class="info-banner">
+            <div class="info-banner-icon">🎓</div>
+            <div class="info-banner-text">As a Student Rep, you can edit lecture times & venues for your year/program and send announcements on behalf of your lecturers.</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('timetable')">📅 Timetable Editor</button>
+            <button class="tab" onclick="switchTab('notifications')">🔔 Send Notifications</button>
+        </div>
+
+        <!-- TAB 1: Timetable Editor -->
+        <div id="tab-timetable" class="tab-content active">
+            <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <input type="text" id="courseSearch" placeholder="🔍 Search components..." class="editable-input" style="width: 300px; margin: 0;" oninput="filterTimetable()">
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Click any class to edit Day, Time, or Venue. Showing all classes for <b id="collegeDisplay">your College</b>.</div>
+            </div>
+            
+            <div id="timetableContainer" class="calendar-container">
+                <div class="calendar-header">
+                    <div>Time</div><div>Monday</div><div>Tuesday</div><div>Wednesday</div><div>Thursday</div><div>Friday</div>
+                </div>
+                <div class="calendar-body" id="calendarBody">
+                    <div style="padding: 40px; text-align: center; grid-column: 1 / -1;">⏳ Loading calendar...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Notifications -->
+        <div id="tab-notifications" class="tab-content">
+            <h3 style="margin-bottom: 16px; color: var(--text);">Quick Notifications</h3>
+            <div class="notif-grid" id="notifGrid">
+                <button class="notif-btn" onclick="sendNotif('delay', 'Class will be delayed today')">
+                    <div class="notif-btn-icon" style="background:#FEF3C7; color:#D97706;">🕒</div>
+                    <div><div class="notif-btn-title">Class Delayed</div><div class="notif-btn-desc">Notify about a delay</div></div>
+                </button>
+                <button class="notif-btn" onclick="sendNotif('venue', 'Class venue has been changed – please confirm with lecturer')">
+                    <div class="notif-btn-icon" style="background:#FEE2E2; color:#DC2626;">📍</div>
+                    <div><div class="notif-btn-title">Venue Change</div><div class="notif-btn-desc">Room changed</div></div>
+                </button>
+                <button class="notif-btn" onclick="sendNotif('cancel', 'Class has been cancelled today')">
+                    <div class="notif-btn-icon" style="background:#FEE2E2; color:#DC2626;">🚫</div>
+                    <div><div class="notif-btn-title">Class Cancelled</div><div class="notif-btn-desc">Cancel today</div></div>
+                </button>
+                <button class="notif-btn" onclick="sendNotif('online', 'This class will be held online today. Please use the Join Link.')">
+                    <div class="notif-btn-icon" style="background:#D1FAE5; color:#059669;">💻</div>
+                    <div><div class="notif-btn-title">Online Class</div><div class="notif-btn-desc">Remote session</div></div>
+                </button>
+                <button class="notif-btn" onclick="sendNotif('info', 'A substitute lecturer will be covering this class')">
+                    <div class="notif-btn-icon" style="background:#DBEAFE; color:#2563EB;">👤</div>
+                    <div><div class="notif-btn-title">Substitute</div><div class="notif-btn-desc">Different lecturer</div></div>
+                </button>
+            </div>
+
+            <h3 style="margin-bottom: 12px; color: var(--text);">Custom Message</h3>
+            <div style="margin-bottom: 12px;">
+                <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted);">Select Course:</label>
+                <select id="notifCourse" style="width: 100%; margin-top: 6px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem;">
+                    <option value="">-- Select a course --</option>
+                </select>
+            </div>
+            <div class="custom-msg">
+                <textarea id="customMsg" placeholder="Type a custom message to send to all students in your year..."></textarea>
+                <button onclick="sendCustom()">📤 Send Custom Message</button>
+            </div>
+        </div>
+        <!-- Edit Modal (Hidden by default) -->
+        <div class="modal-overlay" id="editModal">
+            <div class="modal">
+                <div class="modal-title">Edit Timetable</div>
+                <div id="edit-course" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">Course Name</div>
+                
+                <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:4px;">Day</label>
+                <select id="edit-day" class="editable-input"></select>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:4px;">From</label>
+                        <input id="edit-from" class="editable-input" placeholder="09:00">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:4px;">To</label>
+                        <input id="edit-to" class="editable-input" placeholder="11:00">
+                    </div>
+                </div>
+                
+                <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:4px;">Venue</label>
+                <input id="edit-venue" class="editable-input" placeholder="Room/Venue">
+                
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+                    <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                    <button class="btn-save" onclick="saveRow()" style="padding:8px 16px;">💾 Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="../../js/api.js?v=2"></script>
+    <script>
+        let currentUser = null;
+        let timetableData = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (!userStr) { window.location.href = '../auth.html'; return; }
+            currentUser = JSON.parse(userStr);
+
+            // Check they are actually a student_rep
+            if (currentUser.role !== 'student_rep' && currentUser.role !== 'admin') {
+                document.querySelector('.page').innerHTML = '<div style="text-align:center; padding: 80px 20px;"><h2>🚫 Access Denied</h2><p>You must be a Student Rep or Admin to access this page.</p><a href="../../dashboard.html">← Back to Dashboard</a></div>';
+                return;
+            }
+
+            document.getElementById('repInfo').textContent = `${currentUser.college || 'Your College'} — Year ${currentUser.year || '?'}`;
+            document.getElementById('collegeDisplay').textContent = currentUser.college || 'your college';
+            
+            // Auto-select course based on time
+            setInterval(updateSmartNotif, 60000); // Check every minute
+            
+            loadTimetable();
+        });
+
+        // Generate time slots (08:00 to 18:00)
+        function renderCalendarGrid() {
+            const body = document.getElementById('calendarBody');
+            let html = '<div class="time-col">';
+            for (let i = 8; i <= 18; i++) {
+                html += `<div class="time-slot-label">${i.toString().padStart(2, '0')}:00</div>`;
+            }
+            html += '</div>';
+            
+            ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => {
+                html += `<div class="day-col" id="col-${day}"></div>`;
+            });
+            body.innerHTML = html;
+        }
+
+        async function loadTimetable() {
+            renderCalendarGrid();
+            try {
+                // Fetch ALL classes for the rep's year, then filter by their college locally
+                // because the classes API might not support filtering by College directly yet.
+                const allYearClasses = await API.getTimetable(currentUser.year, "");
+                
+                // Filter by college if the user has a college set
+                timetableData = currentUser.college ? 
+                    allYearClasses.filter(c => c.college && c.college.includes(currentUser.college.split(' ')[0])) : 
+                    allYearClasses;
+                
+                // If the college filter was too strict and returned nothing, fallback to program classes
+                if (timetableData.length === 0) {
+                    timetableData = await API.getTimetable(currentUser.year, currentUser.program);
+                }
+
+                // Populate course dropdown for notifications
+                const courseSelect = document.getElementById('notifCourse');
+                const seenCodes = new Set();
+                timetableData.forEach(c => {
+                    if (!seenCodes.has(c.code)) {
+                        seenCodes.add(c.code);
+                        const opt = document.createElement('option');
+                        opt.value = c.code;
+                        opt.textContent = `${c.code} - ${c.name}`;
+                        courseSelect.appendChild(opt);
+                    }
+                });
+
+                if (!timetableData || timetableData.length === 0) {
+                    document.getElementById('col-Monday').innerHTML = '<div style="padding:20px; color:var(--text-muted); text-align:center; grid-column: 1/-1; width:500px">No classes found.</div>';
+                    return;
+                }
+
+                renderCalendarBlocks(timetableData);
+                updateSmartNotif(); // Call once after loading
+            } catch (err) {
+                console.error(err);
+                document.getElementById('col-Monday').innerHTML = '<div style="padding:20px; color:#DC2626;">⚠️ Failed to load timetable</div>';
+            }
+        }
+
+        // Palette for colors based on course code
+        const colors = [
+            { bg: '#EFF6FF', border: '#3B82F6' }, // Blue
+            { bg: '#F5F3FF', border: '#8B5CF6' }, // Purple
+            { bg: '#ECFDF5', border: '#10B981' }, // Green
+            { bg: '#FFFBEB', border: '#F59E0B' }, // Yellow
+            { bg: '#FEE2E2', border: '#EF4444' }  // Red
+        ];
+
+        function getHashCode(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            return Math.abs(hash);
+        }
+
+        function renderCalendarBlocks(classes) {
+            // Clear existing blocks
+            document.querySelectorAll('.class-block').forEach(el => el.remove());
+
+            classes.forEach((c, i) => {
+                const col = document.getElementById(`col-${c.day}`);
+                if (!col) return;
+
+                const times = c.time.split(' - ');
+                if (times.length !== 2) return;
+                
+                const startHour = parseFloat(times[0].replace(':', '.'));
+                const endHour = parseFloat(times[1].replace(':', '.'));
+                
+                // Calculate position: 8:00 is top 0. Each hour is 60px.
+                const top = (startHour - 8) * 60;
+                const height = (endHour - startHour) * 60;
+                
+                const colorTheme = colors[getHashCode(c.code) % colors.length];
+
+                const block = document.createElement('div');
+                block.className = 'class-block';
+                block.style.top = `${top}px`;
+                block.style.height = `${Math.max(30, height)}px`; // min 30px
+                block.style.backgroundColor = colorTheme.bg;
+                block.style.borderColor = colorTheme.border;
+                block.dataset.search = `${c.code.toLowerCase()} ${c.name.toLowerCase()}`;
+                
+                block.innerHTML = `
+                    <div class="class-code">${c.code}</div>
+                    <div class="class-name">${c.name}</div>
+                    <div class="class-detail">
+                        <span>📍 ${c.room || 'TBD'}</span>
+                        <span>⏱️ ${c.time}</span>
+                    </div>
+                `;
+                
+                // Click to edit
+                block.onclick = () => openEditModal(i);
+                col.appendChild(block);
+            });
+        }
+
+        function filterTimetable() {
+            const query = document.getElementById('courseSearch').value.toLowerCase();
+            document.querySelectorAll('.class-block').forEach(block => {
+                if (block.dataset.search.includes(query)) block.style.display = 'flex';
+                else block.style.display = 'none';
+            });
+        }
+
+        let editingIndex = -1;
+        function openEditModal(i) {
+            editingIndex = i;
+            const c = timetableData[i];
+            const [fromTime, ...toTimeParts] = (c.time || '00:00 - 00:00').split(' - ');
+            const toTime = toTimeParts.join(' - ') || '00:00';
+
+            document.getElementById('edit-course').textContent = `${c.code} - ${c.name}`;
+            
+            // Populate selects
+            const daySel = document.getElementById('edit-day');
+            daySel.innerHTML = ['Monday','Tuesday','Wednesday','Thursday','Friday'].map(d => `<option ${d === c.day ? 'selected' : ''}>${d}</option>`).join('');
+            
+            document.getElementById('edit-from').value = fromTime;
+            document.getElementById('edit-to').value = toTime;
+            document.getElementById('edit-venue').value = c.room || '';
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingIndex = -1;
+        }
+
+        async function saveRow() {
+            if (editingIndex === -1) return;
+            const i = editingIndex;
+            const c = timetableData[i];
+            const Day = document.getElementById(`edit-day`).value;
+            const From_Time = document.getElementById(`edit-from`).value;
+            const To_Time = document.getElementById(`edit-to`).value;
+            const Venue = document.getElementById(`edit-venue`).value;
+
+            try {
+                // Update directly via the known API /api/classes/:id
+                const updateRes = await fetch(`${API.baseUrl || 'http://localhost:3000/api'}/classes/${encodeURIComponent(c.id)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        day: Day,
+                        time: `${From_Time} - ${To_Time}`,
+                        room: Venue
+                    })
+                });
+                const result = await updateRes.json();
+
+                if (updateRes.ok) {
+                    alert('✅ Timetable updated! All students will see the new schedule.');
+                    // Update local data
+                    timetableData[i].day = Day;
+                    timetableData[i].time = `${From_Time} - ${To_Time}`;
+                    timetableData[i].room = Venue;
+                    renderCalendarBlocks(timetableData);
+                    closeEditModal();
+                } else {
+                    alert('❌ ' + (result.message || 'Update failed'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('❌ Error updating timetable');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function updateSmartNotif() {
+            if (!timetableData || timetableData.length === 0) return;
+            const now = new Date();
+            const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+            const currentDay = days[now.getDay()];
+            const currentTime = now.getHours() + (now.getMinutes() / 60); // e.g., 9.5 for 9:30
+
+            // Find the class happening right now or next today
+            let nextClass = null;
+            let bestTimeDiff = Infinity;
+
+            timetableData.forEach(c => {
+                if (c.day === currentDay) {
+                    const times = c.time.split(' - ');
+                    if (times.length === 2) {
+                        const startHour = parseFloat(times[0].replace(':', '.'));
+                        // If it starts in the next 2 hours or is currently happening
+                        if (startHour >= currentTime - 1 && startHour < currentTime + 2) {
+                            const diff = Math.abs(startHour - currentTime);
+                            if (diff < bestTimeDiff) {
+                                bestTimeDiff = diff;
+                                nextClass = c;
+                            }
+                        }
+                    }
+                }
+            });
+
+            const courseSelect = document.getElementById('notifCourse');
+            if (nextClass && courseSelect) {
+                // Auto-select the upcoming class
+                courseSelect.value = nextClass.code;
+            }
+        }
+
+        async function sendNotif(type, message) {
+            const courseCode = document.getElementById('notifCourse').value;
+            if (!courseCode) {
+                alert('Please select a course first. No upcoming class auto-detected.');
+                switchTab('notifications');
+                return;
+            }
+
+            const courseName = timetableData.find(c => c.code === courseCode)?.name || courseCode;
+
+            try {
+                await API.postAnnouncement({
+                    lecturerId: currentUser.id,
+                    lecturerName: currentUser.fullName + ' (Rep)',
+                    courseCode,
+                    courseName,
+                    program: currentUser.program,
+                    year: currentUser.year,
+                    type,
+                    message
+                });
+                alert('✅ Notification sent to all students!');
+            } catch (err) {
+                console.error(err);
+                alert('❌ Error sending notification');
+            }
+        }
+
+        async function sendCustom() {
+            const msg = document.getElementById('customMsg').value.trim();
+            if (!msg) { alert('Please type a message'); return; }
+            await sendNotif('info', msg);
+            document.getElementById('customMsg').value = '';
+        }
+    </script>
+</body>
+</html>

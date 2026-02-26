@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - UPath</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/theme.css">
+    <style>
+        .admin-layout { display: flex; min-height: 100vh; }
+        .admin-sidebar { width: 240px; background: #111827; color: white; padding: 24px 16px; display: flex; flex-direction: column; }
+        .admin-sidebar .logo { font-size: 1.4rem; font-weight: 800; margin-bottom: 32px; display: flex; align-items: center; gap: 10px; }
+        .admin-sidebar .logo span { background: #DC2626; color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+        .admin-sidebar .nav a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #9CA3AF; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 0.9rem; margin-bottom: 4px; }
+        .admin-sidebar .nav a:hover, .admin-sidebar .nav a.active { background: #1F2937; color: white; }
+        .admin-sidebar .nav-icon { font-size: 1.1rem; }
+        .admin-main { flex: 1; background: var(--bg); overflow-y: auto; }
+        .admin-topbar { padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
+        .admin-topbar h1 { font-size: 1.3rem; font-weight: 800; color: var(--text); }
+        .admin-topbar .admin-badge { background: #FEE2E2; color: #DC2626; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .admin-content { padding: 24px 32px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .stat-card .stat-icon { font-size: 1.5rem; margin-bottom: 8px; }
+        .stat-card .stat-value { font-size: 2rem; font-weight: 800; color: var(--text); }
+        .stat-card .stat-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; margin-top: 4px; }
+
+        .section { margin-bottom: 32px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+
+        .data-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .data-table th { background: var(--bg); text-align: left; padding: 12px 14px; font-weight: 600; font-size: 0.8rem; color: var(--text-muted); border-bottom: 2px solid var(--border); }
+        .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text); }
+        .data-table tr:hover { background: var(--primary-light); }
+
+        .role-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .role-student { background: #DBEAFE; color: #2563EB; }
+        .role-student_rep { background: #D1FAE5; color: #059669; }
+        .role-lecturer { background: #FEE2E2; color: #DC2626; }
+        .role-admin { background: #FEF3C7; color: #D97706; }
+
+        .btn { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-danger { background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; }
+        .btn-danger:hover { background: #DC2626; color: white; }
+        .btn-success { background: #ECFDF5; color: #059669; border: 1px solid #6EE7B7; }
+        .btn-success:hover { background: #059669; color: white; }
+
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; border: none; background: var(--surface); color: var(--text-muted); font-weight: 600; cursor: pointer; border-radius: 8px 8px 0 0; border: 1px solid var(--border); border-bottom: none; font-size: 0.85rem; }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+        .form-group input, .form-group select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+
+        .filter-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .filter-row select, .filter-row input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+
+        .logout-btn { margin-top: auto; padding: 12px; background: #1F2937; border: 1px solid #374151; color: #9CA3AF; border-radius: 8px; cursor: pointer; font-weight: 600; text-align: center; }
+        .logout-btn:hover { background: #DC2626; color: white; border-color: #DC2626; }
+
+        @media (max-width: 768px) {
+            .admin-layout { flex-direction: column; }
+            .admin-sidebar { width: 100%; flex-direction: row; padding: 12px; overflow-x: auto; }
+            .admin-sidebar .logo { margin-bottom: 0; margin-right: 16px; }
+            .admin-sidebar .nav { display: flex; gap: 4px; }
+            .admin-sidebar .nav a { white-space: nowrap; padding: 8px 12px; }
+            .admin-content { padding: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="logo"><span>U</span> UPath Admin</div>
+            <nav class="nav">
+                <a href="#" class="active" onclick="switchPanel('overview')"><span class="nav-icon">📊</span> Overview</a>
+                <a href="#" onclick="switchPanel('users')"><span class="nav-icon">👥</span> Users</a>
+                <a href="#" onclick="switchPanel('timetable')"><span class="nav-icon">📅</span> Timetable</a>
+                <a href="#" onclick="switchPanel('create')"><span class="nav-icon">➕</span> Create User</a>
+            </nav>
+            <button class="logout-btn" onclick="sessionStorage.clear(); window.location.href='../auth.html'">Sign Out</button>
+        </aside>
+
+        <!-- Main -->
+        <div class="admin-main">
+            <div class="admin-topbar">
+                <h1>System Administration</h1>
+                <span class="admin-badge">ADMIN</span>
+            </div>
+            <div class="admin-content">
+
+                <!-- PANEL: Overview -->
+                <div id="panel-overview" class="tab-panel active">
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-card"><div class="stat-icon">👨‍🎓</div><div class="stat-value" id="s-students">—</div><div class="stat-label">Total Students</div></div>
+                        <div class="stat-card"><div class="stat-icon">👨‍🏫</div><div class="stat-value" id="s-lecturers">—</div><div class="stat-label">Lecturers</div></div>
+                        <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-value" id="s-reps">—</div><div class="stat-label">Student Reps</div></div>
+                        <div class="stat-card"><div class="stat-icon">🛡️</div><div class="stat-value" id="s-admins">—</div><div class="stat-label">Admins</div></div>
+                        <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-value" id="s-classes">—</div><div class="stat-label">Timetable Entries</div></div>
+                        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="s-attendance">—</div><div class="stat-label">Attendance Records</div></div>
+                        <div class="stat-card"><div class="stat-icon">📡</div><div class="stat-value" id="s-sessions">—</div><div class="stat-label">Active QR Sessions</div></div>
+                        <div class="stat-card"><div class="stat-icon">🔔</div><div class="stat-value" id="s-announcements">—</div><div class="stat-label">Announcements</div></div>
+                    </div>
+                </div>
+
+                <!-- PANEL: Users -->
+                <div id="panel-users" class="tab-panel">
+                    <div class="section-header">
+                        <div class="section-title">User Management</div>
+                    </div>
+                    <div class="filter-row">
+                        <select id="userFilterRole" onchange="loadUsers()">
+                            <option value="">All Roles</option>
+                            <option value="student">Students</option>
+                            <option value="student_rep">Student Reps</option>
+                            <option value="lecturer">Lecturers</option>
+                            <option value="admin">Admins</option>
+                        </select>
+                        <input type="text" id="userSearch" placeholder="Search by name..." oninput="filterUsersLocal()">
+                    </div>
+                    <div id="usersTableContainer"><p>Loading...</p></div>
+                </div>
+
+                <!-- PANEL: Timetable -->
+                <div id="panel-timetable" class="tab-panel">
+                    <div class="section-header">
+                        <div class="section-title">Timetable Management</div>
+                    </div>
+                    <div class="filter-bar">
+                        <select id="ttFilterCollege" onchange="filterProgramsByCollege()">
+                            <option value="">All Colleges</option>
+                        </select>
+                        <select id="ttFilterProgram" onchange="loadTimetable()">
+                            <option value="">All Programs</option>
+                        </select>
+                        <select id="ttFilterYear" onchange="loadTimetable()">
+                            <option value="">All Years</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
+                        <select id="ttFilterDay" onchange="loadTimetable()">
+                            <option value="">All Days</option>
+                            <option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option>
+                        </select>
+                    </div>
+                    <div id="timetableContainer"><p>Loading...</p></div>
+                </div>
+
+                <!-- PANEL: Create User -->
+                <div id="panel-create" class="tab-panel">
+                    <div class="section-header"><div class="section-title">Create New User</div></div>
+                    <form id="createUserForm" onsubmit="createUser(event)">
+                        <div class="form-row">
+                            <div class="form-group"><label>ID Number</label><input id="cu-id" required placeholder="e.g. 250001"></div>
+                            <div class="form-group"><label>Full Name</label><input id="cu-name" required placeholder="e.g. John Doe"></div>
+                            <div class="form-group"><label>Email</label><input id="cu-email" type="email" placeholder="Optional"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Password</label><input id="cu-password" type="password" required placeholder="Set password"></div>
+                            <div class="form-group"><label>Role</label>
+                                <select id="cu-role" required>
+                                    <option value="student">Student</option>
+                                    <option value="student_rep">Student Rep</option>
+                                    <option value="lecturer">Lecturer</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Year</label>
+                                <select id="cu-year"><option value="">N/A</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Program</label><input id="cu-program" placeholder="e.g. Computer Sciences"></div>
+                            <div class="form-group"><label>Department</label><input id="cu-dept" placeholder="e.g. Computing"></div>
+                            <div class="form-group"><label>College</label><input id="cu-college" placeholder="e.g. CEAS"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 12px; padding: 12px 32px; font-size: 0.95rem;">✅ Create User</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/api.js?v=2"></script>
+    <script>
+        let allUsers = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (!userStr) { window.location.href = '../auth.html'; return; }
+            const user = JSON.parse(userStr);
+            if (user.role !== 'admin') {
+                document.querySelector('.admin-content').innerHTML = '<div style="text-align:center;padding:80px;"><h2>🚫 Access Denied</h2><p>Admin privileges required.</p><a href="../../dashboard.html">← Back</a></div>';
+                return;
+            }
+            loadStats();
+            loadUsers();
+            loadFilterData();
+        });
+
+        let timetableDataCache = [];
+
+        function switchPanel(name) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + name).classList.add('active');
+            document.querySelectorAll('.admin-sidebar .nav a').forEach(a => a.classList.remove('active'));
+            event.target.closest('a').classList.add('active');
+            if (name === 'users') loadUsers();
+            if (name === 'timetable') loadTimetable();
+        }
+
+        async function loadStats() {
+            try {
+                const s = await API.get('/api/admin/stats');
+                document.getElementById('s-students').textContent = s.totalStudents;
+                document.getElementById('s-lecturers').textContent = s.totalLecturers;
+                document.getElementById('s-reps').textContent = s.totalReps;
+                document.getElementById('s-admins').textContent = s.totalAdmins;
+                document.getElementById('s-classes').textContent = s.totalClasses;
+                document.getElementById('s-attendance').textContent = s.totalAttendance;
+                document.getElementById('s-sessions').textContent = s.activeSessions;
+                document.getElementById('s-announcements').textContent = s.totalAnnouncements;
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadUsers() {
+            const role = document.getElementById('userFilterRole').value;
+            const container = document.getElementById('usersTableContainer');
+            try {
+                const data = await API.get('/api/users' + (role ? `?role=${role}` : ''));
+                allUsers = data.users || [];
+                renderUsersTable(allUsers);
+            } catch(e) { container.innerHTML = '<p>Error loading users</p>'; }
+        }
+
+        function filterUsersLocal() {
+            const search = document.getElementById('userSearch').value.toLowerCase();
+            const filtered = allUsers.filter(u => u.fullName.toLowerCase().includes(search) || u.id.includes(search));
+            renderUsersTable(filtered);
+        }
+
+        function renderUsersTable(users) {
+            const container = document.getElementById('usersTableContainer');
+            if (users.length === 0) { container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:40px;">No users found</p>'; return; }
+
+            let html = `<table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Program</th><th>Year</th><th>Actions</th></tr></thead><tbody>`;
+            users.forEach(u => {
+                const rc = `role-${u.role}`;
+                html += `<tr>
+                    <td><strong>${u.id}</strong></td><td>${u.fullName}</td><td>${u.email || '—'}</td>
+                    <td><span class="role-badge ${rc}">${u.role.replace('_',' ')}</span></td>
+                    <td>${u.program || '—'}</td><td>${u.year || '—'}</td>
+                    <td>
+                        <select onchange="changeUserRole('${u.id}', this.value)" style="padding:4px 8px; border-radius:4px; border:1px solid var(--border); font-size:0.8rem;">
+                            <option value="" selected disabled>Change Role</option>
+                            <option value="student">Student</option>
+                            <option value="student_rep">Student Rep</option>
+                            <option value="lecturer">Lecturer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button class="btn btn-danger" onclick="deleteUser('${u.id}')" style="margin-left:4px;">🗑️</button>
+                    </td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        async function changeUserRole(userId, newRole) {
+            if (!newRole) return;
+            if (!confirm(`Change user ${userId} to ${newRole}?`)) return;
+            try {
+                const res = await API.put(`/api/users/${userId}/role`, { role: newRole });
+                if (res.success) { alert('✅ ' + res.message); loadUsers(); loadStats(); }
+                else alert('❌ ' + (res.message || 'Failed'));
+            } catch(e) { alert('❌ Error'); }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm(`Permanently delete user ${userId}? This cannot be undone.`)) return;
+            try {
+                const res = await API.delete(`/api/users/${userId}`);
+                if (res.success) { alert('✅ User deleted'); loadUsers(); loadStats(); }
+                else alert('❌ ' + (res.message || 'Failed'));
+            } catch(e) { alert('❌ Error'); }
+        }
+
+        async function loadFilterData() {
+            try {
+                const data = await API.get('/api/classes');
+                // The API now returns a flat array for classes
+                timetableDataCache = data || [];
+                
+                const collegeSel = document.getElementById('ttFilterCollege');
+                const colleges = [...new Set(timetableDataCache.map(c => c.college).filter(Boolean))].sort();
+                
+                colleges.forEach(c => {
+                    const o = document.createElement('option');
+                    o.value = c;
+                    o.textContent = c;
+                    collegeSel.appendChild(o);
+                });
+                
+                filterProgramsByCollege();
+            } catch(e) {
+                console.error("Error loading filter data:", e);
+            }
+        }
+
+        function filterProgramsByCollege() {
+            const college = document.getElementById('ttFilterCollege').value;
+            const programSel = document.getElementById('ttFilterProgram');
+            programSel.innerHTML = '<option value="">All Programs</option>';
+            
+            const filteredClasses = college ? 
+                timetableDataCache.filter(c => c.college === college) : 
+                timetableDataCache;
+                
+            const programs = [...new Set(filteredClasses.map(c => c.program).filter(Boolean))].sort();
+            
+            programs.forEach(p => {
+                const o = document.createElement('option');
+                o.value = p;
+                o.textContent = p;
+                programSel.appendChild(o);
+            });
+            
+            loadTimetable();
+        }
+
+        async function loadTimetable() {
+            const college = document.getElementById('ttFilterCollege').value;
+            const prog = document.getElementById('ttFilterProgram').value;
+            const year = document.getElementById('ttFilterYear').value;
+            const day = document.getElementById('ttFilterDay').value;
+            const container = document.getElementById('timetableContainer');
+            
+            try {
+                let url = '/api/admin/timetable?';
+                if (college) url += `college=${encodeURIComponent(college)}&`;
+                if (prog) url += `program=${encodeURIComponent(prog)}&`;
+                if (year) url += `year=${year}&`;
+                if (day) url += `day=${day}`;
+                
+                const data = await API.get(url);
+                const classes = data.classes || [];
+
+                if (classes.length === 0) { 
+                    container.innerHTML = '<p style="text-align:center; padding:40px; color:var(--text-muted);">No entries found</p>'; 
+                    return; 
+                }
+
+                let html = `<table class="data-table"><thead><tr><th>Course</th><th>Day</th><th>Time</th><th>Venue</th><th>Lecturer</th><th>Program/Year</th></tr></thead><tbody>`;
+                classes.forEach(c => {
+                    html += `<tr><td><strong>${c.Course_Code}</strong><br><small>${c.Course_Name}</small></td>
+                        <td>${c.Day}</td><td>${c.From_Time} - ${c.To_Time}</td><td>${c.Venue||'TBD'}</td>
+                        <td>${c.Lecturer||'—'}</td><td>${c.Program||'—'} (Y${c.Year_Semester?.substring(1,2)||'?'})</td></tr>`;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch(e) { 
+                console.error("Error loading timetable:", e);
+                container.innerHTML = '<p>Error loading timetable</p>'; 
+            }
+        }
+
+        async function createUser(e) {
+            e.preventDefault();
+            const payload = {
+                id: document.getElementById('cu-id').value,
+                fullName: document.getElementById('cu-name').value,
+                email: document.getElementById('cu-email').value || undefined,
+                password: document.getElementById('cu-password').value,
+                role: document.getElementById('cu-role').value,
+                year: document.getElementById('cu-year').value ? parseInt(document.getElementById('cu-year').value) : undefined,
+                program: document.getElementById('cu-program').value || undefined,
+                department: document.getElementById('cu-dept').value || undefined,
+                college: document.getElementById('cu-college').value || undefined
+            };
+            try {
+                const res = await API.post('/api/admin/create-user', payload);
+                if (res.success) {
+                    alert(`✅ User ${res.user.fullName} created as ${res.user.role}`);
+                    document.getElementById('createUserForm').reset();
+                    loadStats();
+                } else {
+                    alert('❌ ' + (res.message || 'Failed to create user'));
+                }
+            } catch(e) { alert('❌ Error creating user'); }
+        }
+    </script>
+</body>
+</html>

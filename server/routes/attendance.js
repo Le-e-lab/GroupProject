@@ -13,6 +13,7 @@ const router = express.Router();
 const { Attendance, Session, Class, User, sequelize } = require('../models');
 const { TOTP, NobleCryptoPlugin, ScureBase32Plugin } = require('otplib');
 const { Op } = require('sequelize');
+const validator = require('validator');
 
 // Create a new TOTP instance (30s step, window 1)
 // Manual TOTP Implementation (HMAC-SHA1)
@@ -67,8 +68,12 @@ function generateSecret() {
  */
 router.post('/generate-code', async (req, res) => {
     try {
-        const { classId } = req.body;
+        const { classId, forceNew } = req.body;
         if (!classId) return res.status(400).json({ message: 'Class ID required' });
+
+        if (forceNew) {
+            await Session.destroy({ where: { classId } });
+        }
 
         let session = await Session.findOne({
             where: {
@@ -111,7 +116,12 @@ router.post('/generate-code', async (req, res) => {
  */
 router.post('/validate-code', async (req, res) => {
     try {
-        const { classId, studentId, code, userLat, userLon } = req.body;
+        let { classId, studentId, code, userLat, userLon } = req.body;
+        
+        // Sanitize the inputs
+        if (classId) classId = validator.escape(validator.trim(classId));
+        if (studentId) studentId = validator.escape(validator.trim(studentId));
+        if (code) code = validator.escape(validator.trim(String(code)));
         
         // Find active session
         const session = await Session.findOne({
@@ -293,17 +303,31 @@ router.get('/stats/course/:courseId', async (req, res) => {
             }
         });
 
-        // 3. Get Unique Students
-        const uniqueStudents = await Attendance.findAll({
-            attributes: [
-                [sequelize.fn('DISTINCT', sequelize.col('userId')), 'userId']
-            ],
-            where: {
-                classId: { [Op.like]: `${courseId}%` }
-            }
+        // 3. Get expected student count from Users table (not just those who attended)
+        const classEntries = await Class.findAll({
+            where: { Course_Code: courseId },
+            attributes: ['Program', 'Year_Semester']
         });
         
-        const activeStudents = uniqueStudents.length || 25; // Default if no data
+        const cohorts = classEntries.map(c => {
+            const ym = c.Year_Semester && c.Year_Semester.match(/Y(\d)/i);
+            return {
+                program: { [Op.like]: `${c.Program || ''}%` },
+                year: ym ? parseInt(ym[1]) : 2
+            };
+        }).filter(c => c.program);
+
+        let activeStudents = 0;
+        if (cohorts.length > 0) {
+            activeStudents = await User.count({
+                where: {
+                    role: { [Op.in]: ['student', 'student_rep'] },
+                    [Op.or]: cohorts
+                }
+            });
+        }
+
+        if (activeStudents === 0) activeStudents = 25; // Fallback for demo if no users seeded
         const expectedRecords = totalSessions * activeStudents;
         
         // Calculate Average
@@ -378,16 +402,22 @@ router.get('/students/:courseCode', async (req, res) => {
         // FIX: Get ALL programs that take this course (not just first one)
         const allClassEntries = await Class.findAll({
             where: { Course_Code: courseCode },
-            attributes: ['Program']
+            attributes: ['Program', 'Year_Semester']
         });
-        const programs = [...new Set(allClassEntries.map(c => c.Program).filter(Boolean))];
+        
+        const cohorts = allClassEntries.map(c => {
+            const ym = c.Year_Semester && c.Year_Semester.match(/Y(\d)/i);
+            return {
+                program: { [Op.like]: `${c.Program || ''}%` },
+                year: ym ? parseInt(ym[1]) : 2
+            };
+        }).filter(c => c.program);
         
         // Get students from ALL programs that take this course
         const students = await User.findAll({
             where: {
-                role: 'student',
-                program: { [Op.in]: programs },
-                year: year
+                role: { [Op.in]: ['student', 'student_rep'] },
+                [Op.or]: cohorts
             }
         });
         
@@ -437,3 +467,26 @@ router.get('/students/:courseCode', async (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * ========================================
+ * MEMORY & DATABASE LEAK PREVENTION
+ * ========================================
+ * Periodically purge expired 6-digit TOTP sessions from the SQLite 
+ * database so the table doesn't grow infinitely over months of uptime.
+ * Runs every 1 hour (3600000 ms).
+ */
+setInterval(async () => {
+    try {
+        const deletedCount = await Session.destroy({
+            where: {
+                expiresAt: { [Op.lt]: new Date() }
+            }
+        });
+        if (deletedCount > 0) {
+            console.log(`[CLEANUP] Purged ${deletedCount} expired attendance sessions from the database.`);
+        }
+    } catch (e) {
+        console.error('[CLEANUP Error] Failed to purge expired sessions:', e);
+    }
+}, 3600000);

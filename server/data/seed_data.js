@@ -1,192 +1,137 @@
-const seedData = {
-    // Colleges and their programs
-    colleges: {
-        'Computing': {
-            programs: ['NCSC', 'NCIS'],
-            lecturers: [
-                { name: 'Dr. T. Zengeni', email: 'tzengeni@upath.ac.zw' },
-                { name: 'Mr. B. Makambwa', email: 'bmakambwa@upath.ac.zw' },
-                { name: 'Mr. P. Chinzvende', email: 'pchinzvende@upath.ac.zw' },
-                { name: 'Mrs. S. Moyo', email: 'smoyo@upath.ac.zw' },
-                { name: 'Dr. K. Dube', email: 'kdube@upath.ac.zw' }
-            ],
-            classes: {
-                'NCSC': ['Operating Systems', 'Network Security', 'Data Structures', 'Software Engineering', 'Intro to Programming', 'Calculus I', 'Advanced Database', 'AI Fundamentals'],
-                'NCIS': ['Group Project', 'Computer Essentials', 'Business Systems', 'Web Development', 'IT Auditing', 'Information Security']
-            }
-        },
-        'Business': {
-            programs: ['BACC', 'BMKT', 'BMAN'],
-            lecturers: [
-                { name: 'Dr. M. Phiri', email: 'mphiri@upath.ac.zw' },
-                { name: 'Mrs. L. Gumbo', email: 'lgumbo@upath.ac.zw' },
-                { name: 'Mr. K. Banda', email: 'kbanda@upath.ac.zw' },
-                { name: 'Dr. J. Ndlovu', email: 'jndlovu@upath.ac.zw' }
-            ],
-            classes: {
-                'BACC': ['Financial Accounting', 'Cost Accounting', 'Auditing Principles', 'Taxation', 'Corporate Finance'],
-                'BMKT': ['Marketing Principles', 'Consumer Behavior', 'Digital Marketing', 'Brand Management'],
-                'BMAN': ['Management Theory', 'Organizational Behavior', 'Strategic Management', 'HR Management']
-            }
-        },
-        'Law': {
-            programs: ['LLBS'],
-            lecturers: [
-                { name: 'Justice G. Malaba', email: 'gmalaba@upath.ac.zw' },
-                { name: 'Adv. T. Mpofu', email: 'tmpofu@upath.ac.zw' },
-                { name: 'Dr. L. Madhuku', email: 'lmadhuku@upath.ac.zw' }
-            ],
-            classes: {
-                'LLBS': ['Constitutional Law', 'Criminal Law', 'Contract Law', 'Legal Ethics', 'Human Rights Law', 'Property Law', 'Evidence']
-            }
-        },
-        'Health': {
-            programs: ['NURS', 'MEDI'],
-            lecturers: [
-                { name: 'Dr. S. Masuka', email: 'smasuka@upath.ac.zw' },
-                { name: 'Matron P. Dlamini', email: 'pdlamini@upath.ac.zw' },
-                { name: 'Dr. A. Mutize', email: 'amutize@upath.ac.zw' }
-            ],
-            classes: {
-                'NURS': ['Anatomy & Physiology', 'Community Health', 'Pediatric Nursing', 'Surgical Nursing'],
-                'MEDI': ['Pathology', 'Pharmacology', 'Internal Medicine', 'Surgery Clerkship', 'Public Health']
-            }
-        }
-    },
+const fs = require('fs');
+const path = require('path');
 
-    // Generated Data Storage
+// Read the parsed timetable JSON
+const rawDataPath = path.join(__dirname, 'parsed_timetable.json');
+let jsonData = [];
+if (fs.existsSync(rawDataPath)) {
+    jsonData = JSON.parse(fs.readFileSync(rawDataPath, 'utf8'));
+} else {
+    console.error("parsed_timetable.json not found! Run parse_raw.js first.");
+}
+
+const seedData = {
     lecturers: [],
     classes: [],
     
-    // Generate Lecturers
     generateLecturers: function() {
+        // Extract unique lecturers from json
+        const uniqueLecs = [...new Set(jsonData.map(c => c.lecturer))].filter(Boolean);
+        
         let lecIdCounter = 210100;
         
-        Object.keys(this.colleges).forEach(collegeName => {
-            const college = this.colleges[collegeName];
-            college.lecturers.forEach(lec => {
-                lecIdCounter++;
-                this.lecturers.push({
-                    id: lecIdCounter.toString(),
-                    fullName: lec.name,
-                    email: lec.email,
-                    role: 'lecturer',
-                    password: 'staff123',
-                    department: collegeName
-                });
+        uniqueLecs.forEach(lecName => {
+            // Find finding their primary college from the data
+            const lecsClass = jsonData.find(c => c.lecturer === lecName);
+            const collegeName = lecsClass ? lecsClass.college : 'Computing';
+            
+            lecIdCounter++;
+            
+            // Clean names to simple chars for email
+            const safeName = lecName.replace(/[^a-zA-Z ]/g, "").split(' ');
+            const emailPrefix = safeName.length > 1 ? safeName.pop().toLowerCase() + lecIdCounter : `lecturer${lecIdCounter}`;
+
+            this.lecturers.push({
+                id: lecIdCounter.toString(),
+                fullName: lecName,
+                email: `${emailPrefix}@africau.edu`,
+                role: 'lecturer',
+                password: 'staff123',
+                department: collegeName
             });
         });
         
-        // Ensure hardcoded demo lecturers exist with specific IDs if needed, otherwise verify above covers it.
-        // The above generates clean new IDs.
         return this.lecturers;
     },
 
-    // Generate Classes
     generateClasses: function() {
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        const rooms = ['Room 101', 'Room 204', 'Hall A', 'Hall B', 'ICT Lab', 'Lab 2B', 'Smart Class 4'];
-        
-        // Helper to generate unique course names if static list runs out
-        const getCourseName = (prog, year, index, staticList) => {
-            // Try to set unique names for specific years if possible, otherwise generic
-            // We need 5 per year => indices 0-4
-            // Map global index to year-based index
-            return `[${prog}${year}] Module ${index + 1}`; 
-        };
-
-        // Specific Curricula (5 courses per year * 4 years = 20 courses per program)
-        const curricula = {
-            'NCSC': {
-                1: ['Intro to Computer Science', 'Programming I', 'Digital Logic', 'Mathematics for CS', 'Communication Skills'],
-                2: ['Data Structures', 'Operating Systems', 'Computer Arch', 'Web Development', 'Linear Algebra'],
-                3: ['Software Engineering', 'Database Systems', 'Network Security', 'Algorithms', 'AI Fundamentals'],
-                4: ['Distributed Systems', 'Cloud Computing', 'Final Year Project', 'Mobile Dev', 'IT Governance']
-            },
-            'NCIS': {
-                1: ['Intro to IT', 'Business Information', 'Programming I', 'Statistics', 'Hardware Fundamentals'],
-                2: ['System Analysis', 'Database Design', 'Web Design', 'Networking Essentials', 'IT Support'],
-                3: ['IT Project Mgmt', 'E-Commerce', 'Info Security', 'Data Analytics', 'Enterprise Systems'],
-                4: ['Strategic IT', 'Audit & Control', 'Capstone Project', 'User Experience', 'Cyber Law']
-            },
-            // Generics for others for brevity, but still 5 distinct per year
-            'DEFAULT': (prog, year) => [
-                `${prog} Principles ${year}`, 
-                `${prog} Practice ${year}`, 
-                `${prog} Theory ${year}`, 
-                `${prog} Application ${year}`, 
-                `${prog} Elective ${year}`
-            ]
-        };
-
-        Object.keys(this.colleges).forEach(collegeName => {
-            const college = this.colleges[collegeName];
-            const collegeLecturers = this.lecturers.filter(l => l.department === collegeName);
+        this.classes = jsonData.map((c, i) => {
+            // Find matched lecturer ID
+            const lec = this.lecturers.find(l => l.fullName === c.lecturer);
+            const lecId = lec ? lec.id : '210000';
             
-            college.programs.forEach(prog => {
-                // Generate for Years 1 to 4
-                for (let year = 1; year <= 4; year++) {
-                    // Get course names for this specific year
-                    let courseNames = (curricula[prog] && curricula[prog][year]) 
-                        ? curricula[prog][year] 
-                        : curricula['DEFAULT'](prog, year);
-
-                    courseNames.forEach((className, i) => {
-                        const randomLec = collegeLecturers[Math.floor(Math.random() * collegeLecturers.length)];
-                        // Spread 5 courses across 5 days if possible, or random
-                        const day = days[i % 5]; 
-                        const randomRoom = rooms[Math.floor(Math.random() * rooms.length)];
-                        
-                        // Time slots: Mon 8-10, Tue 10-12... simple pattern to avoid total overlap
-                        const startHour = 8 + (i * 2); 
-                        const time = `${startHour.toString().padStart(2,'0')}:00 - ${(startHour+2).toString().padStart(2,'0')}:00`;
-
-                        this.classes.push({
-                            id: `${prog.toLowerCase()}-${year}-${i}`,
-                            code: `${prog}${year}0${i+1}`, // e.g. NCSC201
-                            name: className,
-                            year: year,
-                            day: day,
-                            time: time,
-                            room: randomRoom,
-                            lecturerId: randomLec.id,
-                            lecturerName: randomLec.fullName
-                        });
-                    });
+            // Extract roughly the "Year" from "Y1 S2" => 1
+            const yearMatch = c.yearSemester.match(/Y(\d)/);
+            const year = yearMatch ? parseInt(yearMatch[1]) : 1;
+            
+            // The JSON time is usually "11-12", "9-11", "2-4" etc. Need to format to "11:00 - 12:00"
+            // Let's create a small helper for this parser
+            let formattedTime = c.time;
+            try {
+                if (c.time.includes('-')) {
+                    const parts = c.time.split('-');
+                    const startRaw = parts[0].trim().toLowerCase().replace('pm','').replace('am','');
+                    const endRaw = parts[1].trim().toLowerCase().replace('pm','').replace('am','');
+                    
+                    // Simple AM/PM logic: 8, 9, 10, 11, 12 are usually standard. 1, 2, 3, 4, 5, 6, 7 are PM (+12)
+                    const formatHour = (hrStr) => {
+                        let hr = parseInt(hrStr);
+                        if (hr < 8 && hr !== 0) hr += 12; // 1 becomes 13, 2 becomes 14
+                        return `${hr.toString().padStart(2, '0')}:00`;
+                    };
+                    
+                    formattedTime = `${formatHour(startRaw)} - ${formatHour(endRaw)}`;
+                } else if (c.time.includes('pm-')) { // edge cases like 4pm-6pm
+                    const str = c.time.replace(/pm/g,'').replace(/am/g,'');
+                    const parts = str.split('-');
+                    formattedTime = `${(parseInt(parts[0])+12).toString().padStart(2,'0')}:00 - ${(parseInt(parts[1])+12).toString().padStart(2,'0')}:00`;
                 }
-            });
+            } catch (e) { }
+
+            return {
+                id: `cls-${i}`,
+                code: c.courseCode,
+                name: c.courseName,
+                year: year,
+                day: c.day,
+                time: formattedTime,
+                room: c.venue,
+                lecturerId: lecId,
+                lecturerName: c.lecturer,
+                
+                // Keep the raw program & section & college so `seed_all.js` or others can access it
+                rawCollege: c.college,
+                rawProgram: c.program,
+                rawYearSemester: c.yearSemester,
+                rawSection: c.section
+            };
         });
         return this.classes;
     },
 
-    generateStudents: (count = 200) => {
+    generateStudents: function(count = 2500) { // Large cap as there are 800+ courses
         const students = [];
-        const firstNames = ['James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda', 'William', 'Elizabeth', 'David', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Charles', 'Karen', 'Daniel', 'Nancy', 'Matthew', 'Lisa', 'Anthony', 'Betty', 'Donald', 'Margaret', 'Mark', 'Sandra'];
-        const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson'];
+        const firstNames = ['James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda', 'William', 'Elizabeth', 'Tendai', 'Kudzai', 'Nyasha', 'Tatenda', 'Farai', 'Chipo', 'Rudo'];
+        const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Moyo', 'Ndlovu', 'Sibanda', 'Dube', 'Ncube', 'Gumbo', 'Mutasa', 'Chifamba', 'Banda', 'Phiri'];
         
-        const collegeKeys = Object.keys(seedData.colleges);
+        // Use the actual programs extracted from the JSON
+        const programsAndColleges = {};
+        jsonData.forEach(c => {
+             if (c.program && c.college) {
+                 programsAndColleges[c.program] = c.college;
+             }
+        });
         
-        // Structured Generation: 15 students per College per Year
-        // Total = 4 Colleges * 4 Years * 15 Students = 240 Students
-        const studentsPerGroup = 15;
+        const programs = Object.keys(programsAndColleges);
+        if (programs.length === 0) return students;
 
-        for (let year = 1; year <= 4; year++) {
-            // Year prefix logic (Target: YY0XXX - 6 digits total)
-            const yearPrefix = (26 - year).toString(); 
-
-            collegeKeys.forEach(collegeName => {
-                const collegeProgs = seedData.colleges[collegeName].programs;
-
-                for (let i = 0; i < studentsPerGroup; i++) {
-                     // ID Generation: YY0[CollegeIndex][Index]
-                     // This ensures IDs are somewhat ordered by college too logic-wise, 
-                     // but mostly ensures uniqueness combined with Year.
-                     // Actually, keeping it simple random suffix is safer for collision avoidance if not tracking used.
-                     // But user asked for "organized". 
-                     // Let's use a counter per year-college maybe?
-                     // Format: YY0 + Random(100-999).
-                     // To avoid collisions in this loop, we can just check existence or use a large range.
-                     
+        // Spread students across all programs and years
+        let studentCount = 0;
+        for (const prog of programs) {
+            const college = programsAndColleges[prog];
+            // Get valid years for this program from data
+            const progClasses = jsonData.filter(c => c.program === prog);
+            const years = [...new Set(progClasses.map(c => {
+                 const m = c.yearSemester.match(/Y(\d)/);
+                 return m ? parseInt(m[1]) : 1;
+            }))];
+            
+            years.forEach(yr => {
+                // Generate ~10-15 students per program per year
+                const numStudents = Math.floor(Math.random() * 6) + 10;
+                const yearPrefix = (26 - yr).toString(); 
+                
+                for(let i=0; i<numStudents; i++) {
                      let id;
                      let unique = false;
                      while (!unique) {
@@ -197,15 +142,10 @@ const seedData = {
 
                      const fname = firstNames[Math.floor(Math.random() * firstNames.length)];
                      const lname = lastNames[Math.floor(Math.random() * lastNames.length)];
-                     const program = collegeProgs[Math.floor(Math.random() * collegeProgs.length)];
 
-                     // Email Generation: LastName + FirstInitial + @africau.edu
-                     // Handle duplicates by appending a number if necessary
                      let emailBase = `${lname.toLowerCase()}${fname.charAt(0).toLowerCase()}`;
                      let email = `${emailBase}@africau.edu`;
                      let counter = 1;
-                     
-                     // Check against existing generated students (and potentially demo students later)
                      while (students.some(s => s.email === email)) {
                          email = `${emailBase}${counter}@africau.edu`;
                          counter++;
@@ -217,22 +157,26 @@ const seedData = {
                         email: email, 
                         password: 'password123',
                         role: 'student',
-                        year: year,
-                        program: program,
-                        department: collegeName
+                        year: yr,
+                        program: prog,
+                        department: college,
+                        college: college // Keep aligned with backend expectations
                     });
+                    
+                    studentCount++;
+                    if (studentCount >= count) return students; // Cap at requested count
                 }
             });
         }
         
         // Ensure Demo Students exist for testing and override if random gen took their ID
         const demoStudents = [
-            { id: '240101', name: 'Demo Student', year: 2, prog: 'NCSC', dept: 'Computing' },
-            { id: '220101', name: 'Legal Eagle', year: 4, prog: 'LLBS', dept: 'Law' }
+            { id: '240101', name: 'Demo Rep', year: 2, prog: 'BSc Honours in Computer Sciences', dept: 'CEAS', role: 'student_rep' },
+            { id: '240102', name: 'Demo AI Student', year: 2, prog: 'BSc Honours in Artificial Intelligence', dept: 'CEAS', role: 'student' },
+            { id: '220101', name: 'Legal Eagle', year: 4, prog: 'LLBS', dept: 'Law', role: 'student' }
         ];
 
         demoStudents.forEach(demo => {
-            // Remove any random collision
             const idx = students.findIndex(s => s.id === demo.id);
             if (idx !== -1) students.splice(idx, 1);
 
@@ -241,58 +185,16 @@ const seedData = {
                 fullName: demo.name,
                 email: `${demo.id}@upath.ac.zw`,
                 password: 'password123',
-                role: 'student',
+                role: demo.role,
                 year: demo.year,
                 program: demo.prog,
-                department: demo.dept
+                department: demo.dept,
+                college: demo.dept
             });
         });
 
         return students;
-    },
-
-    generateAttendance: (students, classes) => {
-        const attendance = [];
-        const today = new Date();
-        
-        // Generate for past 2 weeks
-        for (let i = 0; i < 14; i++) {
-             const date = new Date(today);
-             date.setDate(date.getDate() - i);
-             const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-             
-             // Find classes on this day
-             const dailyClasses = classes.filter(c => c.day === dayName);
-
-             dailyClasses.forEach(cls => {
-                 // Get eligible students (Matching program logic: Class Code Prefix == Student Program)
-                 const progPrefix = cls.code.substring(0, 4);
-                 
-                 const eligibleStudents = students.filter(s => 
-                    s.year === cls.year && 
-                    s.program === progPrefix
-                 );
-                 
-                 eligibleStudents.forEach(stu => {
-                     // 80% attendance rate
-                     if (Math.random() > 0.2) {
-                         attendance.push({
-                             date: date.toISOString().split('T')[0],
-                             status: 'present',
-                             method: Math.random() > 0.5 ? 'qr' : 'manual',
-                             studentId: stu.id,
-                             classId: cls.id
-                         });
-                     }
-                 });
-             });
-        }
-        return attendance;
     }
 };
-
-// Auto-run generators to populate internal arrays
-seedData.generateLecturers();
-seedData.generateClasses();
 
 module.exports = seedData;

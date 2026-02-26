@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - UPath Student</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/theme.css">
+    <link rel="stylesheet" href="../../css/toast.css?v=2">
+    <style>
+        .notifications-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .notification-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+
+        .notification-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .notif-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .notif-content {
+            flex: 1;
+        }
+
+        .notif-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .notif-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .notif-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .notif-message {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .notif-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: var(--bg);
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            display: inline-flex;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px dashed var(--border);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navbar instead of sidebar -->
+    <nav class="navbar">
+      <a href="../../dashboard.html" class="navbar-brand">
+        <div class="navbar-logo">U</div>
+        <span class="navbar-title">UPath</span>
+        <span class="navbar-role">Student</span>
+      </a>
+      <div class="navbar-nav">
+        <a href="../../dashboard.html" class="navbar-link">Overview</a>
+        <a href="schedule.html" class="navbar-link">Classes</a>
+        <a href="reports.html" class="navbar-link">Attendance</a>
+        <a href="map.html" class="navbar-link">Map</a>
+      </div>
+      <div class="navbar-actions" style="display: flex; align-items: center; gap: 16px;">
+        <a href="notifications.html" style="text-decoration: none; position: relative; color: var(--primary); transition: color 0.2s;">
+          <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        </a>
+        <a href="profile.html" class="navbar-avatar" id="userAvatar" style="text-decoration: none">ST</a>
+        <button class="navbar-logout" onclick="sessionStorage.clear(); window.location.href='../auth.html'">Sign Out</button>
+      </div>
+    </nav>
+
+    <main class="page">
+        <div class="page-container" style="max-width: 800px;">
+            <div class="page-header" style="margin-bottom: 24px;">
+                <h1 class="page-title" style="font-size: 1.8rem;">Notification History</h1>
+            </div>
+            <div class="notifications-container" id="notifContainer">
+                <!-- Notifications injected here -->
+                <div class="empty-state">
+                    <div class="empty-icon">⏳</div>
+                    <h3>Loading notifications...</h3>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/api.js?v=2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (!userStr) {
+                window.location.href = '../auth.html';
+                return;
+            }
+            const user = JSON.parse(userStr);
+            loadNotificationsHistory(user);
+        });
+
+        async function loadNotificationsHistory(user) {
+            const container = document.getElementById('notifContainer');
+            
+            try {
+                // Determine Year
+                let userYear = user.year;
+                if (!userYear && user.id) {
+                    if (user.id.startsWith('25')) userYear = 1;
+                    else if (user.id.startsWith('24')) userYear = 2;
+                    else if (user.id.startsWith('23')) userYear = 3;
+                    else if (user.id.startsWith('22')) userYear = 4;
+                }
+
+                const data = await API.getAnnouncementsForStudent(user.program, userYear);
+                const announcements = data.announcements || [];
+
+                if (announcements.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <h3>All Caught Up!</h3>
+                            <p>You have no recent notifications for your program and year.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                announcements.forEach(a => {
+                    let colorClass, bgClass, iconText;
+
+                    if (a.type === 'info') {
+                        colorClass = '#3B82F6'; bgClass = '#EFF6FF'; iconText = 'ℹ️';
+                    } else if (a.type === 'cancel') {
+                        colorClass = '#EF4444'; bgClass = '#FEF2F2'; iconText = '🚫';
+                    } else if (a.type === 'delay') {
+                        colorClass = '#F59E0B'; bgClass = '#FFFBEB'; iconText = '🕒';
+                    } else if (a.type === 'venue') {
+                        colorClass = '#DC2626'; bgClass = '#FEE2E2'; iconText = '📍';
+                    } else if (a.type === 'online') {
+                        colorClass = '#059669'; bgClass = '#D1FAE5'; iconText = '💻';
+                    } else {
+                        colorClass = '#6B7280'; bgClass = '#F9FAFB'; iconText = '🔔';
+                    }
+
+                    const timeString = new Date(a.timestamp).toLocaleString('en-US', {
+                        weekday: 'short', month: 'short', day: 'numeric',
+                        hour: 'numeric', minute: '2-digit', hour12: true
+                    });
+
+                    html += `
+                        <div class="notification-card" style="border-left: 4px solid ${colorClass}">
+                            <div class="notif-icon" style="background: ${bgClass}; color: ${colorClass};">
+                                ${iconText}
+                            </div>
+                            <div class="notif-content">
+                                <div class="notif-header">
+                                    <div class="notif-title">${a.courseName || a.courseCode}</div>
+                                    <div class="notif-time">${timeString}</div>
+                                </div>
+                                <div class="notif-message">${a.message}</div>
+                                <div class="notif-meta" style="flex-wrap: wrap; width: 100%; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; gap: 16px; align-items: center;">
+                                        <span>👤 ${a.lecturerName}</span>
+                                        <span>•</span>
+                                        <span>${a.type.toUpperCase()}</span>
+                                    </div>
+                                    ${a.type === 'online' ? `<a href="#" onclick="alert('Joining Microsoft Teams / Zoom Meeting...')" style="background: ${colorClass}; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; margin-left: auto;">Join Class</a>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.error("Failed to load notifications page", err);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <h3>Connection Error</h3>
+                        <p>Could not load notification history. Please check your connection.</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
