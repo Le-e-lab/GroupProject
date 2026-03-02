@@ -1,0 +1,630 @@
+{
+  "courses": [
+    {
+      "Code": "NCSC312",
+      "Dept": null,
+      "Year": "Y2S1"
+    },
+    {
+      "Code": "NCSC312",
+      "Dept": null,
+      "Year": "Y2S1"
+    },
+    {
+      "Code": "NCSC312",
+      "Dept": null,
+      "Year": "Y2S1"
+    },
+    {
+      "Code": "NCSC312",
+      "Dept": null,
+      "Year": "Y2S1"
+    },
+    {
+      "Code": "NCSC301",
+      "Dept": null,
+      "Year": "Y3S1"
+    },
+    {
+      "Code": "NCSC301",
+      "Dept": null,
+      "Year": "Y3S1"
+    },
+    {
+      "Code": "NCSC312",
+      "Dept": null,
+      "Year": "Y2S1"
+    },
+    {
+      "Code": "NCSC312",
+      "Dept": null,
+      "Year": "Y2S1"
+    },
+    {
+      "Code": "NCSC301",
+      "Dept": null,
+      "Year": "Y3S1"
+    },
+    {
+      "Code": "NCSC301",
+      "Dept": null,
+      "Year": "Y3S1"
+    },
+    {
+      "Code": "IRD1203",
+      "Dept": null,
+      "Year": "Y1S1"
+    },
+    {
+      "Code": "IRD1203",
+      "Dept": null,
+      "Year": "Y1S1"
+    },
+    {
+      "Code": "NHIR225",
+      "Dept": null,
+      "Year": "Y2S1"
+    },
+    {
+      "Code": "NHIR225",
+      "Dept": null,
+      "Year": "Y2S1"
+    },
+    {
+      "Code": "NHIR423",
+      "Dept": null,
+      "Year": "Y3S1"
+    },
+    {
+      "Code": "NHIR423",
+      "Dept": null,
+      "Year": "Y3S1"
+    },
+    {
+      "Code": "PIR515",
+      "Dept": null,
+      "Year": "Y1S1"
+    },
+    {
+      "Code": "PIR515",
+      "Dept": null,
+      "Year": "Y1S1"
+    }
+  ],
+  "roles": [
+    {
+      "role": "admin",
+      "count": 1
+    },
+    {
+      "role": "lecturer",
+      "count": 185
+    },
+    {
+      "role": "student",
+      "count": 1068
+    },
+    {
+      "role": "student_rep",
+      "count": 1
+    }
+  ],
+  "students": [
+    {
+      "department": "CBMS",
+      "program": "BBS Honours in Management",
+      "year": 1,
+      "count": 15
+    },
+    {
+      "department": "CBMS",
+      "program": "BBS Honours in Management",
+      "year": 2,
+      "count": 13
+    },
+    {
+      "department": "CBMS",
+      "program": "BBS Honours in Management",
+      "year": 3,
+      "count": 15
+    },
+    {
+      "department": "CBMS",
+      "program": "BBS Honours in Marketing",
+      "year": 2,
+      "count": 15
+    },
+    {
+      "department": "CBMS",
+      "program": "BSc Honours in Economics",
+      "year": 2,
+      "count": 12
+    },
+    {
+      "department": "CBMS",
+      "program": "BSc Honours in Economics",
+      "year": 3,
+      "count": 14
+    },
+    {
+      "department": "CBMS",
+      "program": "BSc Honours in Human Resources Management",
+      "year": 2,
+      "count": 13
+    },
+    {
+      "department": "CBMS",
+      "program": "BSc Honours in Public Administration",
+      "year": 1,
+      "count": 11
+    },
+    {
+      "department": "CBMS",
+      "program": "BSc Honours in Public Administration",
+      "year": 2,
+      "count": 15
+    },
+    {
+      "department": "CBMS",
+      "program": "BSc Honours in Public Administration",
+      "year": 3,
+      "count": 14
+    },
+    {
+      "department": "CBMS",
+      "program": "Bachelor of Accounting (Honours)",
+      "year": 1,
+      "count": 13
+    },
+    {
+      "department": "CBMS",
+      "program": "Bachelor of Accounting (Honours)",
+      "year": 2,
+      "count": 12
+    },
+    {
+      "department": "CBMS",
+      "program": "Bachelor of Accounting (Honours)",
+      "year": 3,
+      "count": 14
+    },
+    {
+      "department": "CBMS",
+      "program": "Executive Master in Business Administration (Global)",
+      "year": 1,
+      "count": 10
+    },
+    {
+      "department": "CBMS",
+      "program": "MSc Entrepreneurship, Innovation and Creativity (Conventional)",
+      "year": 1,
+      "count": 14
+    },
+    {
+      "department": "CBMS",
+      "program": "MSc Entrepreneurship, Innovation and Creativity (Global)",
+      "year": 1,
+      "count": 11
+    },
+    {
+      "department": "CBMS",
+      "program": "Master in Public Policy and Governance (Conventional)",
+      "year": 1,
+      "count": 13
+    },
+    {
+      "department": "CBMS",
+      "program": "Master in Public Policy and Governance (Global)",
+      "year": 1,
+      "count": 14
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Artificial Intelligence",
+      "year": 1,
+      "count": 12
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Artificial Intelligence",
+      "year": 2,
+      "count": 12
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Computer Information Systems",
+      "year": 1,
+      "count": 14
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Computer Information Systems",
+      "year": 2,
+      "count": 15
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Computer Information Systems",
+      "year": 3,
+      "count": 13
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Computer Sciences",
+      "year": 1,
+      "count": 10
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Computer Sciences",
+      "year": 2,
+      "count": 11
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Computer Sciences",
+      "year": 3,
+      "count": 12
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Software Engineering",
+      "year": 1,
+      "count": 11
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Software Engineering",
+      "year": 2,
+      "count": 15
+    },
+    {
+      "department": "CEAS",
+      "program": "BSc Honours in Software Engineering",
+      "year": 3,
+      "count": 13
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Agribusiness Management",
+      "year": 1,
+      "count": 14
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Agribusiness Management",
+      "year": 3,
+      "count": 12
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Agriculture and Natural Resources - Animal Science",
+      "year": 2,
+      "count": 14
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Agriculture and Natural Resources - Animal Science",
+      "year": 3,
+      "count": 11
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Agriculture and Natural Resources - Crop Production",
+      "year": 2,
+      "count": 14
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Agriculture and Natural Resources - Crop Production",
+      "year": 3,
+      "count": 10
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Agriculture and Natural Resources - Natural Resources Management",
+      "year": 3,
+      "count": 10
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Honours in Environmental Studies and Natural Resources Management",
+      "year": 1,
+      "count": 12
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Honours in Environmental Studies and Natural Resources Management",
+      "year": 2,
+      "count": 10
+    },
+    {
+      "department": "CHANS",
+      "program": "BSc Honours in Environmental Studies and Natural Resources Management",
+      "year": 3,
+      "count": 10
+    },
+    {
+      "department": "CHANS",
+      "program": "Bachelor of Health Services Management Honours",
+      "year": 2,
+      "count": 11
+    },
+    {
+      "department": "CHANS",
+      "program": "Bachelor of Health Services Management Honours",
+      "year": 3,
+      "count": 13
+    },
+    {
+      "department": "CHANS",
+      "program": "Bachelor of Medical Laboratory Sciences Honours",
+      "year": 1,
+      "count": 13
+    },
+    {
+      "department": "CHANS",
+      "program": "Bachelor of Medical Laboratory Sciences Honours",
+      "year": 2,
+      "count": 14
+    },
+    {
+      "department": "CHANS",
+      "program": "Bachelor of Medical Laboratory Sciences Honours",
+      "year": 3,
+      "count": 14
+    },
+    {
+      "department": "CHANS",
+      "program": "Bachelor of Nursing Sciences (Honours)",
+      "year": 1,
+      "count": 13
+    },
+    {
+      "department": "CHANS",
+      "program": "Master in Public Health",
+      "year": 1,
+      "count": 10
+    },
+    {
+      "department": "CHANS",
+      "program": "Master in Public Health",
+      "year": 2,
+      "count": 14
+    },
+    {
+      "department": "CHANS",
+      "program": "Master in Public Health",
+      "year": 3,
+      "count": 15
+    },
+    {
+      "department": "CHANS",
+      "program": "Master of Science in Agribusiness",
+      "year": 1,
+      "count": 11
+    },
+    {
+      "department": "CHANS",
+      "program": "Post-Basic BSc Honours in Nursing",
+      "year": 1,
+      "count": 12
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Arts in English and Communication Studies",
+      "year": 3,
+      "count": 12
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Arts in Media and Journalism Studies",
+      "year": 1,
+      "count": 11
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Arts in Media and Journalism Studies",
+      "year": 2,
+      "count": 14
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Divinity (Honours)",
+      "year": 1,
+      "count": 12
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Divinity (Honours)",
+      "year": 2,
+      "count": 15
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Divinity (Honours)",
+      "year": 3,
+      "count": 15
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Divinity (Honours)",
+      "year": 4,
+      "count": 10
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Education Honours in French (Global)",
+      "year": 1,
+      "count": 12
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Science Honours in International Relations",
+      "year": 1,
+      "count": 12
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Science Honours in International Relations",
+      "year": 2,
+      "count": 11
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Science Honours in International Relations",
+      "year": 3,
+      "count": 15
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Science Honours in Social Work",
+      "year": 1,
+      "count": 13
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Science Honours in Social Work",
+      "year": 2,
+      "count": 15
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Science Honours in Social Work",
+      "year": 4,
+      "count": 13
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Science Honours in Sociology",
+      "year": 4,
+      "count": 14
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Social Science Honours in Psychology",
+      "year": 1,
+      "count": 14
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Social Science Honours in Psychology",
+      "year": 2,
+      "count": 13
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Bachelor of Social Science Honours in Psychology",
+      "year": 3,
+      "count": 10
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Master of Arts in Religious Studies",
+      "year": 1,
+      "count": 10
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Master of Science in Clinical Social Work",
+      "year": 1,
+      "count": 14
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Master of Science in International Relations and Diplomacy",
+      "year": 1,
+      "count": 10
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Master of Science in Migration, Citizenship and Refugee Protection",
+      "year": 1,
+      "count": 11
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Master of Science in Negotiation and Mediation",
+      "year": 1,
+      "count": 10
+    },
+    {
+      "department": "CSSTHE",
+      "program": "Master of Science in Organizational Psychology",
+      "year": 1,
+      "count": 13
+    },
+    {
+      "department": "INTENSIVE ENGLISH",
+      "program": "HUM2100 Intensive English II",
+      "year": 1,
+      "count": 15
+    },
+    {
+      "department": "Law",
+      "program": "LLBS",
+      "year": 4,
+      "count": 1
+    },
+    {
+      "department": "SCHOOL OF LAW",
+      "program": "Bachelor of Laws (LLB)",
+      "year": 1,
+      "count": 10
+    },
+    {
+      "department": "SCHOOL OF LAW",
+      "program": "Bachelor of Laws (LLB)",
+      "year": 2,
+      "count": 10
+    },
+    {
+      "department": "SCHOOL OF LAW",
+      "program": "Bachelor of Laws (LLB)",
+      "year": 3,
+      "count": 15
+    },
+    {
+      "department": "SCHOOL OF LAW",
+      "program": "Master in Child Rights and Childhood Studies (Global)",
+      "year": 1,
+      "count": 11
+    },
+    {
+      "department": "SCHOOL OF LAW",
+      "program": "Master in Human Rights, Peace and Development (Global)",
+      "year": 1,
+      "count": 14
+    },
+    {
+      "department": "UNIVERSITY WIDE",
+      "program": "AI, Critical Thinking, and Problem Solving",
+      "year": 1,
+      "count": 13
+    },
+    {
+      "department": "UNIVERSITY WIDE",
+      "program": "English as a Second Language II",
+      "year": 1,
+      "count": 10
+    },
+    {
+      "department": "UNIVERSITY WIDE",
+      "program": "Ethics and Christian Values",
+      "year": 1,
+      "count": 14
+    },
+    {
+      "department": "UNIVERSITY WIDE",
+      "program": "French for Beginners II",
+      "year": 1,
+      "count": 13
+    },
+    {
+      "department": "UNIVERSITY WIDE",
+      "program": "Portuguese for Beginners II",
+      "year": 1,
+      "count": 10
+    }
+  ]
+}

@@ -35,6 +35,7 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -51,8 +52,12 @@ const PORT = process.env.PORT || 3000;
 // const attendanceLimiter = rateLimit({ ... });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: true,
+    credentials: true 
+}));
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 // Disable caching for all served files so browsers always get fresh content
 app.use((req, res, next) => {

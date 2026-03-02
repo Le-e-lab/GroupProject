@@ -312,12 +312,14 @@
             document.getElementById('avgAttendance').textContent = globalAvg + '%';
             document.getElementById('sessionsWeek').textContent = Math.round(totalSessions / 12); // Approx weekly avg
             
-            // Fetch real student count
+            // Fetch real student count for this lecturer
             try {
-                const allStudents = await API.getAllStudents();
-                document.getElementById('totalStudents').textContent = allStudents.length;
+                const studentsRes = await API.get(`/api/users?lecturerId=${lecturerId}`);
+                const users = studentsRes.users || [];
+                const uniqueIds = new Set(users.map(u => u.id));
+                document.getElementById('totalStudents').textContent = uniqueIds.size;
             } catch (e) {
-                console.error("Failed to fetch students", e);
+                console.error("Failed to fetch lecturer students", e);
                 document.getElementById('totalStudents').textContent = '0';
             }
 

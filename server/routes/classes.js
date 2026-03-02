@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { Class, User } = require('../models');
 const { Op } = require('sequelize');
+const authMiddleware = require('../middleware/authMiddleware');
+
+router.use(authMiddleware);
 
 /**
  * GET /api/classes

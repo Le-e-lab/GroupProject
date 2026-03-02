@@ -9,6 +9,19 @@ const router = express.Router();
 const { User, Class, Attendance, Session, Announcement, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const validator = require('validator');
+const authMiddleware = require('../middleware/authMiddleware');
+
+// Require authentication for all admin routes
+router.use(authMiddleware);
+
+// Restrict access to Admins only
+router.use((req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Forbidden. Admin access required.' });
+    }
+});
 
 /**
  * GET /api/admin/stats

@@ -55,6 +55,8 @@ router.post('/register', async (req, res) => {
     }
 });
 
+const jwt = require('jsonwebtoken');
+
 /**
  * ========================================
  * LOGIN ROUTE
@@ -87,9 +89,24 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // 2. Return User Profile (Excluding sensitive data if any, keeping password for now as simple str)
-        // Ideally we shouldn't send password back, but keeping structure for now.
-        // CRITICAL: Must include 'program' for student filtering.
+        // 2. Generate JWT Token
+        const payload = {
+            id: user.id,
+            role: user.role,
+            fullName: user.fullName
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '8h' });
+
+        // 3. Set HttpOnly Cookie
+        res.cookie('upath_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 8 * 60 * 60 * 1000 // 8 hours
+        });
+
+        // 4. Return User Profile (Excluding sensitive data if any, keeping password for now as simple str)
         res.json({ 
             message: 'Login successful', 
             user: { 
@@ -111,6 +128,20 @@ router.post('/login', async (req, res) => {
 
 /**
  * ========================================
+ * LOGOUT ROUTE
+ * ========================================
+ */
+router.post('/logout', (req, res) => {
+    res.clearCookie('upath_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
+    res.json({ message: 'Logged out successfully' });
+});
+
+/**
+ * ========================================
  * GET ALL USERS ROUTE
  * ========================================
  */
@@ -120,7 +151,7 @@ router.get('/users', async (req, res) => {
             attributes: { exclude: ['password'] }
         });
         
-        const students = users.filter(u => u.role === 'student');
+        const students = users.filter(u => u.role === 'student' || u.role === 'student_rep');
         const lecturers = users.filter(u => u.role === 'lecturer');
 
         res.json({ students, lecturers });
@@ -129,6 +160,7 @@ router.get('/users', async (req, res) => {
         res.status(500).json({ message: 'Server error fetching users' });
     }
 });
+
 router.get('/user/:id', async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, {

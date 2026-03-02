@@ -9,6 +9,10 @@ const router = express.Router();
 const { User, Class } = require('../models');
 const { Op } = require('sequelize');
 const validator = require('validator');
+const authMiddleware = require('../middleware/authMiddleware');
+
+// Protect all user routes
+router.use(authMiddleware);
 
 /**
  * GET /api/users/stats/overview
@@ -37,63 +41,127 @@ router.get('/stats/overview', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const where = {};
-        if (req.query.role) where.role = req.query.role;
+        if (req.query.role) {
+            if (req.query.role === 'student') {
+                where.role = { [Op.in]: ['student', 'student_rep'] };
+            } else {
+                where.role = req.query.role;
+            }
+        }
         if (req.query.program) where.program = req.query.program;
         if (req.query.year) where.year = parseInt(req.query.year);
+
+        // Handle specific Course Code filter
+        if (req.query.courseCode) {
+            const courseRows = await Class.findAll({ where: { Course_Code: req.query.courseCode } });
+            if (courseRows.length > 0) {
+                // Broaden to catch related programs
+                const courseConditions = courseRows.map(courseRow => {
+                    const yearMatch = courseRow.Year_Semester && courseRow.Year_Semester.match(/Y(\d)/i);
+                    const condition = { year: yearMatch ? parseInt(yearMatch[1]) : 0 };
+                    if (courseRow.Department) condition.department = { [Op.like]: `${courseRow.Department}%` };
+                    if (courseRow.Program) condition.program = { [Op.like]: `${courseRow.Program}%` };
+                    return condition;
+                });
+                
+                const courseWhere = { [Op.or]: courseConditions };
+                
+                if (Object.keys(where).length > 0) {
+                    const existing = { ...where };
+                    ['program', 'department', 'college', 'year', 'role'].forEach(k => delete where[k]);
+                    where[Op.and] = [existing, courseWhere];
+                } else {
+                    Object.assign(where, courseWhere);
+                }
+            } else {
+                where.id = 'INVALID_COURSE';
+            }
+        }
 
         if (req.query.lecturerId) {
             const lecturerUser = await User.findByPk(req.query.lecturerId);
             if (lecturerUser) {
-                // 1. Find all Course Codes taught by this lecturer
                 const taughtClasses = await Class.findAll({
                     where: {
                         [Op.or]: [
                             { LecturerId: req.query.lecturerId },
-                            { Lecturer: { [Op.like]: `%${lecturerUser.fullName}%` } }
+                            { Lecturer: { [Op.like]: `%${lecturerUser.fullName.split(' ').pop()}%` } }
                         ]
-                    },
-                    attributes: ['Course_Code']
+                    }
                 });
 
                 if (taughtClasses.length > 0) {
-                    const courseCodes = [...new Set(taughtClasses.map(c => c.Course_Code).filter(Boolean))];
+                    const codes = taughtClasses.map(c => c.Course_Code).filter(Boolean);
                     
-                    // 2. Find ALL (Program, Year) pairs for these Course Codes
-                    const cohorts = await Class.findAll({
-                        where: { Course_Code: { [Op.in]: courseCodes } },
-                        attributes: ['Program', 'Year_Semester']
+                    // Build conditions based on Department/Program + Year pairs from classes
+                    const cohorts = taughtClasses.map(c => {
+                        const yearMatch = c.Year_Semester && c.Year_Semester.match(/Y(\d)/i);
+                        return {
+                            department: c.Department,
+                            program: c.Program,
+                            year: yearMatch ? parseInt(yearMatch[1]) : null
+                        };
+                    }).filter(c => (c.department || c.program) && c.year);
+
+                    // De-duplicate cohorts
+                    const uniqueCohorts = Array.from(new Set(cohorts.map(JSON.stringify))).map(JSON.parse);
+
+                    const cohortConditions = uniqueCohorts.map(c => {
+                        const cond = { year: c.year };
+                        if (c.department) cond.department = { [Op.like]: `${c.department}%` };
+                        if (c.program) cond.program = { [Op.like]: `${c.program}%` };
+                        return cond;
                     });
 
-                    // 3. Build the OR conditions for students
-                    const cohortConditions = cohorts.map(c => {
-                        const yearMatch = c.Year_Semester && c.Year_Semester.match(/Y(\d)/i);
-                        // USE FUZZY MATCHING for program to handle truncation
-                        const cond = { program: { [Op.like]: `${c.Program || ''}%` } };
-                        if (yearMatch) cond.year = parseInt(yearMatch[1]);
-                        return cond;
-                    }).filter(cond => cond.program);
+                    // Include students with attendance
+                    const { Attendance } = require('../models');
+                    const studentIdsWithAttendance = await Attendance.findAll({
+                        where: { classId: { [Op.in]: codes } },
+                        attributes: ['userId']
+                    }).then(res => [...new Set(res.map(a => a.userId))]);
 
-                    if (cohortConditions.length > 0) {
-                        // Apply these to the 'where' object
-                        // If user specifically requested a program/year, Sequelize will intersect them if we use Op.and
-                        if (Object.keys(where).length > 0) {
-                            const existingWhere = { ...where };
-                            // Clear them from top level so we can wrap them
-                            delete where.program;
-                            delete where.year;
-                            delete where.role;
-                            
-                            where[Op.and] = [
-                                existingWhere,
-                                { [Op.or]: cohortConditions }
-                            ];
+                    const lecturerWhere = {
+                        [Op.or]: [
+                            ...cohortConditions,
+                            { id: { [Op.in]: studentIdsWithAttendance } }
+                        ]
+                    };
+
+                    if (Object.keys(where).length > 0) {
+                        const existing = { ...where };
+                        if (where[Op.and]) {
+                            where[Op.and].push(lecturerWhere);
                         } else {
-                            where[Op.or] = cohortConditions;
+                            Object.keys(existing).forEach(k => delete where[k]);
+                            where[Op.and] = [existing, lecturerWhere];
                         }
+                    } else {
+                        Object.assign(where, lecturerWhere);
                     }
                 } else {
                     where.id = 'NO_CLASSES_FOUND';
                 }
+            }
+        }
+
+        // Add Search functionality (Server-side)
+        if (req.query.search) {
+            const searchVal = `%${req.query.search}%`;
+            const searchWhere = {
+                [Op.or]: [
+                    { fullName: { [Op.like]: searchVal } },
+                    { id: { [Op.like]: searchVal } }
+                ]
+            };
+
+            if (where[Op.and]) {
+                where[Op.and].push(searchWhere);
+            } else if (Object.keys(where).length > 0) {
+                const existing = { ...where };
+                Object.keys(existing).forEach(k => delete where[k]);
+                where[Op.and] = [existing, searchWhere];
+            } else {
+                Object.assign(where, searchWhere);
             }
         }
 

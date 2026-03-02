@@ -500,13 +500,20 @@
             const user = userStr ? JSON.parse(userStr) : { id: 'Unknown', fullName: 'Lecturer' };
             const currentCode = document.getElementById('codeDisplay').textContent;
             const className = document.getElementById('className').textContent;
+            
+            let attendanceLink = '';
+            if (type === 'online') {
+                const protocol = window.location.protocol;
+                const host = window.location.host;
+                attendanceLink = `${protocol}//${host}/dashboard.html?attendance_code=${currentCode}&course_code=${classCode}`;
+            }
 
             const messages = {
                 late: 'Lecturer is running approximately 15 minutes late',
                 venue: 'Class venue has been changed – please check your schedule',
                 cancelled: 'Today\'s class has been cancelled',
                 substitute: 'A substitute lecturer will be covering this class',
-                online: `This class will be held online today. The attendance code is ${currentCode}. Please mark your presence.`
+                online: `This class will be held online today. Link: ${attendanceLink} (Code: ${currentCode}).`
             };
             
             let announcementType = 'info';
@@ -531,7 +538,17 @@
                 
                 document.querySelectorAll('.notif-btn').forEach(b => b.classList.remove('sent'));
                 btn.classList.add('sent');
-                alert(`✅ Notification Sent: ${messages[type]}`);
+                
+                if (type === 'online') {
+                    try {
+                        await navigator.clipboard.writeText(attendanceLink);
+                        alert(`✅ Online Class Started\n\nThe attendance link has been copied to your clipboard to paste into Google Meet/Teams:\n${attendanceLink}`);
+                    } catch (e) {
+                         alert(`✅ Online Class Started\n\nPlease copy this attendance link for your students:\n${attendanceLink}`);
+                    }
+                } else {
+                    alert(`✅ Notification Sent: ${messages[type]}`);
+                }
             } catch (err) {
                 console.error("Notif Error:", err);
                 alert("❌ Failed to send notification.");

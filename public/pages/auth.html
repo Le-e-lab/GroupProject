@@ -305,12 +305,13 @@
             sessionStorage.setItem("upath_user", JSON.stringify(result.user));
 
             setTimeout(() => {
+              const queryParams = window.location.search; // Preserve ?attendance_code=...
               if (result.user.role === "admin") {
                 window.location.href = "/pages/admin/dashboard.html";
               } else if (result.user.role === "lecturer") {
-                window.location.href = "/lecturer_dashboard.html"; 
+                window.location.href = "/lecturer_dashboard.html" + queryParams; 
               } else {
-                window.location.href = "/dashboard.html"; 
+                window.location.href = "/dashboard.html" + queryParams; 
               }
             }, 500); // Short delay to see success toast
           } else {

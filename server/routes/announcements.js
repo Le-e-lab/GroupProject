@@ -11,6 +11,9 @@ const router = express.Router();
 const { Announcement } = require('../models');
 const { Op } = require('sequelize');
 const validator = require('validator');
+const authMiddleware = require('../middleware/authMiddleware');
+
+router.use(authMiddleware);
 
 /**
  * ========================================

@@ -931,7 +931,122 @@
         loadNotifications();
         loadDashboardStats();
         updateClock();
+        
+        // Handle Online Attendance Link
+        const urlParams = new URLSearchParams(window.location.search);
+        const attendanceCode = urlParams.get('attendance_code');
+        const courseCode = urlParams.get('course_code'); // Optional, to help find the classId
+
+        if (attendanceCode) {
+            console.log("Processing online attendance code:", attendanceCode);
+            setTimeout(() => processOnlineAttendance(attendanceCode, courseCode), 1000);
+            
+            // Clean up URL so it doesn't trigger again on refresh
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
       })();
+
+      async function processOnlineAttendance(code, courseIdHint) {
+          const userStr = sessionStorage.getItem("upath_user");
+          if (!userStr) return;
+          const user = JSON.parse(userStr);
+
+          try {
+              // 1. We need the classId. If courseIdHint is provided, find the matching class for today
+              let classId = null;
+              const now = new Date();
+              const today = dayNames[now.getDay()];
+              const yr = user.year || userYear;
+              
+              const allClasses = await API.getTimetable(yr, user.program);
+              const todayClasses = allClasses.filter(c => c.day === today);
+              
+              if (courseIdHint) {
+                  const matchedClass = todayClasses.find(c => c.code.toLowerCase() === courseIdHint.toLowerCase());
+                  if (matchedClass) {
+                      classId = matchedClass.id;
+                  }
+              }
+
+              // If we didn't find the classId but we have an active class happening right now, guess it
+              if (!classId) {
+                  const currentHour = now.getHours();
+                  const currentClasses = todayClasses.filter(c => {
+                      const startHour = parseInt(c.time.split(":")[0]);
+                      return currentHour >= startHour && currentHour < startHour + 2;
+                  });
+                  if (currentClasses.length > 0) {
+                      classId = currentClasses[0].id;
+                  }
+              }
+
+              if (!classId) {
+                  showToast("Attendance Failed", "Could not identify your current class.", "error");
+                  return;
+              }
+
+              // 2. Validate Code
+              const res = await fetch(`${API.BASE_URL}/api/attendance/validate-code`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      classId: classId,
+                      studentId: user.id, // Using standard auth handling in the API
+                      code: code
+                  })
+              });
+              
+              const data = await res.json();
+              if (res.ok) {
+                  showToast("Attendance Marked", "You have been marked present for the online class!", "success");
+                  // Refresh stats
+                  loadTodayClasses();
+                  loadDashboardStats();
+              } else {
+                  showToast("Attendance Failed", data.message || "Invalid or expired code.", "error");
+              }
+
+          } catch (error) {
+              console.error("Online attendance error:", error);
+              showToast("Error", "Could not process attendance. Check connection.", "error");
+          }
+      }
+
+      function showToast(title, message, type='success') {
+          // Minimal toast implementation if the full toast.js isn't loaded
+          const toast = document.createElement('div');
+          toast.style.position = 'fixed';
+          toast.style.bottom = '20px';
+          toast.style.right = '20px';
+          toast.style.minWidth = '250px';
+          toast.style.padding = '16px 20px';
+          toast.style.borderRadius = 'var(--radius-lg, 12px)';
+          toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+          toast.style.zIndex = '9999';
+          toast.style.display = 'flex';
+          toast.style.flexDirection = 'column';
+          toast.style.animation = 'slideIn 0.3s ease';
+          
+          if (type === 'success') {
+              toast.style.background = '#10B981';
+              toast.style.color = 'white';
+          } else {
+              toast.style.background = '#EF4444';
+              toast.style.color = 'white';
+          }
+
+          toast.innerHTML = `
+              <div style="font-weight: 700; font-size: 1rem; margin-bottom: 4px;">${title}</div>
+              <div style="font-size: 0.85rem; opacity: 0.9;">${message}</div>
+          `;
+
+          document.body.appendChild(toast);
+          setTimeout(() => {
+              toast.style.opacity = '0';
+              toast.style.transition = 'opacity 0.5s ease';
+              setTimeout(() => toast.remove(), 500);
+          }, 5000);
+      }
 
       // Update clock every second
       setInterval(updateClock, 1000);

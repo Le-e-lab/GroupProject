@@ -51,35 +51,15 @@ const API = {
      * GENERIC HELPERS (Added Phase 2)
      * ========================================
      */
-    async get(endpoint) {
-        const res = await fetch(this.baseUrl.replace('/api', '') + endpoint);
-        return res.json();
-    },
+    async handleResponse(res) { if (res.status === 401) { console.warn('[API] Auth Token Invalid/Expired.'); this.logout(); throw new Error('Authentication required'); } return res.json(); },
 
-    async post(endpoint, data) {
-        const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        return res.json();
-    },
+    async get(endpoint) { const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, { credentials: 'include' }); return this.handleResponse(res); },
 
-    async put(endpoint, data) {
-        const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        return res.json();
-    },
+    async post(endpoint, data) { const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return this.handleResponse(res); },
 
-    async delete(endpoint) {
-        const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, {
-            method: 'DELETE'
-        });
-        return res.json();
-    },
+    async put(endpoint, data) { const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return this.handleResponse(res); },
+
+    async delete(endpoint) { const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, { method: 'DELETE', credentials: 'include' }); return this.handleResponse(res); },
 
 
 
@@ -672,10 +652,7 @@ const API = {
         };
     },
 
-    logout() {
-        sessionStorage.removeItem('upath_user');
-        window.location.href = '../../pages/auth.html';
-    },
+    async logout() { try { await fetch(this.baseUrl + '/auth/logout', { method: 'POST', credentials: 'include' }); } catch (e) { } sessionStorage.removeItem('upath_user'); window.location.href = '../../pages/auth.html'; },
 
     getCurrentTime() {
         return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -701,3 +678,5 @@ if (typeof module !== 'undefined' && module.exports) {
 if (typeof window !== 'undefined') {
     window.API = API;
 }
+
+

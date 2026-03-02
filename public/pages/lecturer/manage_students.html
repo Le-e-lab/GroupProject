@@ -107,7 +107,7 @@
                 <option value="student">Students Only</option>
                 <option value="student_rep">Reps Only</option>
             </select>
-            <input type="text" id="searchText" placeholder="🔍 Search by name or ID..." oninput="filterStudentsLocal()" style="padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem; min-width: 200px;">
+            <input type="text" id="searchText" placeholder="🔍 Search by name or ID..." oninput="debounceSearch()" style="padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem; min-width: 200px;">
         </div>
 
         <div id="tableContainer">
@@ -118,8 +118,103 @@
         </div>
     </div>
 
+    <!-- Send Notification Modal -->
+    <div id="notifModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--text); font-weight:800; font-size:1.4rem;">Send Message</h3>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+                Direct message to <strong id="modalStudentName" style="color:var(--primary);"></strong>
+            </p>
+            <textarea id="modalMessageArea" rows="4" placeholder="Typing your message here..." style="width:100%; padding:12px; border:1px solid var(--border); border-radius:var(--radius); font-family:inherit; resize:vertical; font-size:0.95rem;"></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+                <button onclick="closeModal()" style="padding:10px 16px; border:1px solid var(--border); background:var(--bg); border-radius:var(--radius); cursor:pointer; font-weight:600; color:var(--text);">Cancel</button>
+                <button onclick="sendModalMessage()" style="padding:10px 16px; border:none; background:var(--primary); color:white; border-radius:var(--radius); cursor:pointer; font-weight:600; box-shadow:0 4px 12px rgba(99,102,241,0.3);">Send Message</button>
+            </div>
+            <input type="hidden" id="modalStudentId">
+        </div>
+    </div>
+
     <script src="../../js/api.js?v=2"></script>
     <script>
+        // ... (Modal logic styling)
+        const modalStyles = document.createElement('style');
+        modalStyles.textContent = `
+            .modal-overlay {
+                display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+                z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+                animation: fadeIn 0.2s ease;
+            }
+            .modal-content {
+                background: var(--surface); padding: 32px; border-radius: var(--radius-xl);
+                width: 90%; max-width: 450px; box-shadow: var(--shadow-xl); border: 1px solid var(--border);
+                transform: translateY(20px); animation: slideUp 0.3s ease forwards;
+            }
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { to { transform: translateY(0); } }
+        `;
+        document.head.appendChild(modalStyles);
+
+        let currentModalStudentId = null;
+        let currentModalStudentName = null;
+
+        function notifyStudent(studentId, studentName) {
+            currentModalStudentId = studentId;
+            currentModalStudentName = studentName;
+            
+            document.getElementById('modalStudentName').textContent = studentName;
+            document.getElementById('modalStudentId').value = studentId;
+            document.getElementById('modalMessageArea').value = '';
+            
+            document.getElementById('notifModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('modalMessageArea').focus(), 100);
+        }
+
+        function closeModal() {
+            document.getElementById('notifModal').style.display = 'none';
+        }
+
+        async function sendModalMessage() {
+            const message = document.getElementById('modalMessageArea').value.trim();
+            if (!message) return alert("Please type a message first.");
+
+            const studentId = currentModalStudentId;
+            const studentName = currentModalStudentName;
+            
+            closeModal(); // Hide right away for snappiness
+
+            const userStr = sessionStorage.getItem('upath_user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            if (!user) return alert("You are not logged in.");
+
+            const sendBtn = document.activeElement;
+            const originalText = sendBtn ? sendBtn.textContent : '';
+            if(sendBtn) sendBtn.textContent = 'Sending...';
+
+            try {
+                const res = await API.postAnnouncement({
+                    title: `Message from ${user.fullName}`,
+                    message: message,
+                    type: 'info',
+                    target: studentId,
+                    authorId: user.id,
+                    authorName: user.fullName
+                });
+                
+                if (res.error) throw new Error(res.error);
+                
+                // Use a floating toast if available, else alert
+                if(window.Toast) {
+                    Toast.success(`Message sent to ${studentName}`);
+                } else {
+                    alert(`✅ Message successfully sent to ${studentName}`);
+                }
+            } catch (err) {
+                console.error("Notify Error:", err);
+                alert(`❌ Failed to send message to ${studentName}.`);
+            }
+            if(sendBtn) sendBtn.textContent = originalText;
+        }
+
         const userStr = sessionStorage.getItem('upath_user');
         if (!userStr) { window.location.href = '../auth.html'; }
 
@@ -127,7 +222,15 @@
         loadStudents();
 
         let lecturerClassesData = [];
-        let allStudentsData = []; // For client-side text filtering
+        let allStudentsData = []; 
+        let searchTimeout = null;
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadStudents();
+            }, 300);
+        }
 
         async function loadPrograms() {
             try {
@@ -168,8 +271,8 @@
                 const sel = document.getElementById('filterCourse');
                 courses.forEach(c => {
                     const opt = document.createElement('option');
-                    // Store the program and year in the value as JSON so we can query the backend
-                    opt.value = JSON.stringify({ program: c.program, year: c.year });
+                    // Store only the course code in the value
+                    opt.value = c.code;
                     opt.textContent = `${c.code} - ${c.name} (Year ${c.year})`;
                     sel.appendChild(opt);
                 });
@@ -177,35 +280,35 @@
         }
 
         async function loadStudents() {
-            const container = document.getElementById('tableContainer');
-            const courseVal = document.getElementById('filterCourse').value;
-            const role = document.getElementById('filterRole').value;
-
-            const userStr = sessionStorage.getItem('upath_user');
-            const user = userStr ? JSON.parse(userStr) : null;
-
-            let query = '?';
-            
-            // Parse the selected course's program and year requirements
-            let parsedProgram = "";
-            let parsedYear = "";
-            if (courseVal) {
-                try {
-                    const parsed = JSON.parse(courseVal);
-                    if (parsed.program) query += `program=${encodeURIComponent(parsed.program)}&`;
-                    if (parsed.year) query += `year=${parsed.year}&`;
-                    parsedProgram = parsed.program;
-                    parsedYear = parsed.year;
-                } catch(e) { console.error("Error parsing course value", e); }
-            }
-
-            if (role) query += `role=${role}&`;
-            else query += 'role=student&'; // Default: show only students + student_reps
-            
-            // Limit to lecturer's students if they are a lecturer
-            if (user && user.role === 'lecturer') query += `lecturerId=${user.id}&`;
-
+            let container;
             try {
+                container = document.getElementById('tableContainer');
+                const courseVal = document.getElementById('filterCourse').value;
+                const role = document.getElementById('filterRole').value;
+
+                const userStr = sessionStorage.getItem('upath_user');
+                let user;
+                try {
+                    user = userStr ? JSON.parse(userStr) : null;
+                } catch(e) { console.error("Bad JSON", e); user = null; }
+
+                let query = '?';
+                const searchVal = document.getElementById('searchText').value;
+                
+                if (courseVal) {
+                    query += `courseCode=${encodeURIComponent(courseVal)}&`;
+                }
+
+                if (searchVal) {
+                    query += `search=${encodeURIComponent(searchVal)}&`;
+                }
+
+                if (role) query += `role=${role}&`;
+                else query += 'role=student&'; // Default: show only students + student_reps
+                
+                // Limit to lecturer's students if they are a lecturer
+                if (user && user.role === 'lecturer') query += `lecturerId=${user.id}&`;
+
                 // Fetch students matching criteria
                 const data = await API.get('/api/users' + query);
                 let users = data.users || [];
@@ -213,11 +316,6 @@
                 // Secondary cleanup: If "All My Courses" is selected and no specific role, 
                 // we want to ensure we have BOTH students and reps
                 if (!role && !courseVal) {
-                    // Already includes reps in the main lecturerId query if role wasn't specified?
-                    // Actually, the backend might filter by role if provided.
-                    // Let's ensure we get everyone by NOT passing a role to the API if we want both.
-                    // But wait, the API default is 'student' if role is missing in some contexts? 
-                    // Let's re-fetch reps specifically to be 100% sure if we only got role=student.
                     const repQuery = query.replace('role=student&', '') + 'role=student_rep';
                     const repsData = await API.get('/api/users' + repQuery);
                     const reps = repsData.users || [];
@@ -247,7 +345,7 @@
                     const promoteBtn = u.role === 'student_rep'
                         ? `<button class="btn-demote" style="margin-right: 6px;" onclick="changeRole('${u.id}', 'student')">↓ Remove Rep</button>`
                         : `<button class="btn-promote" style="margin-right: 6px;" onclick="changeRole('${u.id}', 'student_rep')">⬆ Make Rep</button>`;
-                    const notifyBtn = `<button class="btn-notify" onclick="notifyStudent('${u.id}', '${u.fullName}')">✉️ Notify</button>`;
+                    const notifyBtn = `<button class="btn-notify" onclick="notifyStudent('${u.id}', '${u.fullName.replace("'", "\\\'")}')">✉️ Notify</button>`;
                     const actionBtn = promoteBtn + notifyBtn;
 
                     html += `<tr>
@@ -269,35 +367,6 @@
             }
         }
 
-        function filterStudentsLocal() {
-            const query = document.getElementById('searchText').value.toLowerCase();
-            if (!query) { renderStudentsTable(allStudentsData); return; }
-            const filtered = allStudentsData.filter(u => 
-                u.fullName.toLowerCase().includes(query) || u.id.toLowerCase().includes(query)
-            );
-            renderStudentsTable(filtered);
-        }
-
-        function renderStudentsTable(users) {
-            const container = document.getElementById('tableContainer');
-            document.getElementById('totalCount').textContent = users.length;
-            if (users.length === 0) {
-                container.innerHTML = `<div class="empty-state"><div style="font-size:2.5rem;margin-bottom:12px;">📭</div><h3>No students found</h3><p>Try adjusting your filters above.</p></div>`;
-                return;
-            }
-            let html = `<table class="students-table"><thead><tr><th>ID</th><th>Full Name</th><th>Program</th><th>Year</th><th>Role</th><th>Actions</th></tr></thead><tbody>`;
-            users.forEach(u => {
-                const roleClass = u.role === 'student_rep' ? 'role-student_rep' : 'role-student';
-                const promoteBtn = u.role === 'student_rep'
-                    ? `<button class="btn-demote" style="margin-right: 6px;" onclick="changeRole('${u.id}', 'student')">↓ Remove Rep</button>`
-                    : `<button class="btn-promote" style="margin-right: 6px;" onclick="changeRole('${u.id}', 'student_rep')">⬆ Make Rep</button>`;
-                const notifyBtn = `<button class="btn-notify" onclick="notifyStudent('${u.id}', '${u.fullName}')">✉️ Notify</button>`;
-                html += `<tr><td><strong>${u.id}</strong></td><td>${u.fullName}</td><td>${u.program || '—'}</td><td>${u.year || '—'}</td><td><span class="role-badge ${roleClass}">${u.role.replace('_', ' ')}</span></td><td>${promoteBtn}${notifyBtn}</td></tr>`;
-            });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-
         async function changeRole(userId, newRole) {
             if (!confirm(`Are you sure you want to ${newRole === 'student_rep' ? 'promote this student to Rep' : 'remove this student as Rep'}?`)) return;
 
@@ -315,31 +384,6 @@
             }
         }
 
-        async function notifyStudent(studentId, studentName) {
-            const message = prompt(`Send direct notification to ${studentName} (${studentId}):\n\nExample: "Please come see me after class regarding your attendance."`);
-            if (!message || message.trim() === '') return;
-
-            const userStr = sessionStorage.getItem('upath_user');
-            const user = userStr ? JSON.parse(userStr) : null;
-            if (!user) return;
-
-            try {
-                const res = await API.postAnnouncement({
-                    title: `Message from ${user.fullName}`,
-                    message: message,
-                    type: 'info',
-                    target: studentId,
-                    authorId: user.id,
-                    authorName: user.fullName
-                });
-                
-                if (res.error) throw new Error(res.error);
-                alert(`✅ Message successfully sent to ${studentName}`);
-            } catch (err) {
-                console.error("Notify Error:", err);
-                alert(`❌ Failed to send message to ${studentName}.`);
-            }
-        }
     </script>
 </body>
 </html>
