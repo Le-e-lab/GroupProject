@@ -495,6 +495,42 @@
         }
 
         // Notification logic
+        // ─── Notification Modal Handlers ───
+        function showNotificationModal(type, title, message) {
+            let overlay = document.getElementById('notificationModalOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'notificationModalOverlay';
+                overlay.className = 'notification-modal-overlay';
+                overlay.innerHTML = `
+                    <div class="notification-modal">
+                        <div class="notification-modal-icon" id="notifModalIcon"></div>
+                        <h3 class="notification-modal-title" id="notifModalTitle"></h3>
+                        <p class="notification-modal-msg" id="notifModalMsg"></p>
+                        <button class="btn btn-primary notification-modal-btn" onclick="document.getElementById('notificationModalOverlay').classList.remove('active')">Got it</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+
+            const icon = document.getElementById('notifModalIcon');
+            if (type === 'error') {
+                icon.className = 'notification-modal-icon error';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>`;
+            } else {
+                icon.className = 'notification-modal-icon';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>`;
+            }
+
+            document.getElementById('notifModalTitle').textContent = title;
+            document.getElementById('notifModalMsg').textContent = message;
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
+        }
+
         async function sendNotif(type, btn) {
             const userStr = sessionStorage.getItem('upath_user');
             const user = userStr ? JSON.parse(userStr) : { id: 'Unknown', fullName: 'Lecturer' };
@@ -537,27 +573,27 @@
                 }
                 
                 document.querySelectorAll('.notif-btn').forEach(b => b.classList.remove('sent'));
-                btn.classList.add('sent');
+                if (btn) btn.classList.add('sent');
                 
                 if (type === 'online') {
                     try {
                         await navigator.clipboard.writeText(attendanceLink);
-                        alert(`✅ Online Class Started\n\nThe attendance link has been copied to your clipboard to paste into Google Meet/Teams:\n${attendanceLink}`);
+                        showNotificationModal('success', 'Online Class Started', 'The attendance link has been copied to your clipboard to paste into Google Meet/Teams.');
                     } catch (e) {
-                         alert(`✅ Online Class Started\n\nPlease copy this attendance link for your students:\n${attendanceLink}`);
+                         showNotificationModal('success', 'Online Class Started', 'The online class notification has been sent successfully.');
                     }
                 } else {
-                    alert(`✅ Notification Sent: ${messages[type]}`);
+                    showNotificationModal('success', 'Notification Sent', messages[type]);
                 }
             } catch (err) {
                 console.error("Notif Error:", err);
-                alert("❌ Failed to send notification.");
+                showNotificationModal('error', 'Failed to Send', 'Could not send the notification. Please try again.');
             }
         }
 
         async function sendCustom() {
             const msg = document.getElementById('customMsg').value.trim();
-            if (!msg) return alert('Please enter a message');
+            if (!msg) return showNotificationModal('error', 'Empty Message', 'Please enter a message before sending.');
             
             const userStr = sessionStorage.getItem('upath_user');
             const user = userStr ? JSON.parse(userStr) : { id: 'Unknown', fullName: 'Lecturer' };
@@ -577,11 +613,11 @@
                     const res = await API.postAnnouncement(announcement);
                     if (res.error) throw new Error(res.error);
                 }
-                alert('✅ Custom message sent to students!');
+                showNotificationModal('success', 'Message Sent', 'Your custom message has been sent to the students.');
                 document.getElementById('customMsg').value = '';
             } catch (err) {
                 console.error("Custom Notif Error:", err);
-                alert("❌ Failed to send custom message.");
+                showNotificationModal('error', 'Delivery Failed', 'Failed to send the custom message.');
             }
         }
         

@@ -466,6 +466,39 @@ router.get('/students/:courseCode', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/attendance/today-by-class/:courseCode
+ * Returns list of student IDs who have checked in today for this course
+ */
+router.get('/today-by-class/:courseCode', async (req, res) => {
+    try {
+        const { courseCode } = req.params;
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const records = await Attendance.findAll({
+            where: {
+                classId: { [Op.like]: `${courseCode}%` },
+                date: { [Op.gte]: startOfDay }
+            },
+            attributes: ['userId', 'method', 'date']
+        });
+
+        // Deduplicate by userId
+        const checkedIn = {};
+        records.forEach(r => {
+            if (!checkedIn[r.userId]) {
+                checkedIn[r.userId] = { userId: r.userId, method: r.method };
+            }
+        });
+
+        res.json({ checkedInStudents: Object.values(checkedIn) });
+    } catch (err) {
+        console.error('Error fetching today class attendance:', err);
+        res.status(500).json({ message: 'Error fetching attendance' });
+    }
+});
+
 module.exports = router;
 
 /**

@@ -364,8 +364,11 @@ Promise.all([
     }
 }).catch(err => console.error("DB Sync Error:", err));
 
-// Fallback for SPA (or 404)
-app.get(/(.*)/, (req, res) => {
+// Fallback for SPA (serve index.html for all non-API GET requests)
+app.use((req, res) => {
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ message: 'API endpoint not found' });
+    }
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 

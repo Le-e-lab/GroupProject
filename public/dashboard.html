@@ -13,70 +13,112 @@
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/toast.css?v=2" />
     <style>
-      .notification-banner {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        border: 1px solid #f59e0b;
-        border-radius: var(--radius-lg);
-        padding: 16px 20px;
-        margin-bottom: 20px;
+      /* Notification Pills */
+      .notif-pills-container {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 420px;
+        width: 100%;
+        pointer-events: none;
+      }
+      .notif-pill {
+        pointer-events: all;
+        background: var(--surface, #fff);
+        border-radius: 14px;
+        padding: 14px 18px;
         display: flex;
         align-items: center;
-        gap: 16px;
-        animation: slideIn 0.3s ease;
+        gap: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+        animation: pillSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s, opacity 0.3s;
+        border-left: 4px solid #3B82F6;
       }
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      .notif-pill:hover {
+        transform: translateX(-4px);
       }
-      .notif-icon {
-        width: 40px;
-        height: 40px;
-        background: #f59e0b;
+      .notif-pill.dismissing {
+        animation: pillSlideOut 0.4s ease forwards;
+      }
+      @keyframes pillSlideIn {
+        from { opacity: 0; transform: translateX(100px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      @keyframes pillSlideOut {
+        from { opacity: 1; transform: translateX(0); max-height: 120px; }
+        to { opacity: 0; transform: translateX(100px); max-height: 0; padding: 0; margin: 0; }
+      }
+      .notif-pill-icon {
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 0.8rem;
+        font-size: 1rem;
         flex-shrink: 0;
       }
-      .notif-content {
-        flex: 1;
+      .notif-pill-body { flex: 1; min-width: 0; }
+      .notif-pill-title {
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: var(--text, #111);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
-      .notif-title {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--text);
-        margin-bottom: 2px;
-      }
-      .notif-message {
-        font-size: 0.8rem;
-        color: #92400e;
-      }
-      .notif-time {
+      .notif-pill-msg {
         font-size: 0.75rem;
-        color: #b45309;
-        font-weight: 500;
+        color: var(--text-muted, #6B7280);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
       }
-      .notif-dismiss {
+      .notif-pill-close {
         background: none;
         border: none;
-        color: #92400e;
+        color: var(--text-muted);
         cursor: pointer;
-        padding: 8px;
-        font-size: 1.2rem;
-        opacity: 0.6;
+        font-size: 1.1rem;
+        padding: 4px;
+        opacity: 0.5;
         transition: opacity 0.2s;
+        flex-shrink: 0;
       }
-      .notif-dismiss:hover {
-        opacity: 1;
+      .notif-pill-close:hover { opacity: 1; }
+      .notif-pill-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: currentColor;
+        opacity: 0.3;
+        animation: pillProgress 10s linear forwards;
+      }
+      @keyframes pillProgress {
+        from { width: 100%; }
+        to { width: 0%; }
+      }
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @media (max-width: 768px) {
+        .notif-pills-container {
+          right: 10px;
+          left: 10px;
+          max-width: none;
+          top: 65px;
+        }
       }
 
       .action-card {
@@ -699,15 +741,27 @@
           return;
         }
 
+        // Fetch today's attendance to know which classes student is marked present for
+        let presentSet = new Set();
+        try {
+            if (user) {
+                const presentIds = await API.getTodayAttendance(user.id);
+                presentSet = new Set(presentIds);
+            }
+        } catch (e) {}
+
         let html = "";
         todayClasses.forEach((c) => {
           const startHour = parseInt(c.time.split(":")[0]);
           const isCurrent =
             currentHour >= startHour && currentHour < startHour + 2;
+          const isPresent = presentSet.has(c.id) || presentSet.has(c.code);
 
           html += `
-                    <div class="class-card ${isCurrent ? "current" : ""}">
-                        <div class="class-time">${c.time}</div>
+                    <div class="class-card ${isCurrent ? "current" : ""}" style="${isPresent ? 'border-left: 4px solid #059669;' : ''}">
+                        <div class="class-time">${c.time}
+                            ${isPresent ? '<span style="background:#059669; color:white; font-size:0.65rem; padding:3px 8px; border-radius:10px; margin-left:8px; font-weight:600;">✓ Present</span>' : ''}
+                        </div>
                         <div class="class-name">${c.name}</div>
                         <div class="class-code">${c.code}</div>
                         <div class="class-meta">
@@ -722,115 +776,108 @@
 
       async function loadNotifications() {
         const container = document.getElementById("notifications");
+        container.innerHTML = ''; // Clear old banners
         const now = new Date();
         const currentHour = now.getHours();
         const today = dayNames[now.getDay()];
+        const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
 
         // 1. Get Announcements
-        const announcements = API.getAnnouncementsForStudent(userYear);
-
-        // 2. Get Upcoming Classes
-        // Reuse server filtered data
+        const user = API.getCurrentUser();
         const prog = user ? user.program : null;
         const yr = user ? user.year || userYear : userYear;
-        const allClasses = await API.getTimetable(yr, prog);
+        let announcements = [];
+        try {
+            announcements = await API.getAnnouncementsForStudent(prog, yr);
+            if (!Array.isArray(announcements)) announcements = [];
+        } catch (e) {
+            console.warn('Could not fetch announcements:', e);
+        }
 
+        // Filter out announcements older than 48 hours, or already cleared
+        const clearedTime = parseInt(localStorage.getItem('notifs_cleared_time') || '0');
+        const readTime = parseInt(localStorage.getItem('notifs_last_read') || '0');
+        announcements = announcements.filter(a => {
+            const ts = new Date(a.timestamp || a.createdAt).getTime();
+            return (now.getTime() - ts) < FORTY_EIGHT_HOURS && ts > clearedTime && ts > readTime;
+        });
+
+        // 2. Get Upcoming Classes
+        const allClasses = await API.getTimetable(yr, prog);
         const upcomingClasses = allClasses.filter((c) => {
           if (c.day !== today) return false;
-
           const startHour = parseInt(c.time.split(":")[0]);
           return startHour > currentHour && startHour <= currentHour + 2;
         });
 
-        // Load dismissed notifications from localStorage
-        const dismissedStr = localStorage.getItem('dismissed_notifs') || '[]';
+        // Load dismissed pills from sessionStorage (per-session dismiss)
+        const dismissedStr = sessionStorage.getItem('dismissed_pills') || '[]';
         const dismissedIds = new Set(JSON.parse(dismissedStr));
-        let activeNotifCount = 0;
+        const activeNotifCount = announcements.length;
 
-        // If nothing, show nothing
-        if (announcements.length === 0 && upcomingClasses.length === 0) {
-          container.innerHTML = "";
-          document.getElementById('notifBadge').style.display = 'none';
-          return;
+        // Create or get the pills container (fixed position)
+        let pillsContainer = document.getElementById('notifPills');
+        if (!pillsContainer) {
+          pillsContainer = document.createElement('div');
+          pillsContainer.id = 'notifPills';
+          pillsContainer.className = 'notif-pills-container';
+          document.body.appendChild(pillsContainer);
         }
+        pillsContainer.innerHTML = '';
 
-        let html = "";
+        const pills = [];
 
-        // Render Announcements First
+        // Build announcement pills
         announcements.forEach((a, i) => {
-          const notifId = `announcement${a.id || i}`;
-          if (dismissedIds.has(notifId)) return;
+          const notifId = `pill_ann_${a.id || i}`;
+          if (dismissedIds.has(notifId)) { return; }
           
-          activeNotifCount++;
-          let colorClass = "#2563EB"; // Info blue
-          let bgClass = "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)";
-          let borderClass = "#93C5FD";
-          let iconText = "ℹ️";
+          let color = '#3B82F6', bg = '#EFF6FF', icon = 'ℹ️';
+          let typeLabel = 'UPDATE';
+          if (a.type === 'cancel') { color = '#EF4444'; bg = '#FEF2F2'; icon = '🚫'; typeLabel = 'CANCELLED'; }
+          else if (a.type === 'delay') { color = '#F59E0B'; bg = '#FFFBEB'; icon = '🕒'; typeLabel = 'DELAYED'; }
+          else if (a.type === 'online') { color = '#059669'; bg = '#ECFDF5'; icon = '💻'; typeLabel = 'ONLINE'; }
+          else if (a.type === 'exam') { color = '#7C3AED'; bg = '#F5F3FF'; icon = '📝'; typeLabel = 'EXAM'; }
 
-          if (a.type === "cancel") {
-            colorClass = "#DC2626";
-            bgClass = "linear-gradient(135deg, #FEE2E2 0%, #FECaca 100%)";
-            borderClass = "#FCA5A5";
-            iconText = "🚫";
-          } else if (a.type === "delay") {
-            colorClass = "#D97706";
-            bgClass = "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)";
-            borderClass = "#FCD34D";
-            iconText = "🕒";
-          } else if (a.type === "online") {
-            colorClass = "#059669";
-            bgClass = "linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)";
-            borderClass = "#6EE7B7";
-            iconText = "💻";
-          }
-
-          let typeLabel = "UPDATE";
-          if (a.type === "cancel") typeLabel = "CANCELLED";
-          if (a.type === "delay") typeLabel = "DELAYED";
-          if (a.type === "online") typeLabel = "ONLINE CLASS";
-
-          html += `
-                    <div class="notification-banner" id="${notifId}" style="background: ${bgClass}; border: 1px solid ${borderClass}; display: flex; flex-wrap: wrap;">
-                        <div style="display: flex; flex: 1; align-items: center; gap: 15px;">
-                            <div class="notif-icon" style="background: ${colorClass};">${iconText}</div>
-                            <div class="notif-content">
-                                <div class="notif-title" style="color: #1F2937;">${a.courseName}: ${typeLabel}</div>
-                                <div class="notif-message" style="color: #374151;">${a.message}</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            ${a.type === 'online' ? `<a href="#" onclick="alert('Joining Microsoft Teams / Zoom Meeting...')" style="background: ${colorClass}; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">Join Class</a>` : ''}
-                            <div class="notif-time" style="color: ${colorClass};">New</div>
-                            <button class="notif-dismiss" onclick="dismissNotif('${notifId}')" style="color: ${colorClass};">×</button>
-                        </div>
-                    </div>
-                `;
+          pills.push({ notifId, color, bg, icon, title: `${a.courseName}: ${typeLabel}`, msg: a.message });
         });
 
-        // Render Class Notifications
+        // Build class reminder pills
         upcomingClasses.forEach((c, i) => {
-          const notifId = `class_notif_${c.code}_${today}`;
-          if (dismissedIds.has(notifId)) return;
+          const notifId = `pill_class_${c.code}_${today}`;
+          if (dismissedIds.has(notifId)) { return; }
           
-          activeNotifCount++;
           const startHour = parseInt(c.time.split(":")[0]);
           const minsUntil = (startHour - currentHour) * 60 - now.getMinutes();
-
-          html += `
-                    <div class="notification-banner" id="${notifId}">
-                        <div class="notif-icon">${c.code.substring(0, 2)}</div>
-                        <div class="notif-content">
-                            <div class="notif-title">${c.name} starting soon</div>
-                            <div class="notif-message">${c.room} • ${c.lecturerName}</div>
-                        </div>
-                        <div class="notif-time">In ~${Math.max(1, minsUntil)} min</div>
-                        <button class="notif-dismiss" onclick="dismissNotif('${notifId}')">×</button>
-                    </div>
-                `;
+          pills.push({
+            notifId, color: '#F59E0B', bg: '#FFFBEB', icon: '📚',
+            title: `${c.name} starting soon`,
+            msg: `${c.room} • ${c.lecturerName} • In ~${Math.max(1, minsUntil)} min`
+          });
         });
 
-        container.innerHTML = html;
-        
+        // Render pills with staggered auto-dismiss (10 seconds each, 1s stagger)
+        pills.forEach((p, idx) => {
+          const pill = document.createElement('div');
+          pill.className = 'notif-pill';
+          pill.id = p.notifId;
+          pill.style.borderLeftColor = p.color;
+          pill.style.animationDelay = `${idx * 0.15}s`;
+          pill.innerHTML = `
+            <div class="notif-pill-icon" style="background:${p.bg}; color:${p.color};">${p.icon}</div>
+            <div class="notif-pill-body" onclick="window.location.href='/pages/student/notifications.html'">
+              <div class="notif-pill-title">${p.title}</div>
+              <div class="notif-pill-msg">${p.msg}</div>
+            </div>
+            <button class="notif-pill-close" onclick="event.stopPropagation(); dismissPill('${p.notifId}')">×</button>
+            <div class="notif-pill-progress" style="color:${p.color};"></div>
+          `;
+          pillsContainer.appendChild(pill);
+
+          // Auto-dismiss after 10 seconds (staggered)
+          setTimeout(() => { dismissPill(p.notifId, true); }, 10000 + (idx * 1500));
+        });
+
         // Update notification badge on the bell icon
         const badge = document.getElementById('notifBadge');
         if (activeNotifCount > 0) {
@@ -839,6 +886,21 @@
         } else {
           badge.style.display = 'none';
         }
+      }
+
+      function dismissPill(id, isAuto) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add('dismissing');
+          setTimeout(() => el.remove(), 400);
+        }
+        // Save to sessionStorage so pills don't reappear this session
+        try {
+          const dismissed = JSON.parse(sessionStorage.getItem('dismissed_pills') || '[]');
+          const set = new Set(dismissed);
+          set.add(id);
+          sessionStorage.setItem('dismissed_pills', JSON.stringify(Array.from(set)));
+        } catch (e) {}
       }
 
       async function loadDashboardStats() {

@@ -60,6 +60,20 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Custom Notification Block added for Phase 3 UI Enhancement -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <h3 class="card-title">Send Announcement</h3>
+                </div>
+                <div class="custom-msg">
+                    <textarea id="customMsg" rows="3" placeholder="Enter custom message for this class..." style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; resize: vertical; font-family: inherit; margin-bottom: 12px;"></textarea>
+                    <button class="btn btn-secondary" onclick="sendCustom()" style="width: 100%;">
+                        Broadcast Message to Students
+                    </button>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -110,15 +124,27 @@
             container.innerHTML = `<div style="padding:20px; text-align:center;">Loading students with attendance data...</div>`;
 
             try {
-                // Use new API endpoint that returns students with attendance stats
-                const response = await fetch(`/api/attendance/students/${classCode}`);
+                // Fetch students AND today's check-ins in parallel
+                const [studentsRes, checkedInRes] = await Promise.all([
+                    fetch(`/api/attendance/students/${classCode}`),
+                    fetch(`/api/attendance/today-by-class/${classCode}`)
+                ]);
                 
-                if (!response.ok) {
-                    throw new Error('API error');
-                }
+                if (!studentsRes.ok) throw new Error('API error');
                 
-                const data = await response.json();
+                const data = await studentsRes.json();
                 const students = data.students || [];
+                
+                // Build set of student IDs who already checked in today
+                let checkedInSet = new Set();
+                let checkedInMethods = {};
+                if (checkedInRes.ok) {
+                    const checkedInData = await checkedInRes.json();
+                    (checkedInData.checkedInStudents || []).forEach(c => {
+                        checkedInSet.add(c.userId);
+                        checkedInMethods[c.userId] = c.method || 'unknown';
+                    });
+                }
                 
                 if (students.length === 0) {
                     container.innerHTML = `
@@ -128,13 +154,43 @@
                         </div>`;
                     return;
                 }
-                
-                // Sort: Danger first, then Risk, then Warning, then Good
-                const order = { danger: 0, risk: 1, warning: 2, good: 3 };
-                students.sort((a, b) => order[a.status] - order[b.status]);
 
-                // Render List with REAL risk badges
-                container.innerHTML = students.map(s => {
+                // Show summary of who's checked in
+                const checkedCount = students.filter(s => checkedInSet.has(s.id)).length;
+                let summaryHtml = '';
+                if (checkedCount > 0) {
+                    summaryHtml = `
+                        <div style="padding: 12px 16px; background: linear-gradient(135deg, #D1FAE5, #A7F3D0); border-radius: var(--radius); margin: 0 16px 12px 16px; display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 1.4rem;">✅</span>
+                            <div>
+                                <div style="font-weight: 700; color: #065F46; font-size: 0.95rem;">${checkedCount} of ${students.length} students already checked in today</div>
+                                <div style="font-size: 0.8rem; color: #047857;">via QR code or TOTP — these are pre-selected below</div>
+                            </div>
+                        </div>`;
+                }
+                
+                // Sort: checked-in students first, then by risk status
+                const order = { danger: 0, risk: 1, warning: 2, good: 3 };
+                students.sort((a, b) => {
+                    const aChecked = checkedInSet.has(a.id) ? 0 : 1;
+                    const bChecked = checkedInSet.has(b.id) ? 0 : 1;
+                    if (aChecked !== bChecked) return aChecked - bChecked;
+                    return order[a.status] - order[b.status];
+                });
+
+                // Render List with check-in status and risk badges
+                const listHtml = students.map(s => {
+                    const isCheckedIn = checkedInSet.has(s.id);
+                    const method = checkedInMethods[s.id];
+                    const methodLabel = method === 'totp' ? 'TOTP Code' : method === 'qr' ? 'QR Scan' : method === 'manual' ? 'Manual' : 'Auto';
+                    
+                    // Check-in badge
+                    let checkinBadge = '';
+                    if (isCheckedIn) {
+                        checkinBadge = `<span style="font-size:0.65rem; background:#059669; color:white; padding:3px 8px; border-radius:10px; margin-left:8px; font-weight:600;">✓ Checked In (${methodLabel})</span>`;
+                    }
+                    
+                    // Risk badge
                     let badge = '';
                     if (s.status === 'danger') {
                         badge = `<span style="font-size:0.6rem; background:#fecaca; color:#dc2626; padding:2px 6px; border-radius:4px; margin-left:8px;">Danger (0%)</span>`;
@@ -147,15 +203,17 @@
                     }
                     
                     return `
-                    <div class="list-item" style="cursor: pointer; display:flex; align-items:center;">
-                        <input type="checkbox" value="${s.id}" style="width: 20px; height: 20px; accent-color: var(--primary);">
+                    <div class="list-item" style="cursor: pointer; display:flex; align-items:center; ${isCheckedIn ? 'background: #F0FDF4; border-left: 3px solid #059669;' : ''}">
+                        <input type="checkbox" value="${s.id}" ${isCheckedIn ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: var(--primary);">
                         <div class="list-item-content" style="flex:1; margin-left:12px;">
-                            <div class="list-item-title">${s.fullName} ${badge}</div>
+                            <div class="list-item-title">${s.fullName} ${checkinBadge} ${badge}</div>
                             <div class="list-item-subtitle">${s.id} • ${s.attended}/${s.total} sessions</div>
                         </div>
-                        <button class="btn btn-sm btn-secondary" onclick="alert('Student ID: ${s.id}\\nProgram: ${s.program}\\nYear: ${s.year}\\nAttendance: ${s.attended}/${s.total} (${s.percentage}%)')" style="font-size:0.7rem; padding:4px 8px;">Details</button>
+                        <button class="btn btn-sm btn-secondary" onclick="alert('Student ID: ${s.id}\\nProgram: ${s.program}\\nYear: ${s.year}\\nAttendance: ${s.attended}/${s.total} (${s.percentage}%)${isCheckedIn ? '\\nToday: ✓ Checked in via ' + methodLabel : '\\nToday: Not checked in'}')" style="font-size:0.7rem; padding:4px 8px;">Details</button>
                     </div>
                 `}).join('');
+
+                container.innerHTML = summaryHtml + listHtml;
 
             } catch (e) {
                 console.error(e);
@@ -200,15 +258,87 @@
                 await API.saveBulkAttendance(currentClass.code, studentIds);
                 
                 // Visual Feedback
-                alert(`Attendance saved for ${studentIds.length} student(s)!`);
+                showNotificationModal('success', 'Attendance Saved', `Attendance has been saved for ${studentIds.length} student(s)!`);
                 clearAll(); // Reset selection
             } catch (error) {
                 console.error(error);
-                alert('Failed to save attendance.');
+                showNotificationModal('error', 'Save Failed', 'Failed to save attendance records. Please try again.');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
             }
+        }
+
+        async function sendCustom() {
+            if (!currentClass) return showNotificationModal('error', 'Select a Class', 'Please select a class from the dropdown above before sending an announcement.');
+            const msg = document.getElementById('customMsg').value.trim();
+            if (!msg) return showNotificationModal('error', 'Empty Message', 'Please enter a message before sending.');
+            
+            const userStr = sessionStorage.getItem('upath_user');
+            const user = userStr ? JSON.parse(userStr) : { id: 'Unknown', fullName: 'Lecturer' };
+
+            const announcement = {
+                authorId: user.id,
+                authorName: user.fullName,
+                courseCode: currentClass.code,
+                courseName: currentClass.name,
+                type: 'info',
+                message: msg
+            };
+            
+            try {
+                if (window.API && API.postAnnouncement) {
+                    const res = await API.postAnnouncement(announcement);
+                    if (res.error) throw new Error(res.error);
+                }
+                showNotificationModal('success', 'Message Sent', 'Your custom announcement has been broadcasted to the students.');
+                document.getElementById('customMsg').value = '';
+            } catch (err) {
+                console.error("Custom Notif Error:", err);
+                showNotificationModal('error', 'Delivery Failed', 'Failed to send the announcement.');
+            }
+        }
+
+        // ─── Notification Modal Handlers ───
+        function showNotificationModal(type, title, message) {
+            let overlay = document.getElementById('notificationModalOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'notificationModalOverlay';
+                overlay.className = 'notification-modal-overlay';
+                overlay.innerHTML = `
+                    <div class="notification-modal">
+                        <div class="notification-modal-icon" id="notifModalIcon"></div>
+                        <h3 class="notification-modal-title" id="notifModalTitle"></h3>
+                        <p class="notification-modal-msg" id="notifModalMsg"></p>
+                        <button class="btn btn-primary notification-modal-btn" onclick="document.getElementById('notificationModalOverlay').classList.remove('active')">Got it</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+
+            const icon = document.getElementById('notifModalIcon');
+            if (type === 'error') {
+                icon.className = 'notification-modal-icon error';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><path d="M18 6L6 18M6 6l12 12"></path></svg>`;
+            } else if (type === 'info') {
+                icon.className = 'notification-modal-icon';
+                icon.style.background = 'var(--primary-light)';
+                icon.style.color = 'var(--primary)';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>`;
+            } else {
+                icon.className = 'notification-modal-icon';
+                icon.style.background = '';
+                icon.style.color = '';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><path d="M20 6L9 17l-5-5"></path></svg>`;
+            }
+
+            document.getElementById('notifModalTitle').textContent = title;
+            document.getElementById('notifModalMsg').textContent = message;
+            
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
         }
 
         function logout() { sessionStorage.removeItem('upath_user'); window.location.href = '../../pages/auth.html'; }

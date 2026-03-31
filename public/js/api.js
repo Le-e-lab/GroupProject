@@ -659,6 +659,60 @@ const API = {
     },
     getCurrentDate() {
         return new Date().toLocaleDateString('en-US', { day: 'numeric' });
+    },
+
+    /**
+     * Updates the notification badge on pages that have it, except the main dashboards
+     */
+    async updateGlobalBadge() {
+        const badge = document.getElementById('notifBadge');
+        if (!badge) return;
+
+        const user = this.getCurrentUser();
+        if (!user) return;
+
+        try {
+            let activeCount = 0;
+            const now = new Date();
+            const FORTY_EIGHT = 48 * 60 * 60 * 1000;
+            const clearedTime = parseInt(localStorage.getItem('notifs_cleared_time') || '0');
+            const readTime = parseInt(localStorage.getItem('notifs_last_read') || '0');
+
+            if (user.role === 'student' || user.role === 'student_rep') {
+                let userYear = user.year;
+                if (!userYear && user.id) {
+                    if (user.id.startsWith('25')) userYear = 1;
+                    else if (user.id.startsWith('24')) userYear = 2;
+                    else if (user.id.startsWith('23')) userYear = 3;
+                    else if (user.id.startsWith('22')) userYear = 4;
+                }
+                const announcements = await this.getAnnouncementsForStudent(user.program, userYear);
+                activeCount = announcements.filter(a => {
+                    const ts = new Date(a.timestamp || a.createdAt).getTime();
+                    return (now.getTime() - ts) < FORTY_EIGHT && ts > clearedTime && ts > readTime;
+                }).length;
+            } else if (user.role === 'lecturer') {
+                const classes = await this.getClassesByLecturer(user.id);
+                const classCodes = classes.map(c => c.code);
+                if (classCodes.length > 0) {
+                    const data = await fetch(`${this.baseUrl}/announcements/by-courses?codes=${encodeURIComponent(classCodes.join(','))}`).then(r => r.json());
+                    const announcements = data.announcements || [];
+                    activeCount = announcements.filter(a => {
+                        const ts = new Date(a.timestamp || a.createdAt).getTime();
+                        return (now.getTime() - ts) < FORTY_EIGHT && ts > clearedTime && ts > readTime;
+                    }).length;
+                }
+            }
+
+            if (activeCount > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = activeCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        } catch (e) {
+            console.warn('Failed to update global badge', e);
+        }
     }
 };
 
@@ -666,6 +720,11 @@ const API = {
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
         if (API.initMobileNav) API.initMobileNav();
+        
+        // Update notification badge automatically on all pages except the main dashboards
+        if (!window.location.href.includes('dashboard.html')) {
+            API.updateGlobalBadge();
+        }
     });
 }
 

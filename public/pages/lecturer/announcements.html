@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post Announcement - UPath</title>
+    <title>Announcements - UPath</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../css/theme.css">
     <style>
@@ -68,6 +68,71 @@
         .badge.delay { background: #FEF3C7; color: #D97706; }
         .badge.info { background: #DBEAFE; color: #2563EB; }
 
+        .received-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid #F59E0B;
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .received-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        }
+        .received-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .received-content { flex: 1; }
+        .received-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .received-title { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+        .received-time { font-size: 0.8rem; color: var(--text-muted); }
+        .received-message { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+        .received-meta {
+            display: inline-flex;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: var(--bg);
+            padding: 4px 10px;
+            border-radius: var(--radius);
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .section-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        .section-badge {
+            background: #EF4444;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
         @media (max-width: 768px) {
             .history-item {
                 flex-direction: column;
@@ -90,9 +155,9 @@
             <a href="../../pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
         </div>
         <div class="navbar-actions" style="display: flex; align-items: center; gap: 16px;">
-            <a href="../../pages/lecturer/announcements.html" style="text-decoration: none; position: relative; color: var(--primary); transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">
+            <a href="../../pages/lecturer/announcements.html" style="text-decoration: none; position: relative; color: var(--primary); transition: color 0.2s;">
                 <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                <span id="notifBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #EF4444; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 0.65rem; font-weight: 700; align-items: center; justify-content: center;">0</span>
+                <span id="notifBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #EF4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.65rem; font-weight: 700; align-items: center; justify-content: center;">0</span>
             </a>
             <a href="../../pages/lecturer/profile.html" class="navbar-avatar" id="userAvatar">LC</a>
             <button class="navbar-logout" onclick="logout()">Sign Out</button>
@@ -104,7 +169,21 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Class Announcements</h1>
-                    <p class="page-subtitle">Notify students about cancellations, delays, or important info</p>
+                    <p class="page-subtitle">Post announcements and see notifications from student reps</p>
+                </div>
+            </div>
+
+            <!-- Received Notifications from Student Reps -->
+            <div id="receivedSection" style="display: none; margin-bottom: 28px;">
+                <div class="section-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h2>📨 Received from Student Reps</h2>
+                        <span class="section-badge" id="receivedCount">0</span>
+                    </div>
+                    <button onclick="clearReceivedHistory()" style="background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 16px; border-radius: var(--radius); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#FEE2E2'; this.style.color='#DC2626'; this.style.borderColor='#FCA5A5';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">Clear All</button>
+                </div>
+                <div class="history-list" id="receivedNotifs">
+                    <!-- Dynamically loaded -->
                 </div>
             </div>
 
@@ -138,7 +217,7 @@
                 </form>
             </div>
 
-            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;">Recent Announcements</h2>
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;">My Recent Announcements</h2>
             <div class="history-list" id="announcementHistory">
                 <!-- Dynamically loaded -->
                 <div style="text-align: center; color: var(--text-muted); padding: 20px;">No recent announcements</div>
@@ -155,6 +234,19 @@
     <script>
         let lecturerId = '210101';
         let lecturerName = 'Lecturer';
+        let myCoursesCodes = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            localStorage.setItem('notifs_last_read', Date.now().toString());
+            loadUserData();
+        });
+
+        function clearReceivedHistory() {
+            if (confirm('Clear all received notifications?')) {
+                localStorage.setItem('notifs_cleared_time', Date.now().toString());
+                loadReceivedNotifs();
+            }
+        }
 
         function loadUserData() {
             const userStr = sessionStorage.getItem('upath_user');
@@ -178,27 +270,33 @@
                 
                 // Unique courses
                 const courses = {};
-            myClasses.forEach(c => {
-                if (!courses[c.code]) {
-                    courses[c.code] = {
-                        code: c.code,
-                        name: c.name,
-                        year: c.year
-                    };
-                }
-            });
+                myClasses.forEach(c => {
+                    if (!courses[c.code]) {
+                        courses[c.code] = {
+                            code: c.code,
+                            name: c.name,
+                            year: c.year
+                        };
+                    }
+                });
 
-            const select = document.getElementById('classSelect');
-            select.innerHTML = '<option value="">Select a class...</option>';
-            
-            Object.values(courses).forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.code;
-                option.textContent = `${c.code} - ${c.name} (Year ${c.year})`;
-                option.dataset.name = c.name;
-                option.dataset.year = c.year;
-                select.appendChild(option);
-            });
+                // Store course codes for fetching received notifications
+                myCoursesCodes = Object.keys(courses);
+
+                const select = document.getElementById('classSelect');
+                select.innerHTML = '<option value="">Select a class...</option>';
+                
+                Object.values(courses).forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c.code;
+                    option.textContent = `${c.code} - ${c.name} (Year ${c.year})`;
+                    option.dataset.name = c.name;
+                    option.dataset.year = c.year;
+                    select.appendChild(option);
+                });
+
+                // After loading classes, load received notifs (needs course codes)
+                loadReceivedNotifs();
             } catch (err) {
                 console.error("Failed to load classes for announcements", err);
             }
@@ -237,7 +335,7 @@
             
             // Reset form and reload
             messageInput.value = '';
-            loadHistory();
+            setTimeout(() => loadHistory(), 500);
         }
 
         async function loadHistory() {
@@ -277,8 +375,86 @@
             container.innerHTML = html;
         }
 
+        async function loadReceivedNotifs() {
+            if (myCoursesCodes.length === 0) return;
+
+            const container = document.getElementById('receivedNotifs');
+            const section = document.getElementById('receivedSection');
+
+            try {
+                const codesParam = myCoursesCodes.join(',');
+                const res = await fetch(`/api/announcements/by-courses?codes=${encodeURIComponent(codesParam)}&excludeAuthor=${lecturerId}`);
+                if (!res.ok) throw new Error('Failed');
+                const data = await res.json();
+                let notifs = data.announcements || [];
+
+                const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+                const now = Date.now();
+                const clearedTime = parseInt(localStorage.getItem('notifs_cleared_time') || '0');
+                notifs = notifs.filter(a => {
+                    const ts = new Date(a.timestamp || a.createdAt).getTime();
+                    return (now - ts) < FORTY_EIGHT_HOURS && ts > clearedTime;
+                });
+
+                if (notifs.length === 0) {
+                    section.style.display = 'none';
+                    // Update global badge for empty state
+                    const badge = document.getElementById('notifBadge');
+                    if (badge) badge.style.display = 'none';
+                    return;
+                }
+
+                section.style.display = 'block';
+                document.getElementById('receivedCount').textContent = notifs.length;
+
+                // Update bell badge
+                const badge = document.getElementById('notifBadge');
+                if (badge) {
+                    badge.textContent = notifs.length;
+                    badge.style.display = 'flex';
+                }
+
+                let html = '';
+                notifs.forEach(a => {
+                    let colorClass = '#F59E0B', bgClass = '#FFFBEB', iconText = '📣';
+                    if (a.type === 'cancel') { colorClass = '#EF4444'; bgClass = '#FEF2F2'; iconText = '🚫'; }
+                    else if (a.type === 'delay') { colorClass = '#F59E0B'; bgClass = '#FFFBEB'; iconText = '🕒'; }
+                    else if (a.type === 'venue') { colorClass = '#DC2626'; bgClass = '#FEE2E2'; iconText = '📍'; }
+                    else if (a.type === 'info') { colorClass = '#3B82F6'; bgClass = '#EFF6FF'; iconText = 'ℹ️'; }
+
+                    const timeString = new Date(a.timestamp || a.createdAt).toLocaleString('en-US', {
+                        weekday: 'short', month: 'short', day: 'numeric',
+                        hour: 'numeric', minute: '2-digit', hour12: true
+                    });
+
+                    html += `
+                        <div class="received-card" style="border-left-color: ${colorClass};">
+                            <div class="received-icon" style="background: ${bgClass}; color: ${colorClass};">
+                                ${iconText}
+                            </div>
+                            <div class="received-content">
+                                <div class="received-header">
+                                    <div class="received-title">${a.courseName || a.courseCode}</div>
+                                    <div class="received-time">${timeString}</div>
+                                </div>
+                                <div class="received-message">${a.message}</div>
+                                <div class="received-meta">
+                                    <span>👤 ${a.lecturerName || 'Student Rep'}</span>
+                                    <span>•</span>
+                                    <span>${(a.type || 'info').toUpperCase()}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Error loading received notifications:', err);
+            }
+        }
+
         function logout() {
-            sessionStorage.removeItem('upath_user');
             sessionStorage.removeItem('upath_user');
             window.location.href = '../../pages/auth.html';
         }

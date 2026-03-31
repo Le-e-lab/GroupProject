@@ -126,8 +126,9 @@
 
     <main class="page">
         <div class="page-container" style="max-width: 800px;">
-            <div class="page-header" style="margin-bottom: 24px;">
+            <div class="page-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
                 <h1 class="page-title" style="font-size: 1.8rem;">Notification History</h1>
+                <button onclick="clearNotificationsHistory()" style="background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); padding: 8px 16px; border-radius: var(--radius); cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#FEE2E2'; this.style.color='#DC2626'; this.style.borderColor='#FCA5A5';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">Clear All</button>
             </div>
             <div class="notifications-container" id="notifContainer">
                 <!-- Notifications injected here -->
@@ -148,8 +149,20 @@
                 return;
             }
             const user = JSON.parse(userStr);
+            
+            // Mark all notifications as read (updates the badge)
+            localStorage.setItem('notifs_last_read', Date.now().toString());
+            
             loadNotificationsHistory(user);
         });
+
+        function clearNotificationsHistory() {
+            if (confirm('Are you sure you want to clear all notifications?')) {
+                localStorage.setItem('notifs_cleared_time', Date.now().toString());
+                const userStr = sessionStorage.getItem('upath_user');
+                if (userStr) loadNotificationsHistory(JSON.parse(userStr));
+            }
+        }
 
         async function loadNotificationsHistory(user) {
             const container = document.getElementById('notifContainer');
@@ -165,7 +178,17 @@
                 }
 
                 const data = await API.getAnnouncementsForStudent(user.program, userYear);
-                const announcements = data.announcements || [];
+                // getAnnouncementsForStudent returns an array directly
+                const allAnnouncements = Array.isArray(data) ? data : (data.announcements || []);
+
+                // Filter out announcements older than 48 hours and explicitly cleared ones
+                const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+                const now = Date.now();
+                const clearedTime = parseInt(localStorage.getItem('notifs_cleared_time') || '0');
+                const announcements = allAnnouncements.filter(a => {
+                    const ts = new Date(a.timestamp || a.createdAt).getTime();
+                    return (now - ts) < FORTY_EIGHT_HOURS && ts > clearedTime;
+                });
 
                 if (announcements.length === 0) {
                     container.innerHTML = `

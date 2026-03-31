@@ -1043,3 +1043,75 @@ input[type="submit"] {
     transition-duration: 0.01ms !important;
   }
 }
+/* =========================================
+   NOTIFICATION MODAL UI
+   ========================================= */
+.notification-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+
+.notification-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.notification-modal {
+  background: var(--surface);
+  width: 90%;
+  max-width: 400px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: 24px;
+  transform: translateY(20px) scale(0.95);
+  transition: all var(--transition-slow);
+  text-align: center;
+}
+
+.notification-modal-overlay.active .notification-modal {
+  transform: translateY(0) scale(1);
+}
+
+.notification-modal-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--success-light);
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 24px;
+}
+
+.notification-modal-icon.error {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.notification-modal-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.notification-modal-msg {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.notification-modal-btn {
+  width: 100%;
+}

@@ -236,12 +236,13 @@
 
                 // Populate course dropdown for notifications
                 const courseSelect = document.getElementById('notifCourse');
-                const seenCodes = new Set();
+                const seenCourses = new Set();
                 timetableData.forEach(c => {
-                    if (!seenCodes.has(c.code)) {
-                        seenCodes.add(c.code);
+                    const uniqueKey = `${c.code}|${c.name}`;
+                    if (!seenCourses.has(uniqueKey)) {
+                        seenCourses.add(uniqueKey);
                         const opt = document.createElement('option');
-                        opt.value = c.code;
+                        opt.value = uniqueKey;
                         opt.textContent = `${c.code} - ${c.name}`;
                         courseSelect.appendChild(opt);
                     }
@@ -428,24 +429,66 @@
             const courseSelect = document.getElementById('notifCourse');
             if (nextClass && courseSelect) {
                 // Auto-select the upcoming class
-                courseSelect.value = nextClass.code;
+                courseSelect.value = `${nextClass.code}|${nextClass.name}`;
             }
         }
 
+        // ─── Notification Modal Handlers ───
+        function showNotificationModal(type, title, message) {
+            let overlay = document.getElementById('notificationModalOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'notificationModalOverlay';
+                overlay.className = 'notification-modal-overlay';
+                overlay.innerHTML = `
+                    <div class="notification-modal">
+                        <div class="notification-modal-icon" id="notifModalIcon"></div>
+                        <h3 class="notification-modal-title" id="notifModalTitle"></h3>
+                        <p class="notification-modal-msg" id="notifModalMsg"></p>
+                        <button class="btn btn-primary notification-modal-btn" onclick="document.getElementById('notificationModalOverlay').classList.remove('active')">Got it</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+
+            const icon = document.getElementById('notifModalIcon');
+            if (type === 'error') {
+                icon.className = 'notification-modal-icon error';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><path d="M18 6L6 18M6 6l12 12"></path></svg>`;
+            } else if (type === 'info') {
+                icon.className = 'notification-modal-icon';
+                icon.style.background = 'var(--primary-light)';
+                icon.style.color = 'var(--primary)';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>`;
+            } else {
+                icon.className = 'notification-modal-icon';
+                icon.style.background = '';
+                icon.style.color = '';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><path d="M20 6L9 17l-5-5"></path></svg>`;
+            }
+
+            document.getElementById('notifModalTitle').textContent = title;
+            document.getElementById('notifModalMsg').textContent = message;
+            
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
+        }
+
         async function sendNotif(type, message) {
-            const courseCode = document.getElementById('notifCourse').value;
-            if (!courseCode) {
-                alert('Please select a course first. No upcoming class auto-detected.');
+            const selectedVal = document.getElementById('notifCourse').value;
+            if (!selectedVal) {
+                showNotificationModal('error', 'Select a Course', 'Please select a course first. No upcoming class auto-detected.');
                 switchTab('notifications');
                 return;
             }
 
-            const courseName = timetableData.find(c => c.code === courseCode)?.name || courseCode;
+            const [courseCode, courseName] = selectedVal.split('|');
 
             try {
                 await API.postAnnouncement({
-                    lecturerId: currentUser.id,
-                    lecturerName: currentUser.fullName + ' (Rep)',
+                    authorId: currentUser.id,
+                    authorName: currentUser.fullName + ' (Rep)',
                     courseCode,
                     courseName,
                     program: currentUser.program,
@@ -453,16 +496,16 @@
                     type,
                     message
                 });
-                alert('✅ Notification sent to all students!');
+                showNotificationModal('success', 'Notification Sent', 'Notification sent to all students!');
             } catch (err) {
                 console.error(err);
-                alert('❌ Error sending notification');
+                showNotificationModal('error', 'Delivery Failed', 'Error sending notification. Please try again.');
             }
         }
 
         async function sendCustom() {
             const msg = document.getElementById('customMsg').value.trim();
-            if (!msg) { alert('Please type a message'); return; }
+            if (!msg) { showNotificationModal('error', 'Empty Message', 'Please type a message'); return; }
             await sendNotif('info', msg);
             document.getElementById('customMsg').value = '';
         }

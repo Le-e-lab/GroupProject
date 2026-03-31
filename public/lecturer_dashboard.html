@@ -206,6 +206,104 @@
             .current-class-card { flex-direction: column; text-align: center; }
             .classes-grid { grid-template-columns: 1fr; }
         }
+
+        /* Pill Notifications */
+        .notif-pills-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 320px;
+            pointer-events: none;
+        }
+        .notif-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 12px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+            animation: pillSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0;
+            transform: translateX(100px);
+        }
+        .notif-pill.dismissing {
+            animation: pillSlideOut 0.4s ease forwards;
+        }
+        @keyframes pillSlideIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pillSlideOut {
+            from { opacity: 1; transform: translateX(0); max-height: 120px; }
+            to { opacity: 0; transform: translateX(100px); max-height: 0; padding: 0; margin: 0; border: none; }
+        }
+        .notif-pill-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .notif-pill-body { flex: 1; min-width: 0; cursor: pointer; }
+        .notif-pill-title {
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .notif-pill-msg {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+        .notif-pill-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+        .notif-pill-close:hover { opacity: 1; }
+        .notif-pill-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: currentColor;
+            opacity: 0.3;
+            animation: pillProgress 10s linear forwards;
+        }
+        @keyframes pillProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        @media (max-width: 768px) {
+            .notif-pills-container {
+                right: 10px; left: 10px; max-width: none; top: 65px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -492,6 +590,9 @@
             });
             
             classesGrid.innerHTML = html || '<div class="text-muted">No classes assigned</div>';
+            
+            // Load notifications based on my classes
+            loadNotifications(uniqueCodes);
         }
 
         function getNextClassDay(classes) {
@@ -505,6 +606,103 @@
                 }
             }
             return 'your next scheduled day';
+        }
+
+        async function loadNotifications(courseCodes) {
+            if (!courseCodes || courseCodes.length === 0) return;
+            
+            try {
+                // Fetch announcements for these courses
+                const codesParam = courseCodes.join(',');
+                const data = await API.get(`/api/announcements/by-courses?codes=${encodeURIComponent(codesParam)}`);
+                let announcements = data.announcements || [];
+                
+                // Filter 48 hours and 'Clear All' timestamp
+                const now = new Date();
+                const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+                const clearedTime = parseInt(localStorage.getItem('notifs_cleared_time') || '0');
+                const readTime = parseInt(localStorage.getItem('notifs_last_read') || '0');
+                
+                announcements = announcements.filter(a => {
+                    const ts = new Date(a.timestamp || a.createdAt).getTime();
+                    return (now.getTime() - ts) < FORTY_EIGHT_HOURS && ts > clearedTime && ts > readTime;
+                });
+
+                // Load dismissed pills
+                const dismissedStr = sessionStorage.getItem('dismissed_pills') || '[]';
+                const dismissedIds = new Set(JSON.parse(dismissedStr));
+                const activeNotifCount = announcements.length;
+
+                let pillsContainer = document.getElementById('notifPills');
+                if (!pillsContainer) {
+                    pillsContainer = document.createElement('div');
+                    pillsContainer.id = 'notifPills';
+                    pillsContainer.className = 'notif-pills-container';
+                    document.body.appendChild(pillsContainer);
+                }
+                pillsContainer.innerHTML = '';
+
+                let idx = 0;
+                announcements.forEach((a) => {
+                    const notifId = `pill_ann_${a.id || idx}`;
+                    if (dismissedIds.has(notifId)) { return; }
+
+                    let color = '#3B82F6', bg = '#EFF6FF', icon = 'ℹ️';
+                    let typeLabel = 'UPDATE';
+                    if (a.type === 'cancel') { color = '#EF4444'; bg = '#FEF2F2'; icon = '🚫'; typeLabel = 'CANCELLED'; }
+                    else if (a.type === 'delay') { color = '#F59E0B'; bg = '#FFFBEB'; icon = '🕒'; typeLabel = 'DELAYED'; }
+                    else if (a.type === 'online') { color = '#059669'; bg = '#ECFDF5'; icon = '💻'; typeLabel = 'ONLINE'; }
+                    else if (a.type === 'exam') { color = '#7C3AED'; bg = '#F5F3FF'; icon = '📝'; typeLabel = 'EXAM'; }
+
+                    const title = `${a.courseCode}: ${typeLabel}`;
+                    const msg = a.message;
+
+                    const pill = document.createElement('div');
+                    pill.className = 'notif-pill';
+                    pill.id = notifId;
+                    pill.style.borderLeftColor = color;
+                    pill.style.animationDelay = `${idx * 0.15}s`;
+                    pill.innerHTML = `
+                        <div class="notif-pill-icon" style="background:${bg}; color:${color};">${icon}</div>
+                        <div class="notif-pill-body" onclick="window.location.href='/pages/lecturer/announcements.html'">
+                            <div class="notif-pill-title">${title}</div>
+                            <div class="notif-pill-msg">${msg}</div>
+                        </div>
+                        <button class="notif-pill-close" onclick="event.stopPropagation(); dismissPill('${notifId}')">×</button>
+                        <div class="notif-pill-progress" style="color:${color};"></div>
+                    `;
+                    pillsContainer.appendChild(pill);
+
+                    setTimeout(() => { dismissPill(notifId, true); }, 10000 + (idx * 1500));
+                    idx++;
+                });
+
+                const badge = document.getElementById('notifBadge');
+                if (badge) {
+                    if (activeNotifCount > 0) {
+                        badge.textContent = activeNotifCount;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load notifications:', err);
+            }
+        }
+
+        function dismissPill(id, isAuto) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('dismissing');
+                setTimeout(() => el.remove(), 400);
+            }
+            try {
+                const dismissed = JSON.parse(sessionStorage.getItem('dismissed_pills') || '[]');
+                const set = new Set(dismissed);
+                set.add(id);
+                sessionStorage.setItem('dismissed_pills', JSON.stringify(Array.from(set)));
+            } catch (e) {}
         }
 
         function logout() {

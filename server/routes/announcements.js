@@ -47,15 +47,18 @@ setInterval(async () => {
  */
 router.post('/', async (req, res) => {
     try {
-        const { lecturerName, courseCode, courseName, program, year, type, message, lecturerId } = req.body;
+        const { lecturerName, courseCode, courseName, program, year, type, message, lecturerId, authorId, authorName } = req.body;
 
         if (!message || !courseCode) {
             return res.status(400).json({ message: 'courseCode and message are required' });
         }
 
+        const finalAuthorId = authorId || lecturerId || 'unknown';
+        const finalAuthorName = authorName || lecturerName || 'Lecturer / Rep';
+
         const announcement = await Announcement.create({
-            lecturerId: lecturerId || 'unknown',
-            lecturerName: lecturerName || 'Lecturer',
+            lecturerId: finalAuthorId,
+            lecturerName: finalAuthorName,
             courseCode,
             courseName: courseName || courseCode,
             program: program || null,
@@ -69,6 +72,40 @@ router.post('/', async (req, res) => {
     } catch (err) {
         console.error("Error creating announcement:", err);
         res.status(500).json({ message: 'Failed to create announcement' });
+    }
+});
+
+/**
+ * GET /api/announcements/by-courses?codes=NCSC211,NCSC312&excludeAuthor=210101
+ * Fetch announcements for specific course codes (for lecturer to see rep announcements)
+ */
+router.get('/by-courses', async (req, res) => {
+    try {
+        const { codes, excludeAuthor } = req.query;
+        if (!codes) return res.json({ announcements: [] });
+
+        const codeList = codes.split(',').map(c => c.trim()).filter(Boolean);
+        if (codeList.length === 0) return res.json({ announcements: [] });
+
+        const where = {
+            courseCode: { [Op.in]: codeList }
+        };
+
+        // Exclude the lecturer's own announcements so they only see rep/other posts
+        if (excludeAuthor) {
+            where.lecturerId = { [Op.ne]: excludeAuthor };
+        }
+
+        const announcements = await Announcement.findAll({
+            where,
+            order: [['createdAt', 'DESC']],
+            limit: 20
+        });
+
+        res.json({ announcements });
+    } catch (err) {
+        console.error("Error fetching announcements by courses:", err);
+        res.status(500).json({ message: 'Failed to fetch announcements' });
     }
 });
 
