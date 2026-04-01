@@ -120,6 +120,7 @@
                 <a href="#" onclick="switchPanel('timetable', event)"><span class="nav-icon">📅</span> Timetable</a>
                 <a href="#" onclick="switchPanel('upload', event)"><span class="nav-icon">⬆️</span> Upload Timetable</a>
                 <a href="#" onclick="switchPanel('quality', event)"><span class="nav-icon">🧹</span> Data Quality</a>
+                <a href="#" onclick="switchPanel('students', event)"><span class="nav-icon">👨‍🎓</span> Dup. Students</a>
                 <a href="#" onclick="switchPanel('security', event)"><span class="nav-icon">🔐</span> Security</a>
                 <a href="#" onclick="switchPanel('create', event)"><span class="nav-icon">➕</span> Create User</a>
             </nav>
@@ -351,6 +352,19 @@
                     </div>
                 </div>
 
+                <div id="panel-students" class="tab-panel">
+                    <div class="section-header" style="margin-bottom: 12px;">
+                        <div>
+                            <div class="section-title">Duplicate Student Accounts</div>
+                            <p class="section-subtext">Find students with the same name in the same program/year (likely duplicates or test accounts).</p>
+                        </div>
+                        <button class="btn btn-success" type="button" onclick="loadStudentDuplicates()">🔄 Refresh</button>
+                    </div>
+                    <div id="studentDuplicatesContainer" class="panel-card">
+                        <p style="color: var(--text-muted);">Run a scan to detect duplicate student accounts.</p>
+                    </div>
+                </div>
+
                 <div id="panel-security" class="tab-panel">
                     <div class="section-header" style="margin-bottom: 12px;">
                         <div>
@@ -433,6 +447,7 @@
                 loadBackups();
             }
             if (name === 'quality') loadLecturerDuplicates();
+            if (name === 'students') loadStudentDuplicates();
             if (name === 'security') loadSecurityChecks();
         }
 
@@ -771,6 +786,63 @@
             } catch (err) {
                 console.error('Security checks error:', err);
                 container.innerHTML = '<p style="color:#DC2626;">Failed to load security checks.</p>';
+            }
+        }
+
+        async function loadStudentDuplicates() {
+            const container = document.getElementById('studentDuplicatesContainer');
+            if (!container) return;
+            container.innerHTML = '<p style="color: var(--text-muted);">Scanning student records...</p>';
+
+            try {
+                const data = await API.get('/api/admin/data-quality/student-duplicates');
+                const duplicates = data.studentDuplicates || [];
+
+                if (!duplicates.length) {
+                    container.innerHTML = '<div style="background:#ECFDF5; border-left:4px solid #059669; padding:14px; border-radius:8px; color:#065F46;"><strong>✅ No duplicate student groups found.</strong></div>';
+                    return;
+                }
+
+                let html = `<div style="background:#FFFBEB; border-left:4px solid #B45309; padding:14px; border-radius:8px; margin-bottom:14px; color:#92400E;"><strong>⚠️ ${duplicates.length} potential duplicate group(s) found.</strong> Students with same name in same program/year may be test accounts or system dupes.</div>`;
+
+                duplicates.forEach((group, index) => {
+                    const members = group.members || [];
+                    if (!members.length) return;
+
+                    html += `
+                        <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:12px;">
+                            <div style="margin-bottom:10px;">
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Student Name</div>
+                                <div style="font-weight:700; margin-bottom:4px;">${escapeHtml(group.name)}</div>
+                                <div style="font-size:0.85rem; color:var(--text-muted);">
+                                    Program: <strong>${escapeHtml(group.program || 'N/A')}</strong> | Year: <strong>${group.year || 'N/A'}</strong> | Count: <strong>${members.length}</strong>
+                                </div>
+                            </div>
+                            <div class="table-wrap" style="margin-bottom:10px;">
+                                <table class="data-table">
+                                    <thead><tr><th>Student ID</th><th>Email</th><th>Program</th><th>Year</th><th>Action</th></tr></thead>
+                                    <tbody>
+                                        ${members.map((m) => `
+                                            <tr>
+                                                <td><strong>${escapeHtml(m.id)}</strong></td>
+                                                <td>${escapeHtml(m.email || '—')}</td>
+                                                <td>${escapeHtml(m.program || '—')}</td>
+                                                <td>${m.year || '—'}</td>
+                                                <td><button class="btn btn-danger" onclick="deleteUser('${escapeHtml(m.id)}')" style="padding:4px 8px; font-size:0.75rem;">Delete</button></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div style="font-size:0.8rem; color:var(--text-muted);">⚠️ Review before deleting. Only delete if these are confirmed duplicates/test accounts.</div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Student duplicate scan error:', err);
+                container.innerHTML = '<p style="color:#DC2626;">Failed to load student duplicate groups.</p>';
             }
         }
 
