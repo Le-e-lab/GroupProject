@@ -41,7 +41,8 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Student List</h3>
-                    <div class="flex gap-1">
+                    <div class="flex gap-1" style="flex-wrap: wrap; justify-content: flex-end;">
+                        <button class="btn btn-secondary btn-sm" onclick="downloadRegisteredStudents()">⬇️ Download List</button>
                         <button class="btn btn-secondary btn-sm" onclick="selectAll()">Select All</button>
                         <button class="btn btn-secondary btn-sm" onclick="clearAll()">Clear All</button>
                         <button class="btn btn-primary btn-sm" onclick="addStudentPrompt()">+ Add Student</button>
@@ -266,6 +267,39 @@
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
+            }
+        }
+
+        async function downloadRegisteredStudents() {
+            if (!currentClass || !currentClass.code) {
+                showNotificationModal('error', 'Select a Class', 'Please select a class before downloading.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/attendance/students/${encodeURIComponent(currentClass.code)}/export`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.message || 'Failed to download class list');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${currentClass.code}_registered_students.csv`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+
+                showNotificationModal('success', 'Download Complete', `Student list for ${currentClass.code} has been downloaded.`);
+            } catch (error) {
+                console.error('Download class list error:', error);
+                showNotificationModal('error', 'Download Failed', error.message || 'Unable to download student list.');
             }
         }
 

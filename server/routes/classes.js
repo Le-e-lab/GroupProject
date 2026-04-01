@@ -141,18 +141,30 @@ router.get('/lecturer/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
     try {
-        const { name, code, time, room, lecturerId, lecturerName, day, year } = req.body;
+        const { name, code, time, room, lecturerId, lecturerName, day, year, program, college, section } = req.body;
+
+        if (!name || !code || !time || !room || !day) {
+            return res.status(400).json({ message: 'Missing required class fields' });
+        }
+
+        const [fromTime, toTime] = String(time).split(' - ').map((v) => (v || '').trim());
+        if (!fromTime || !toTime) {
+            return res.status(400).json({ message: 'Time must be in "HH:MM - HH:MM" format' });
+        }
         
         const newClass = await Class.create({
-            id: 'c' + Date.now(),
-            name, 
-            code, 
-            time, 
-            room, 
-            lecturerId, 
-            lecturerName, 
-            day,
-            year: year || 2
+            Course_Code: code,
+            Course_Name: name,
+            Day: day,
+            From_Time: fromTime,
+            To_Time: toTime,
+            Venue: room,
+            Lecturer: lecturerName || '',
+            LecturerId: lecturerId || '',
+            Year_Semester: `Y${year || 2}S1`,
+            Program: program || (String(code).substring(0, 4) || ''),
+            Section: section || '1',
+            College: college || 'Computing'
         });
 
         res.json({ message: 'Class created', class: newClass });
@@ -170,17 +182,35 @@ router.put('/:id', async (req, res) => {
     try {
         const classId = req.params.id;
         const { day, time, room } = req.body;
-        
-        const classObj = await Class.findByPk(classId);
+
+        const [courseCode, currentDay, currentFromTime] = String(classId).split('-');
+        if (!courseCode || !currentDay || !currentFromTime) {
+            return res.status(400).json({ message: 'Invalid class id format' });
+        }
+
+        const classObj = await Class.findOne({
+            where: {
+                Course_Code: courseCode,
+                Day: currentDay,
+                From_Time: currentFromTime
+            }
+        });
         
         if (!classObj) {
             return res.status(404).json({ message: 'Class not found' });
         }
 
         // Update fields
-        if (day) classObj.day = day;
-        if (time) classObj.time = time;
-        if (room) classObj.room = room;
+        if (day) classObj.Day = day;
+        if (time) {
+            const [fromTime, toTime] = String(time).split(' - ').map((v) => (v || '').trim());
+            if (!fromTime || !toTime) {
+                return res.status(400).json({ message: 'Time must be in "HH:MM - HH:MM" format' });
+            }
+            classObj.From_Time = fromTime;
+            classObj.To_Time = toTime;
+        }
+        if (room) classObj.Venue = room;
 
         await classObj.save();
 

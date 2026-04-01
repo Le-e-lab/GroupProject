@@ -14,6 +14,33 @@ const { Attendance, Session, Class, User, sequelize } = require('../models');
 const { TOTP, NobleCryptoPlugin, ScureBase32Plugin } = require('otplib');
 const { Op } = require('sequelize');
 const validator = require('validator');
+const authMiddleware = require('../middleware/authMiddleware');
+const { attendanceAttemptLimiter } = require('../middleware/rateLimiters');
+
+const canManageAttendanceRoles = new Set(['lecturer', 'admin']);
+const canViewClassAttendanceRoles = new Set(['lecturer', 'admin', 'student_rep']);
+
+function hasRole(req, rolesSet) {
+    return req.user && rolesSet.has(req.user.role);
+}
+
+function requireRoles(rolesSet) {
+    return (req, res, next) => {
+        if (!hasRole(req, rolesSet)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+        return next();
+    };
+}
+
+function canAccessStudentData(req, studentId) {
+    if (!req.user) return false;
+    if (req.user.id === String(studentId)) return true;
+    return hasRole(req, canViewClassAttendanceRoles);
+}
+
+// Protect all attendance routes by default.
+router.use(authMiddleware);
 
 // Create a new TOTP instance (30s step, window 1)
 // Manual TOTP Implementation (HMAC-SHA1)
@@ -66,7 +93,7 @@ function generateSecret() {
  * POST /api/attendance/generate-code
  * Lecturer generates a code for a class session
  */
-router.post('/generate-code', async (req, res) => {
+router.post('/generate-code', requireRoles(canManageAttendanceRoles), async (req, res) => {
     try {
         const { classId, forceNew } = req.body;
         if (!classId) return res.status(400).json({ message: 'Class ID required' });
@@ -114,7 +141,7 @@ router.post('/generate-code', async (req, res) => {
  * POST /api/attendance/validate-code
  * Student submits code to mark attendance
  */
-router.post('/validate-code', async (req, res) => {
+router.post('/validate-code', attendanceAttemptLimiter, async (req, res) => {
     try {
         let { classId, studentId, code, userLat, userLon } = req.body;
         
@@ -122,6 +149,15 @@ router.post('/validate-code', async (req, res) => {
         if (classId) classId = validator.escape(validator.trim(classId));
         if (studentId) studentId = validator.escape(validator.trim(studentId));
         if (code) code = validator.escape(validator.trim(String(code)));
+
+        if (!studentId) {
+            return res.status(400).json({ message: 'Student ID required' });
+        }
+
+        const isPrivileged = hasRole(req, canManageAttendanceRoles);
+        if (!isPrivileged && String(req.user.id) !== String(studentId)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
         
         // Find active session
         const session = await Session.findOne({
@@ -181,6 +217,10 @@ router.post('/validate-code', async (req, res) => {
 router.get('/student/:id', async (req, res) => {
     try {
         const { id } = req.params;
+
+        if (!canAccessStudentData(req, id)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
         
         // 1. Fetch Student
         const student = await User.findByPk(id);
@@ -249,6 +289,9 @@ router.get('/student/:id', async (req, res) => {
 router.get('/today/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        if (!canAccessStudentData(req, id)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         
@@ -354,7 +397,7 @@ router.get('/stats/course/:courseId', async (req, res) => {
 /**
  * POST /api/attendance/bulk-mark
  */
-router.post('/bulk-mark', async (req, res) => {
+router.post('/bulk-mark', requireRoles(canManageAttendanceRoles), async (req, res) => {
     try {
         const { classId, students, date } = req.body;
         
@@ -377,11 +420,62 @@ router.post('/bulk-mark', async (req, res) => {
         res.status(500).json({ message: 'Error saving bulk attendance: ' + err.message });
     }
 });
+
+/**
+ * POST /api/attendance/mark
+ * Manual mark/update for a single student attendance record.
+ */
+router.post('/mark', requireRoles(canManageAttendanceRoles), async (req, res) => {
+    try {
+        let { classId, studentId, status, date } = req.body;
+
+        classId = validator.escape(validator.trim(String(classId || '')));
+        studentId = validator.escape(validator.trim(String(studentId || '')));
+        status = validator.escape(validator.trim(String(status || 'present')));
+        const safeDate = date ? validator.escape(validator.trim(String(date))) : new Date().toISOString().split('T')[0];
+
+        if (!classId || !studentId) {
+            return res.status(400).json({ message: 'classId and studentId are required' });
+        }
+
+        if (!['present', 'absent', 'late'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+
+        const existing = await Attendance.findOne({
+            where: {
+                classId,
+                userId: studentId,
+                date: safeDate
+            }
+        });
+
+        if (existing) {
+            existing.status = status;
+            existing.method = 'manual';
+            await existing.save();
+            return res.json({ message: 'Attendance updated', attendance: existing });
+        }
+
+        const created = await Attendance.create({
+            classId,
+            userId: studentId,
+            status,
+            date: safeDate,
+            method: 'manual'
+        });
+
+        return res.status(201).json({ message: 'Attendance marked', attendance: created });
+    } catch (err) {
+        console.error('Mark attendance error:', err);
+        return res.status(500).json({ message: 'Error marking attendance' });
+    }
+});
 /**
  * GET /api/attendance/students/:courseCode
  * Get all students for a course with their attendance stats
  */
-router.get('/students/:courseCode', async (req, res) => {
+router.get('/students/:courseCode', requireRoles(canViewClassAttendanceRoles), async (req, res) => {
     try {
         const { courseCode } = req.params;
         
@@ -470,7 +564,7 @@ router.get('/students/:courseCode', async (req, res) => {
  * GET /api/attendance/today-by-class/:courseCode
  * Returns list of student IDs who have checked in today for this course
  */
-router.get('/today-by-class/:courseCode', async (req, res) => {
+router.get('/today-by-class/:courseCode', requireRoles(canViewClassAttendanceRoles), async (req, res) => {
     try {
         const { courseCode } = req.params;
         const startOfDay = new Date();
@@ -496,6 +590,72 @@ router.get('/today-by-class/:courseCode', async (req, res) => {
     } catch (err) {
         console.error('Error fetching today class attendance:', err);
         res.status(500).json({ message: 'Error fetching attendance' });
+    }
+});
+
+/**
+ * GET /api/attendance/students/:courseCode/export
+ * Lecturer/admin export of registered students for a course as CSV.
+ */
+router.get('/students/:courseCode/export', async (req, res) => {
+    try {
+        const courseCode = validator.escape(validator.trim(req.params.courseCode || ''));
+        if (!courseCode) return res.status(400).json({ message: 'Course code is required' });
+
+        const classes = await Class.findAll({ where: { Course_Code: courseCode } });
+        if (!classes.length) return res.status(404).json({ message: 'Course not found' });
+
+        if (req.user.role === 'lecturer') {
+            const ownMatch = classes.some((c) => String(c.LecturerId || '') === String(req.user.id));
+            if (!ownMatch) {
+                return res.status(403).json({ message: 'You can only export your own class lists' });
+            }
+        } else if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const cohorts = classes.map((c) => {
+            const ym = c.Year_Semester && c.Year_Semester.match(/Y(\d)/i);
+            return {
+                program: { [Op.like]: `${c.Program || ''}%` },
+                year: ym ? parseInt(ym[1], 10) : 1
+            };
+        }).filter((c) => c.program);
+
+        const students = await User.findAll({
+            where: {
+                role: { [Op.in]: ['student', 'student_rep'] },
+                [Op.or]: cohorts
+            },
+            order: [['fullName', 'ASC']]
+        });
+
+        const allRecords = await Attendance.findAll({ where: { classId: { [Op.like]: `${courseCode}%` } } });
+        const uniqueDates = new Set(allRecords.map((r) => new Date(r.date).toDateString()));
+        const totalSessions = Math.max(uniqueDates.size, 1);
+
+        const rows = ['StudentId,FullName,Program,Year,AttendanceCount,TotalSessions,Percentage'];
+
+        for (const s of students) {
+            const attended = await Attendance.count({
+                where: {
+                    userId: s.id,
+                    classId: { [Op.like]: `${courseCode}%` }
+                }
+            });
+            const pct = Math.round((attended / totalSessions) * 100);
+            const safeName = `"${String(s.fullName || '').replace(/"/g, '""')}"`;
+            const safeProgram = `"${String(s.program || '').replace(/"/g, '""')}"`;
+            rows.push([s.id, safeName, safeProgram, s.year || '', attended, totalSessions, pct].join(','));
+        }
+
+        const filename = `${courseCode}_registered_students.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        return res.status(200).send(rows.join('\n'));
+    } catch (err) {
+        console.error('Export students error:', err);
+        return res.status(500).json({ message: 'Error exporting class list' });
     }
 });
 

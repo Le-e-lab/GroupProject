@@ -7,18 +7,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../css/theme.css">
     <style>
-        .admin-layout { display: flex; min-height: 100vh; }
-        .admin-sidebar { width: 240px; background: #111827; color: white; padding: 24px 16px; display: flex; flex-direction: column; }
+        body { font-family: 'Inter', sans-serif; }
+        .admin-layout { display: flex; height: 100vh; }
+        .admin-sidebar { width: 240px; height: 100vh; position: sticky; top: 0; overflow-y: auto; background: #111827; color: white; padding: 24px 16px; display: flex; flex-direction: column; flex-shrink: 0; }
         .admin-sidebar .logo { font-size: 1.4rem; font-weight: 800; margin-bottom: 32px; display: flex; align-items: center; gap: 10px; }
         .admin-sidebar .logo span { background: #DC2626; color: white; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
         .admin-sidebar .nav a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #9CA3AF; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 0.9rem; margin-bottom: 4px; }
         .admin-sidebar .nav a:hover, .admin-sidebar .nav a.active { background: #1F2937; color: white; }
         .admin-sidebar .nav-icon { font-size: 1.1rem; }
-        .admin-main { flex: 1; background: var(--bg); overflow-y: auto; }
+        .admin-main { flex: 1; min-width: 0; height: 100vh; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; }
         .admin-topbar { padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
         .admin-topbar h1 { font-size: 1.3rem; font-weight: 800; color: var(--text); }
         .admin-topbar .admin-badge { background: #FEE2E2; color: #DC2626; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
-        .admin-content { padding: 24px 32px; }
+        .admin-content { padding: 24px 32px; flex: 1; min-height: 0; overflow: auto; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
         .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
@@ -34,6 +35,7 @@
         .data-table th { background: var(--bg); text-align: left; padding: 12px 14px; font-weight: 600; font-size: 0.8rem; color: var(--text-muted); border-bottom: 2px solid var(--border); }
         .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text); }
         .data-table tr:hover { background: var(--primary-light); }
+        .data-table thead th { position: sticky; top: 0; z-index: 2; }
 
         .role-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
         .role-student { background: #DBEAFE; color: #2563EB; }
@@ -44,6 +46,8 @@
         .btn { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { opacity: 0.9; }
+        .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--bg); }
         .btn-danger { background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; }
         .btn-danger:hover { background: #DC2626; color: white; }
         .btn-success { background: #ECFDF5; color: #059669; border: 1px solid #6EE7B7; }
@@ -53,7 +57,7 @@
         .tab { padding: 10px 20px; border: none; background: var(--surface); color: var(--text-muted); font-weight: 600; cursor: pointer; border-radius: 8px 8px 0 0; border: 1px solid var(--border); border-bottom: none; font-size: 0.85rem; }
         .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
         .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
+        .tab-panel.active { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 
         .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
@@ -62,18 +66,46 @@
 
         .filter-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
         .filter-row select, .filter-row input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .filter-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--surface); color: var(--text); }
+
+        .panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+        .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+        .section-subtext { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+        .status-tile { background: var(--bg); padding: 12px; border-radius: 8px; }
+        .status-tile .label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+        .status-tile .value { font-size: 1.3rem; font-weight: 700; }
+        .drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; background: var(--bg); transition: all 0.2s; }
+        .file-name-display { margin-top: 12px; display: none; padding: 12px; background: #ECFDF5; border: 1px solid #6EE7B7; border-radius: 6px; color: #059669; font-size: 0.85rem; }
+        .warning-box { background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 0.85rem; color: #B45309; }
+
+        .upload-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .upload-actions .btn { min-width: 170px; }
+        .table-wrap { overflow: auto; border-radius: 10px; }
+        .table-wrap-fill { flex: 1; min-height: 320px; }
+        #usersTableContainer, #timetableContainer, #uploadHistoryContainer { min-height: 0; }
+        #uploadHistoryContainer { max-height: min(52vh, 560px); }
+        .upload-checklist { background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+        .upload-checklist h4 { margin: 0 0 10px 0; font-size: 0.9rem; color: #3730A3; }
+        .checklist-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; color: #312E81; font-size: 0.85rem; }
+        .checklist-item:last-child { margin-bottom: 0; }
+        .checklist-help { margin-top: 8px; font-size: 0.8rem; color: #4338CA; }
 
         .logout-btn { margin-top: auto; padding: 12px; background: #1F2937; border: 1px solid #374151; color: #9CA3AF; border-radius: 8px; cursor: pointer; font-weight: 600; text-align: center; }
         .logout-btn:hover { background: #DC2626; color: white; border-color: #DC2626; }
 
         @media (max-width: 768px) {
             .admin-layout { flex-direction: column; }
-            .admin-sidebar { width: 100%; flex-direction: row; padding: 12px; overflow-x: auto; }
+            .admin-sidebar { width: 100%; height: auto; position: static; flex-direction: row; padding: 12px; overflow-x: auto; overflow-y: hidden; }
             .admin-sidebar .logo { margin-bottom: 0; margin-right: 16px; }
             .admin-sidebar .nav { display: flex; gap: 4px; }
             .admin-sidebar .nav a { white-space: nowrap; padding: 8px 12px; }
+            .admin-main { height: auto; min-height: calc(100vh - 72px); }
             .admin-content { padding: 16px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .upload-actions .btn { width: 100%; }
+            .table-wrap { max-height: none; }
         }
     </style>
 </head>
@@ -83,10 +115,11 @@
         <aside class="admin-sidebar">
             <div class="logo"><span>U</span> UPath Admin</div>
             <nav class="nav">
-                <a href="#" class="active" onclick="switchPanel('overview')"><span class="nav-icon">📊</span> Overview</a>
-                <a href="#" onclick="switchPanel('users')"><span class="nav-icon">👥</span> Users</a>
-                <a href="#" onclick="switchPanel('timetable')"><span class="nav-icon">📅</span> Timetable</a>
-                <a href="#" onclick="switchPanel('create')"><span class="nav-icon">➕</span> Create User</a>
+                <a href="#" class="active" onclick="switchPanel('overview', event)"><span class="nav-icon">📊</span> Overview</a>
+                <a href="#" onclick="switchPanel('users', event)"><span class="nav-icon">👥</span> Users</a>
+                <a href="#" onclick="switchPanel('timetable', event)"><span class="nav-icon">📅</span> Timetable</a>
+                <a href="#" onclick="switchPanel('upload', event)"><span class="nav-icon">⬆️</span> Upload Timetable</a>
+                <a href="#" onclick="switchPanel('create', event)"><span class="nav-icon">➕</span> Create User</a>
             </nav>
             <button class="logout-btn" onclick="sessionStorage.clear(); window.location.href='../auth.html'">Sign Out</button>
         </aside>
@@ -128,7 +161,7 @@
                         </select>
                         <input type="text" id="userSearch" placeholder="Search by name..." oninput="filterUsersLocal()">
                     </div>
-                    <div id="usersTableContainer"><p>Loading...</p></div>
+                    <div id="usersTableContainer" class="table-wrap table-wrap-fill"><p>Loading...</p></div>
                 </div>
 
                 <!-- PANEL: Timetable -->
@@ -155,7 +188,151 @@
                             <option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option>
                         </select>
                     </div>
-                    <div id="timetableContainer"><p>Loading...</p></div>
+                    <div id="timetableContainer" class="table-wrap table-wrap-fill"><p>Loading...</p></div>
+                </div>
+
+                <!-- PANEL: Upload Timetable -->
+                <div id="panel-upload" class="tab-panel">
+                    <div class="section-header" style="margin-bottom: 24px;">
+                        <div>
+                            <div class="section-title" style="margin-bottom: 8px;">Upload New Timetable</div>
+                            <p class="section-subtext">Replace the existing timetable with new semester data. Supports Excel (.xlsx) and delimited text (.csv, .txt, .tsv) files.</p>
+                        </div>
+                        <div class="upload-actions">
+                            <button class="btn btn-secondary" type="button" onclick="downloadTimetableTemplate()">⬇️ Template</button>
+                            <button class="btn btn-secondary" type="button" onclick="previewTimetable()">👁️ Preview</button>
+                        </div>
+                    </div>
+
+                    <!-- Status Section -->
+                    <div class="panel-card">
+                        <div class="card-header-row">
+                            <div>
+                                <h3 style="margin: 0; font-size: 0.95rem; font-weight: 600;">Current Timetable Status</h3>
+                            </div>
+                            <button class="btn btn-success" onclick="checkUploadStatus()">🔄 Refresh</button>
+                        </div>
+                        <div id="uploadStatusContainer" class="status-grid">
+                            <div class="status-tile">
+                                <div class="label">Status</div>
+                                <div class="value" id="statusIndicator">—</div>
+                            </div>
+                            <div class="status-tile">
+                                <div class="label">Total Classes</div>
+                                <div class="value" id="statusClasses">—</div>
+                            </div>
+                            <div class="status-tile">
+                                <div class="label">Unique Courses</div>
+                                <div class="value" id="statusCourses">—</div>
+                            </div>
+                            <div class="status-tile">
+                                <div class="label">Programs</div>
+                                <div class="value" id="statusPrograms">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Form -->
+                    <form id="uploadTimetableForm" onsubmit="uploadTimetable(event)" class="panel-card">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">📁 Select Timetable File*</label>
+                            <div class="drop-zone" id="dropZone">
+                                <input type="file" id="ttFile" accept=".xlsx,.csv,.txt,.tsv" required style="display: none;">
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">
+                                    <div style="font-size: 1.5rem; margin-bottom: 8px;">📤</div>
+                                    <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Drop your file here or click to browse</div>
+                                    <div style="font-size: 0.8rem;">Supported: Excel (.xlsx), delimited text (.csv, .txt, .tsv) - Max 5MB</div>
+                                </div>
+                            </div>
+                            <div id="fileNameDisplay" class="file-name-display">
+                                <strong>Selected:</strong> <span id="selectedFileName"></span>
+                            </div>
+                        </div>
+
+                        <div class="warning-box">
+                            <strong>⚠️ File Requirements:</strong>
+                            <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                                <li>Required columns: <strong>Course_Code, Course_Name, Day, From_Time, To_Time</strong></li>
+                                <li>Optional columns: College, Department, Program, Year_Semester, Section, Venue, Lecturer, LecturerId</li>
+                                <li>Day values must be: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday</li>
+                                <li>Times format: HH:MM (24-hour format, e.g., 09:00, 14:30)</li>
+                                <li>Maximum 1,000 rows per file</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" id="resetAttendance" value="true">
+                                <span>🔄 Reset attendance records for new semester</span>
+                            </label>
+                            <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">⚠️ Check this only when starting a new semester. This will delete all attendance records.</p>
+                        </div>
+
+                        <div class="upload-checklist">
+                            <h4>✅ Upload Checklist</h4>
+                            <label class="checklist-item">
+                                <input type="checkbox" id="checkTemplate" onchange="updateChecklistState()">
+                                <span>I verified my file follows the required column format.</span>
+                            </label>
+                            <label class="checklist-item">
+                                <input type="checkbox" id="checkPreview" onchange="updateChecklistState()">
+                                <span>I ran Preview and reviewed sample rows before upload.</span>
+                            </label>
+                            <label class="checklist-item">
+                                <input type="checkbox" id="checkBackup" onchange="updateChecklistState()">
+                                <span>I confirm this action will replace the current timetable dataset.</span>
+                            </label>
+                            <label class="checklist-item" id="checkResetItem" style="display:none;">
+                                <input type="checkbox" id="checkResetConfirm" onchange="updateChecklistState()">
+                                <span>I confirm attendance reset is intentional for this semester rollover.</span>
+                            </label>
+                            <div id="checklistStatus" class="checklist-help">Complete all checklist items to enable upload.</div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 0.95rem; flex: 1;">⬆️ Upload Timetable</button>
+                            <button type="reset" class="btn btn-secondary" style="padding: 12px 32px; font-size: 0.95rem;">Clear</button>
+                        </div>
+
+                        <div id="uploadProgress" style="display: none; margin-top: 20px;">
+                            <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 8px;">Uploading...</div>
+                            <div style="width: 100%; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden;">
+                                <div id="progressBar" style="height: 100%; background: var(--primary); width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Results Section -->
+                    <div id="uploadResultsSection" style="display: none; margin-top: 24px;">
+                        <div id="uploadResultsBox" class="panel-card" style="margin-bottom: 0;">
+                            <div id="uploadResultsContent"></div>
+                        </div>
+                    </div>
+
+                    <div class="panel-card" style="margin-top:24px;">
+                        <div class="section-header" style="margin-bottom: 12px;">
+                            <div class="section-title">Recent Upload History</div>
+                            <button class="btn btn-success" type="button" onclick="loadUploadHistory()">🔄 Refresh</button>
+                        </div>
+                        <div id="uploadHistoryContainer" class="table-wrap">
+                            <p style="color: var(--text-muted);">No upload history loaded yet.</p>
+                        </div>
+                    </div>
+
+                    <div class="panel-card" style="margin-top:24px;">
+                        <div class="section-header" style="margin-bottom: 12px;">
+                            <div class="section-title">Rollback Timetable</div>
+                            <button class="btn btn-success" type="button" onclick="loadBackups()">🔄 Refresh</button>
+                        </div>
+                        <p class="section-subtext" style="margin-bottom: 12px;">Restore a previous timetable snapshot if a recent upload was incorrect.</p>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <select id="backupSelect" style="min-width: 260px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text);">
+                                <option value="">No backups loaded</option>
+                            </select>
+                            <button class="btn btn-danger" type="button" onclick="restoreBackup()">Restore Selected Backup</button>
+                        </div>
+                        <div id="backupMeta" style="margin-top:10px; font-size:0.82rem; color:var(--text-muted);"></div>
+                    </div>
                 </div>
 
                 <!-- PANEL: Create User -->
@@ -212,13 +389,21 @@
 
         let timetableDataCache = [];
 
-        function switchPanel(name) {
+        function switchPanel(name, evt) {
+            if (evt) evt.preventDefault();
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             document.getElementById('panel-' + name).classList.add('active');
             document.querySelectorAll('.admin-sidebar .nav a').forEach(a => a.classList.remove('active'));
-            event.target.closest('a').classList.add('active');
+            if (evt && evt.target && evt.target.closest('a')) {
+                evt.target.closest('a').classList.add('active');
+            }
             if (name === 'users') loadUsers();
             if (name === 'timetable') loadTimetable();
+            if (name === 'upload') {
+                checkUploadStatus();
+                loadUploadHistory();
+                loadBackups();
+            }
         }
 
         async function loadStats() {
@@ -399,6 +584,443 @@
                 }
             } catch(e) { alert('❌ Error creating user'); }
         }
+
+        // ==========================================
+        // TIMETABLE UPLOAD FUNCTIONALITY
+        // ==========================================
+
+        // File input handlers
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('ttFile');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.background = '#F0FDF4';
+            dropZone.style.borderColor = '#6EE7B7';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.background = 'var(--bg)';
+            dropZone.style.borderColor = 'var(--border)';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'var(--bg)';
+            dropZone.style.borderColor = 'var(--border)';
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileDisplay();
+            }
+        });
+
+        fileInput.addEventListener('change', updateFileDisplay);
+
+        const resetAttendanceInput = document.getElementById('resetAttendance');
+        resetAttendanceInput.addEventListener('change', updateChecklistState);
+
+        function updateFileDisplay() {
+            const file = fileInput.files[0];
+            const display = document.getElementById('fileNameDisplay');
+            const nameSpan = document.getElementById('selectedFileName');
+            
+            if (file) {
+                nameSpan.textContent = `${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                display.style.display = 'block';
+            } else {
+                display.style.display = 'none';
+            }
+
+            updateChecklistState();
+        }
+
+        function updateChecklistState() {
+            const submitBtn = document.querySelector('#uploadTimetableForm button[type="submit"]');
+            const checklistStatus = document.getElementById('checklistStatus');
+            const resetChecked = resetAttendanceInput.checked;
+            const resetItem = document.getElementById('checkResetItem');
+            const resetConfirm = document.getElementById('checkResetConfirm');
+
+            resetItem.style.display = resetChecked ? 'flex' : 'none';
+            if (!resetChecked) {
+                resetConfirm.checked = false;
+            }
+
+            const requiredChecks = [
+                document.getElementById('checkTemplate').checked,
+                document.getElementById('checkPreview').checked,
+                document.getElementById('checkBackup').checked
+            ];
+
+            if (resetChecked) {
+                requiredChecks.push(resetConfirm.checked);
+            }
+
+            const hasFile = Boolean(fileInput.files[0]);
+            const checklistComplete = requiredChecks.every(Boolean);
+            const canUpload = hasFile && checklistComplete;
+
+            submitBtn.disabled = !canUpload;
+            submitBtn.style.opacity = canUpload ? '1' : '0.6';
+            submitBtn.style.cursor = canUpload ? 'pointer' : 'not-allowed';
+
+            if (!hasFile) {
+                checklistStatus.textContent = 'Select a file, then complete all checklist items.';
+                checklistStatus.style.color = '#4338CA';
+            } else if (!checklistComplete) {
+                checklistStatus.textContent = 'Checklist incomplete: upload remains disabled until all required confirmations are checked.';
+                checklistStatus.style.color = '#4338CA';
+            } else {
+                checklistStatus.textContent = 'Checklist complete. Upload is enabled.';
+                checklistStatus.style.color = '#059669';
+            }
+        }
+
+        async function uploadTimetable(e) {
+            e.preventDefault();
+
+            const submitBtn = document.querySelector('#uploadTimetableForm button[type="submit"]');
+
+            const file = document.getElementById('ttFile').files[0];
+            if (!file) {
+                alert('❌ Please select a file first');
+                return;
+            }
+
+            // Validate file size (5 MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('❌ File size exceeds 5 MB limit');
+                return;
+            }
+
+            // Confirm action
+            if (!confirm('⚠️ This will replace the entire timetable. Are you sure you want to proceed?\n\nClick OK to continue.')) {
+                return;
+            }
+
+            const resetAttendance = document.getElementById('resetAttendance').checked;
+            if (resetAttendance) {
+                if (!confirm('⚠️ You have selected to reset attendance records. This cannot be undone!\n\nClick OK to proceed with BOTH timetable upload AND attendance reset.')) {
+                    return;
+                }
+            }
+
+            try {
+                // Show progress
+                document.getElementById('uploadProgress').style.display = 'block';
+                document.getElementById('uploadResultsSection').style.display = 'none';
+                submitBtn.disabled = true;
+
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('file', file);
+
+                // Make request
+                const response = await fetch(`/api/admin/timetable/upload?resetAttendance=${resetAttendance}`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                // Hide progress
+                document.getElementById('uploadProgress').style.display = 'none';
+                submitBtn.disabled = false;
+
+                // Show results
+                displayUploadResults(result);
+
+                if (result.success) {
+                    // Reset form
+                    document.getElementById('uploadTimetableForm').reset();
+                    document.getElementById('fileNameDisplay').style.display = 'none';
+                    updateChecklistState();
+                    // Refresh stats
+                    setTimeout(() => {
+                        loadStats();
+                        checkUploadStatus();
+                        loadUploadHistory();
+                        loadBackups();
+                    }, 1000);
+                }
+
+            } catch (err) {
+                console.error('Upload error:', err);
+                document.getElementById('uploadProgress').style.display = 'none';
+                submitBtn.disabled = false;
+                alert('❌ Upload failed: ' + err.message);
+            }
+        }
+
+        function downloadTimetableTemplate() {
+            window.location.href = '/api/admin/timetable/template';
+        }
+
+        async function previewTimetable() {
+            const file = document.getElementById('ttFile').files[0];
+            if (!file) {
+                alert('❌ Select a file to preview first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/admin/timetable/preview', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const result = await response.json();
+
+                const content = document.getElementById('uploadResultsContent');
+                const section = document.getElementById('uploadResultsSection');
+
+                if (!result.success) {
+                    content.innerHTML = `
+                        <div style="background:#FEF2F2; border-left:4px solid #DC2626; padding:14px; border-radius:8px;">
+                            <strong style="color:#DC2626;">Preview failed</strong>
+                            <ul style="margin:8px 0 0 18px; color:#991B1B;">
+                                ${(result.errors || ['Unknown error']).slice(0, 10).map((e) => `<li>${e}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                    section.style.display = 'block';
+                    return;
+                }
+
+                const rows = result.preview || [];
+                const headers = rows.length ? Object.keys(rows[0]) : [];
+                const table = rows.length ? `
+                    <div class="table-wrap" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead>
+                            <tbody>
+                                ${rows.map((r) => `<tr>${headers.map((h) => `<td>${r[h] ?? ''}</td>`).join('')}</tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                ` : '<p style="color:var(--text-muted)">No preview rows.</p>';
+
+                content.innerHTML = `
+                    <div style="background:#ECFDF5; border-left:4px solid #059669; padding:14px; border-radius:8px; margin-bottom:12px;">
+                        <strong style="color:#065F46;">Preview looks valid</strong>
+                        <div style="font-size:0.85rem; color:#047857; margin-top:6px;">
+                            Rows: ${result.totalRows} | Courses: ${result.summary?.courses || 0} | Programs: ${result.summary?.programs || 0}
+                        </div>
+                    </div>
+                    ${result.diff ? `
+                        <div style="background:#EFF6FF; border-left:4px solid #2563EB; padding:14px; border-radius:8px; margin-bottom:12px;">
+                            <strong style="color:#1D4ED8;">Change Impact</strong>
+                            <div style="font-size:0.85rem; color:#1E40AF; margin-top:6px; display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px;">
+                                <div>Current Rows: <strong>${result.diff.currentRows}</strong></div>
+                                <div>Incoming Rows: <strong>${result.diff.incomingRows}</strong></div>
+                                <div>To Add: <strong>${result.diff.toAdd}</strong></div>
+                                <div>To Remove: <strong>${result.diff.toRemove}</strong></div>
+                                <div>To Change: <strong>${result.diff.toChange}</strong></div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${table}
+                `;
+                document.getElementById('checkPreview').checked = true;
+                updateChecklistState();
+                section.style.display = 'block';
+            } catch (err) {
+                console.error('Preview error:', err);
+                alert('❌ Preview failed.');
+            }
+        }
+
+        async function loadUploadHistory() {
+            const container = document.getElementById('uploadHistoryContainer');
+            if (!container) return;
+
+            try {
+                const data = await API.get('/api/admin/timetable/upload-history');
+                const logs = data.logs || [];
+
+                if (!logs.length) {
+                    container.innerHTML = '<p style="color: var(--text-muted);">No uploads yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Date</th><th>Admin</th><th>File</th><th>Rows</th><th>Reset</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            ${logs.map((l) => `
+                                <tr>
+                                    <td>${new Date(l.createdAt).toLocaleString()}</td>
+                                    <td>${l.uploadedBy}</td>
+                                    <td>${l.filename}</td>
+                                    <td>${l.rowsInserted}</td>
+                                    <td>${l.resetAttendance ? 'Yes' : 'No'}</td>
+                                    <td>${l.status === 'success' ? '✅ Success' : '❌ Failed'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (err) {
+                console.error('History error:', err);
+                container.innerHTML = '<p style="color:#DC2626;">Failed to load history.</p>';
+            }
+        }
+
+        function displayUploadResults(result) {
+            const section = document.getElementById('uploadResultsSection');
+            const content = document.getElementById('uploadResultsContent');
+
+            let html = '';
+
+            if (result.success) {
+                html += `
+                    <div style="background: #ECFDF5; border-left: 4px solid #059669; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                        <div style="color: #059669; font-weight: 700; margin-bottom: 8px;">✅ Timetable Uploaded Successfully</div>
+                        <div style="color: #047857; font-size: 0.85rem;">${result.message}</div>
+                    </div>
+                `;
+
+                if (result.data.summary) {
+                    const summary = result.data.summary;
+                    html += `
+                        <div style="background: var(--bg); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="font-weight: 600; margin-bottom: 12px;">Summary:</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; font-size: 0.85rem;">
+                                <div><div style="color: var(--text-muted);">Total Rows</div><div style="font-size: 1.2rem; font-weight: 700;">${summary.totalRows}</div></div>
+                                <div><div style="color: var(--text-muted);">Unique Courses</div><div style="font-size: 1.2rem; font-weight: 700;">${summary.courses}</div></div>
+                                <div><div style="color: var(--text-muted);">Days</div><div style="font-size: 1.2rem; font-weight: 700;">${summary.days}</div></div>
+                                <div><div style="color: var(--text-muted);">Colleges</div><div style="font-size: 1.2rem; font-weight: 700;">${summary.colleges}</div></div>
+                                <div><div style="color: var(--text-muted);">Programs</div><div style="font-size: 1.2rem; font-weight: 700;">${summary.programs}</div></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (result.warnings && result.warnings.length > 0) {
+                    html += `
+                        <div style="background: #FFFBEB; border-left: 4px solid #B45309; padding: 16px; border-radius: 8px;">
+                            <div style="color: #B45309; font-weight: 700; margin-bottom: 8px;">⚠️ Actions Performed:</div>
+                            <ul style="margin: 0; padding-left: 20px; color: #92400E; font-size: 0.85rem;">
+                                ${result.warnings.map(w => `<li>${w}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+            } else {
+                html += `
+                    <div style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                        <div style="color: #DC2626; font-weight: 700; margin-bottom: 8px;">❌ Upload Failed</div>
+                        <div style="color: #991B1B; font-size: 0.85rem;">${result.message}</div>
+                    </div>
+                `;
+
+                if (result.errors && result.errors.length > 0) {
+                    html += `
+                        <div style="background: var(--bg); border-radius: 8px; padding: 16px; border: 1px solid #FCA5A5;">
+                            <div style="color: #DC2626; font-weight: 600; margin-bottom: 12px;">Errors:</div>
+                            <ul style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #991B1B;">
+                                ${result.errors.slice(0, 10).map(e => `<li>${e}</li>`).join('')}
+                                ${result.errors.length > 10 ? `<li><strong>... and ${result.errors.length - 10} more errors</strong></li>` : ''}
+                            </ul>
+                        </div>
+                    `;
+                }
+            }
+
+            content.innerHTML = html;
+            section.style.display = 'block';
+        }
+
+        async function checkUploadStatus() {
+            try {
+                const status = await API.get('/api/admin/timetable/upload-status');
+
+                const indicator = document.getElementById('statusIndicator');
+                const classes = document.getElementById('statusClasses');
+                const courses = document.getElementById('statusCourses');
+                const programs = document.getElementById('statusPrograms');
+
+                if (status.exists) {
+                    indicator.textContent = '✅ Active';
+                    indicator.style.color = '#059669';
+                } else {
+                    indicator.textContent = '❌ Empty';
+                    indicator.style.color = '#DC2626';
+                }
+
+                classes.textContent = status.totalClasses || '0';
+                courses.textContent = (status.stats && status.stats.uniqueCourses) || '0';
+                programs.textContent = (status.stats && status.stats.uniquePrograms) || '0';
+
+            } catch(e) {
+                console.error('Error checking status:', e);
+                document.getElementById('statusIndicator').textContent = '?';
+                document.getElementById('statusIndicator').style.color = '#6B7280';
+            }
+        }
+
+        async function loadBackups() {
+            const select = document.getElementById('backupSelect');
+            const meta = document.getElementById('backupMeta');
+            if (!select || !meta) return;
+
+            try {
+                const data = await API.get('/api/admin/timetable/backups');
+                const backups = data.backups || [];
+
+                if (!backups.length) {
+                    select.innerHTML = '<option value="">No backups available</option>';
+                    meta.textContent = 'No snapshots have been created yet.';
+                    return;
+                }
+
+                select.innerHTML = backups.map((b) => {
+                    const when = new Date(b.createdAt).toLocaleString();
+                    return `<option value="${b.backupId}" data-rows="${b.rowCount}" data-created="${b.createdAt}">${b.backupId} (${b.rowCount} rows, ${when})</option>`;
+                }).join('');
+
+                const first = backups[0];
+                meta.textContent = `Latest backup: ${first.backupId} with ${first.rowCount} rows.`;
+            } catch (err) {
+                console.error('Load backups error:', err);
+                select.innerHTML = '<option value="">Failed to load backups</option>';
+                meta.textContent = 'Could not load backup snapshots.';
+            }
+        }
+
+        async function restoreBackup() {
+            const select = document.getElementById('backupSelect');
+            const backupId = select ? select.value : '';
+            if (!backupId) {
+                alert('❌ Select a backup first.');
+                return;
+            }
+
+            if (!confirm(`⚠️ Restore timetable from backup ${backupId}?\n\nThis will replace the current timetable.`)) {
+                return;
+            }
+
+            try {
+                const result = await API.post(`/api/admin/timetable/rollback/${encodeURIComponent(backupId)}`, {});
+                alert(`✅ ${result.message}`);
+                loadStats();
+                checkUploadStatus();
+                loadTimetable();
+                loadUploadHistory();
+                loadBackups();
+            } catch (err) {
+                console.error('Rollback error:', err);
+                alert('❌ Rollback failed. Check server logs for details.');
+            }
+        }
+
+        updateChecklistState();
+
     </script>
 </body>
 </html>

@@ -521,7 +521,7 @@ const API = {
 
     async markAttendanceAsync(studentId, courseCode) {
         try {
-            const res = await fetch('/api/attendance/mark', {
+            const res = await fetch(`${this.baseUrl}/attendance/mark`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -533,34 +533,6 @@ const API = {
             return res.ok;
         } catch (err) {
             return true;
-        }
-    },
-
-    /**
-     * Save Bulk Attendance for Manual Marking
-     * @param {string} classId - The course code
-     * @param {string[]} studentIds - Array of student IDs to mark present
-     */
-    async saveBulkAttendance(classId, studentIds) {
-        try {
-            const res = await fetch('/api/attendance/bulk-mark', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    classId,
-                    students: studentIds,
-                    date: new Date().toISOString().split('T')[0]
-                })
-            });
-            
-            if (!res.ok) {
-                throw new Error('Failed to save attendance');
-            }
-            
-            return await res.json();
-        } catch (err) {
-            console.error('Bulk attendance error:', err);
-            throw err;
         }
     },
 

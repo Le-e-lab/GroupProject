@@ -95,6 +95,21 @@ const Announcement = sequelize.define('Announcement', {
     timestamp: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
 });
 
+// 6. Timetable Upload History (Admin audit trail)
+const TimetableUploadLog = sequelize.define('TimetableUploadLog', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    uploadedBy: { type: DataTypes.STRING, allowNull: false },
+    filename: { type: DataTypes.STRING, allowNull: false },
+    rowsInserted: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    resetAttendance: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    deletedAttendanceRecords: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    status: { type: DataTypes.ENUM('success', 'failed'), allowNull: false, defaultValue: 'success' },
+    errorSummary: { type: DataTypes.TEXT, allowNull: true }
+}, {
+    tableName: 'timetable_upload_logs',
+    timestamps: true
+});
+
 // Associations
 User.hasMany(Attendance, { foreignKey: 'userId' });
 Attendance.belongsTo(User, { foreignKey: 'userId' });
@@ -121,5 +136,6 @@ module.exports = {
     Class, 
     Attendance,
     Session,
-    Announcement
+    Announcement,
+    TimetableUploadLog
 };

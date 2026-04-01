@@ -4,6 +4,9 @@ const { User } = require('../models');
 const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 const validator = require('validator');
+const authMiddleware = require('../middleware/authMiddleware');
+const { getJwtSecret } = require('../utils/jwt');
+const { authLoginLimiter } = require('../middleware/rateLimiters');
 
 /**
  * ========================================
@@ -62,8 +65,9 @@ const jwt = require('jsonwebtoken');
  * LOGIN ROUTE
  * ========================================
  */
-router.post('/login', async (req, res) => {
+router.post('/login', authLoginLimiter, async (req, res) => {
     try {
+        const jwtSecret = getJwtSecret();
         // Allow login with EMAIL or ID (frontend sends ID in 'email' field usually)
         const { email, password } = req.body;
         const identifier = email; // Alias for clarity
@@ -96,7 +100,7 @@ router.post('/login', async (req, res) => {
             fullName: user.fullName
         };
 
-        const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '8h' });
+        const token = jwt.sign(payload, jwtSecret, { expiresIn: '8h' });
 
         // 3. Set HttpOnly Cookie
         res.cookie('upath_token', token, {
@@ -145,8 +149,11 @@ router.post('/logout', (req, res) => {
  * GET ALL USERS ROUTE
  * ========================================
  */
-router.get('/users', async (req, res) => {
+router.get('/users', authMiddleware, async (req, res) => {
     try {
+        if (!['lecturer', 'admin'].includes(req.user.role)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
         const users = await User.findAll({
             attributes: { exclude: ['password'] }
         });
@@ -161,8 +168,11 @@ router.get('/users', async (req, res) => {
     }
 });
 
-router.get('/user/:id', async (req, res) => {
+router.get('/user/:id', authMiddleware, async (req, res) => {
     try {
+        if (req.user.id !== req.params.id && !['lecturer', 'admin'].includes(req.user.role)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
         const user = await User.findByPk(req.params.id, {
             attributes: { exclude: ['password'] }
         });

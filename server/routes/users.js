@@ -11,6 +11,14 @@ const { Op } = require('sequelize');
 const validator = require('validator');
 const authMiddleware = require('../middleware/authMiddleware');
 
+function isAdmin(req) {
+    return req.user && req.user.role === 'admin';
+}
+
+function isLecturer(req) {
+    return req.user && req.user.role === 'lecturer';
+}
+
 // Protect all user routes
 router.use(authMiddleware);
 
@@ -206,6 +214,18 @@ router.put('/:id/role', async (req, res) => {
         const { role } = req.body;
         const validRoles = ['student', 'student_rep', 'lecturer', 'admin'];
 
+        if (!isAdmin(req) && !isLecturer(req)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        if (isLecturer(req) && role !== 'student_rep') {
+            return res.status(403).json({ message: 'Lecturers can only assign student_rep role' });
+        }
+
+        if (isLecturer(req) && req.params.id === req.user.id) {
+            return res.status(403).json({ message: 'Lecturers cannot update their own role' });
+        }
+
         if (!role || !validRoles.includes(role)) {
             return res.status(400).json({ message: 'Invalid role. Must be one of: ' + validRoles.join(', ') });
         }
@@ -230,6 +250,14 @@ router.put('/:id/role', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
     try {
+        if (!isAdmin(req)) {
+            return res.status(403).json({ message: 'Admin access required' });
+        }
+
+        if (req.params.id === req.user.id) {
+            return res.status(400).json({ message: 'You cannot delete your own account' });
+        }
+
         const user = await User.findByPk(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 

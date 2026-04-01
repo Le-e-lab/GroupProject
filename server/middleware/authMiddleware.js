@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { getJwtSecret } = require('../utils/jwt');
 
 const authMiddleware = (req, res, next) => {
     // Check for token in cookies
@@ -9,8 +10,9 @@ const authMiddleware = (req, res, next) => {
     }
 
     try {
+        const jwtSecret = getJwtSecret();
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        const decoded = jwt.verify(token, jwtSecret);
         
         // Attach user info to request
         req.user = decoded;

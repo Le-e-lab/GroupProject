@@ -40,10 +40,20 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
-const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const authMiddleware = require('./middleware/authMiddleware');
+const { getJwtSecret } = require('./utils/jwt');
+const { apiIdentityLimiter } = require('./middleware/rateLimiters');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+try {
+    getJwtSecret();
+} catch (err) {
+    console.error(`[SECURITY] ${err.message}`);
+    process.exit(1);
+}
 
 // Security: Rate Limiters (DISABLED for University Wi-Fi compatibility)
 // Because thousands of students share the same public IP via the campus network,
@@ -52,12 +62,45 @@ const PORT = process.env.PORT || 3000;
 // const attendanceLimiter = rateLimit({ ... });
 
 // Middleware
-app.use(cors({
-    origin: true,
-    credentials: true 
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://fonts.googleapis.com'],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https://*.openstreetmap.org', 'https://unpkg.com'],
+            fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+            connectSrc: ["'self'", 'https://router.project-osrm.org', 'https://*.openstreetmap.org'],
+            objectSrc: ["'none'"],
+            frameAncestors: ["'none'"],
+            baseUri: ["'self'"]
+        }
+    },
+    crossOriginEmbedderPolicy: false,
+    hsts: process.env.NODE_ENV === 'production'
 }));
-app.use(bodyParser.json());
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('CORS policy violation'));
+    },
+    credentials: true
+}));
+
+app.use(bodyParser.json({ limit: '1mb' }));
+app.use(bodyParser.urlencoded({ extended: false, limit: '1mb' }));
 app.use(cookieParser());
+
+// Identity-based API rate limiting avoids shared Wi-Fi IP lockouts while still limiting abuse.
+app.use('/api', apiIdentityLimiter);
 
 // Disable caching for all served files so browsers always get fresh content
 app.use((req, res, next) => {
@@ -90,122 +133,73 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Seed Route
-app.post('/api/debug/seed', async (req, res) => {
-    try {
-        const seedData = require('./data/seed_data');
-        console.log('SEEDING via API...');
-        
-        // 1. Lecturers
-        const lecturers = seedData.generateLecturers();
-        for (const lec of lecturers) {
-            try { await User.create(lec); } catch(e) {}
+if (process.env.ENABLE_DEBUG_ROUTES === 'true') {
+    app.get('/api/debug/users', authMiddleware, async (req, res) => {
+        try {
+            if (req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'Forbidden' });
+            }
+            const count = await User.count();
+            const firstUser = await User.findOne();
+            return res.json({ count, firstUser });
+        } catch (e) {
+            return res.status(500).json({ error: e.message });
         }
-        
-        // 2. Classes
-        const classes = seedData.generateClasses();
-        // Map to DB Schema
-        const timetableData = classes.map(c => ({
-           Course_Code: c.code,
-           Course_Name: c.name,
-           Day: c.day,
-           From_Time: c.time.split(' - ')[0],
-           To_Time: c.time.split(' - ')[1],
-           Venue: c.room,
-           Lecturer: c.lecturerName,
-           LecturerId: c.lecturerId,
-           Year_Semester: `Y${c.year}S1`,
-           Program: c.code.substring(0, 4),
-           Section: '1',
-           College: c.department || 'Computing' 
-        }));
-        // Use bulkCreate for classes as it's faster and less prone to PK constraint if empty
-        // But if exists, we might ignore.
-        // Let's use loop for safety if PK exists
-         for (const cls of timetableData) {
-            try { await Class.create(cls); } catch(e) {}
-        }
+    });
 
-        // 3. Students
-        const students = seedData.generateStudents();
-        for (const stu of students) {
-            try { await User.create(stu); } catch(e) {}
-        }
-        
-        const count = await User.count();
-        res.json({ message: 'Seeding Complete', count });
-        
-    } catch(e) {
-        console.error(e);
-        res.status(500).json({ error: e.message });
-    }
-});
+    app.post('/api/debug/seed', authMiddleware, async (req, res) => {
+        try {
+            if (req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'Forbidden' });
+            }
 
-// Debug Route
-app.get('/api/debug/users', async (req, res) => {
-    try {
-        const count = await User.count();
-        const firstUser = await User.findOne();
-        res.json({ count, firstUser });
-    } catch(e) {
-        res.status(500).json({ error: e.message });
-    }
-});
+            const seedData = require('./data/seed_data');
+            console.log('SEEDING via API...');
 
-// Seed Route
-app.post('/api/debug/seed', async (req, res) => {
-    try {
-        const seedData = require('./data/seed_data');
-        console.log('SEEDING via API...');
-        
-        // 1. Lecturers
-        const lecturers = seedData.generateLecturers();
-        for (const lec of lecturers) {
-            try { await User.create(lec); } catch(e) {}
-        }
-        
-        // 2. Classes
-        const classes = seedData.generateClasses();
-        // Map to DB Schema
-        const timetableData = classes.map(c => ({
-           Course_Code: c.code,
-           Course_Name: c.name,
-           Day: c.day,
-           From_Time: c.time.split(' - ')[0],
-           To_Time: c.time.split(' - ')[1],
-           Venue: c.room,
-           Lecturer: c.lecturerName,
-           LecturerId: c.lecturerId,
-           Year_Semester: `Y${c.year}S1`,
-           Program: c.rawProgram || c.code.substring(0, 4),
-           Section: c.rawSection || '1',
-           College: c.rawCollege || c.department || 'Computing' 
-        }));
+            const lecturers = seedData.generateLecturers();
+            for (const lec of lecturers) {
+                try { await User.create(lec); } catch (e) {}
+            }
 
-         for (const cls of timetableData) {
-            try { await Class.create(cls); } catch(e) {}
-        }
+            const classes = seedData.generateClasses();
+            const timetableData = classes.map(c => ({
+                Course_Code: c.code,
+                Course_Name: c.name,
+                Day: c.day,
+                From_Time: c.time.split(' - ')[0],
+                To_Time: c.time.split(' - ')[1],
+                Venue: c.room,
+                Lecturer: c.lecturerName,
+                LecturerId: c.lecturerId,
+                Year_Semester: `Y${c.year}S1`,
+                Program: c.rawProgram || c.code.substring(0, 4),
+                Section: c.rawSection || '1',
+                College: c.rawCollege || c.department || 'Computing'
+            }));
 
-        // 3. Students
-        const students = seedData.generateStudents();
-        for (const stu of students) {
-            try { await User.create(stu); } catch(e) {}
+            for (const cls of timetableData) {
+                try { await Class.create(cls); } catch (e) {}
+            }
+
+            const students = seedData.generateStudents();
+            for (const stu of students) {
+                try { await User.create(stu); } catch (e) {}
+            }
+
+            const count = await User.count();
+            return res.json({ message: 'Seeding Complete', count });
+        } catch (e) {
+            console.error(e);
+            return res.status(500).json({ error: e.message });
         }
-        
-        const count = await User.count();
-        res.json({ message: 'Seeding Complete', count });
-        
-    } catch(e) {
-        console.error(e);
-        res.status(500).json({ error: e.message });
-    }
-});
+    });
+}
 
 // Database synchronization
 const db = require('./models'); // <--- Missing import
 const { sequelize } = db;
 console.log('Server DB Path:', sequelize.options.storage);
-const { User, Attendance, Session, Class, Announcement } = db;
+const { User, Attendance, Session, Class, Announcement, TimetableUploadLog } = db;
 const { Op } = require('sequelize');
 
 async function seedAttendanceIfEmpty() {
@@ -278,25 +272,34 @@ Promise.all([
     Attendance.sync(),
     Session.sync(),
     Class.sync(), // Create the timetable table if it doesn't exist
-    Announcement.sync() // Create the announcements table
+    Announcement.sync(), // Create the announcements table
+    TimetableUploadLog.sync()
 ]).then(async () => {
-    console.log("Synced Users, Attendance, Sessions, Classes, and Announcements.");
+    console.log("Synced Users, Attendance, Sessions, Classes, Announcements, and Upload Logs.");
 
-    // Auto-seed default Admin account if none exists
+    // Auto-seed admin account only when explicitly enabled.
     try {
         const adminExists = await User.findOne({ where: { role: 'admin' } });
-        if (!adminExists) {
+        const shouldSeedAdmin = process.env.SEED_DEFAULT_ADMIN === 'true';
+        const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD;
+
+        if (!adminExists && shouldSeedAdmin) {
+            if (!defaultAdminPassword || defaultAdminPassword.length < 12) {
+                throw new Error('DEFAULT_ADMIN_PASSWORD must be set to at least 12 characters when SEED_DEFAULT_ADMIN=true');
+            }
             await User.create({
                 id: 'admin',
                 fullName: 'System Administrator',
                 email: 'admin@upath.ac.zw',
-                password: 'admin123',
+                password: defaultAdminPassword,
                 role: 'admin',
                 department: 'IT Administration'
             });
-            console.log('[SEED] Default admin created — Login: admin / admin123');
-        } else {
+            console.log('[SEED] Default admin created from environment configuration.');
+        } else if (adminExists) {
             console.log('[SEED] Admin account exists:', adminExists.id);
+        } else {
+            console.log('[SEED] Admin seeding skipped. Set SEED_DEFAULT_ADMIN=true to enable.');
         }
     } catch (e) {
         console.error('Admin seed error:', e.message);

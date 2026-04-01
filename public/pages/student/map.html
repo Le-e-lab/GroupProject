@@ -270,18 +270,20 @@
                             <select class="nav-select" id="fromSelect">
                                 <option value="current">Current Location (GPS)</option>
                                 <option value="entrance">Main Gate</option>
-                                <option value="halls">Halls of Residence</option>
-                                <option value="library">Yokyo Library</option>
+                                <option value="accommodation">Halls of Residence</option>
+                                <option value="ict">Yokyo Library</option>
                             </select>
                             <select class="nav-select" id="toSelect">
                                 <option value="">Select destination</option>
                                 <option value="ict">ICT Complex</option>
-                                <option value="library">Yokyo Library</option>
+                                <option value="ict">Yokyo Library</option>
                                 <option value="chapel">Kwame Nkrumah Chapel</option>
-                                <option value="halls">Halls of Residence</option>
-                                <option value="union">Student Union</option>
+                                <option value="accommodation">Halls of Residence</option>
+                                <option value="su">Student Union</option>
                             </select>
                             <button class="nav-btn" onclick="calculateRoute()">Navigate</button>
+                            <button class="nav-btn" type="button" onclick="detectCurrentBuilding()" style="margin-top: 8px; background: var(--surface); color: var(--text); border: 1px solid var(--border);">Detect My Building</button>
+                            <button class="nav-btn" id="liveTrackBtn" type="button" onclick="toggleLiveTracking()" style="margin-top: 8px; background: #0f766e;">Start Live Tracking</button>
                         </div>
                     </div>
                 </div>
@@ -301,6 +303,16 @@
         let map;
         let routingControl = null;
         let markers = {};
+        let activeDestinationKey = null;
+        let liveTrackWatchId = null;
+        let liveUserMarker = null;
+
+        const venueAliases = {
+            library: 'ict',
+            halls: 'accommodation',
+            union: 'su',
+            smart_village: 'ict'
+        };
 
         // Venue Data - Finalized User Coordinates
         const venues = {
@@ -421,8 +433,214 @@
             'Hall B': 'tmlt',
             'ICT Lab': 'ict',
             'Lab 2B': 'ict',
-            'Smart Class 4': 'smart_village' // Needs a location if it exists, else ICT
+            'Smart Class 4': 'ict'
         };
+
+        function resolveVenueKey(key) {
+            if (!key) return null;
+            const normalized = String(key).trim().toLowerCase();
+            const alias = venueAliases[normalized] || normalized;
+            return venues[alias] ? alias : null;
+        }
+
+        function findNearestVenueKey(latLng) {
+            let bestKey = null;
+            let bestDistance = Infinity;
+
+            Object.keys(venues).forEach((key) => {
+                const v = venues[key];
+                const venuePoint = L.latLng(v.lat, v.lng);
+                const distance = latLng.distanceTo(venuePoint);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestKey = key;
+                }
+            });
+
+            return { key: bestKey, distance: bestDistance };
+        }
+
+        function panToBuilding(buildingKey) {
+            const resolvedKey = resolveVenueKey(buildingKey);
+            if (!resolvedKey) {
+                alert('Building not recognized on the campus map.');
+                return;
+            }
+
+            const venue = venues[resolvedKey];
+            map.flyTo([venue.lat, venue.lng], 18, { duration: 0.8 });
+
+            const marker = markers[resolvedKey];
+            if (marker) {
+                marker.openPopup();
+            }
+
+            document.querySelectorAll('.building-item').forEach((item) => item.classList.remove('active'));
+            const matchedItem = Array.from(document.querySelectorAll('.building-item')).find((item) =>
+                item.getAttribute('onclick') && item.getAttribute('onclick').includes(`'${resolvedKey}'`)
+            );
+            if (matchedItem) {
+                matchedItem.classList.add('active');
+            }
+
+            const toSelect = document.getElementById('toSelect');
+            if (toSelect && toSelect.querySelector(`option[value="${resolvedKey}"]`)) {
+                toSelect.value = resolvedKey;
+            }
+        }
+
+        function detectCurrentBuilding() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported in this browser.');
+                return;
+            }
+
+            const detectBtn = document.querySelector('button[onclick="detectCurrentBuilding()"]');
+            const originalText = detectBtn ? detectBtn.textContent : '';
+            if (detectBtn) {
+                detectBtn.textContent = 'Detecting...';
+                detectBtn.disabled = true;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const current = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                    window.userLocation = current;
+                    const nearest = findNearestVenueKey(current);
+
+                    if (!nearest.key) {
+                        alert('Could not match your location to a mapped building.');
+                    } else {
+                        panToBuilding(nearest.key);
+                        if (nearest.distance > 250) {
+                            alert(`Nearest mapped building: ${venues[nearest.key].name} (${Math.round(nearest.distance)}m away).`);
+                        }
+                    }
+
+                    if (detectBtn) {
+                        detectBtn.textContent = originalText;
+                        detectBtn.disabled = false;
+                    }
+                },
+                () => {
+                    alert('Could not read your GPS location. Check location permissions.');
+                    if (detectBtn) {
+                        detectBtn.textContent = originalText;
+                        detectBtn.disabled = false;
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 }
+            );
+        }
+
+        function getCustomRoutePoints(startKey, endKey) {
+            const routeKey = `${startKey}_${endKey}`;
+            const reverseKey = `${endKey}_${startKey}`;
+            if (customRoutes[routeKey]) return customRoutes[routeKey];
+            if (customRoutes[reverseKey]) return customRoutes[reverseKey].slice().reverse();
+            return null;
+        }
+
+        function buildLivePathFromCurrent(currentLatLng, endKey) {
+            const nearest = findNearestVenueKey(currentLatLng);
+            if (!nearest.key) return null;
+
+            const routePoints = getCustomRoutePoints(nearest.key, endKey);
+            if (!routePoints) return null;
+
+            const nearestPin = [venues[nearest.key].lat, venues[nearest.key].lng];
+            const endPin = [venues[endKey].lat, venues[endKey].lng];
+            return [[currentLatLng.lat, currentLatLng.lng], nearestPin, ...routePoints, endPin];
+        }
+
+        function updateLiveRoute(currentLatLng, endKey) {
+            const livePath = buildLivePathFromCurrent(currentLatLng, endKey);
+            if (livePath) {
+                drawCustomRoute(livePath, false);
+                return;
+            }
+            drawRoute(currentLatLng, L.latLng(venues[endKey].lat, venues[endKey].lng));
+        }
+
+        function updateLiveTrackButton(active) {
+            const btn = document.getElementById('liveTrackBtn');
+            if (!btn) return;
+            if (active) {
+                btn.textContent = 'Stop Live Tracking';
+                btn.style.background = '#b91c1c';
+            } else {
+                btn.textContent = 'Start Live Tracking';
+                btn.style.background = '#0f766e';
+            }
+        }
+
+        function stopLiveTracking() {
+            if (liveTrackWatchId !== null && navigator.geolocation) {
+                navigator.geolocation.clearWatch(liveTrackWatchId);
+            }
+            liveTrackWatchId = null;
+            activeDestinationKey = null;
+            updateLiveTrackButton(false);
+        }
+
+        function startLiveTracking(endKey) {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported in this browser.');
+                return;
+            }
+            if (!endKey || !venues[endKey]) {
+                alert('Select a destination first.');
+                return;
+            }
+
+            activeDestinationKey = endKey;
+            if (liveTrackWatchId !== null) {
+                navigator.geolocation.clearWatch(liveTrackWatchId);
+            }
+
+            let centeredOnce = false;
+            liveTrackWatchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const current = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                    window.userLocation = current;
+
+                    if (!liveUserMarker) {
+                        liveUserMarker = L.circleMarker(current, {
+                            radius: 8,
+                            color: '#0ea5e9',
+                            fillColor: '#38bdf8',
+                            fillOpacity: 0.9,
+                            weight: 2
+                        }).addTo(map);
+                        liveUserMarker.bindPopup('<b>You are here</b>');
+                    } else {
+                        liveUserMarker.setLatLng(current);
+                    }
+
+                    updateLiveRoute(current, activeDestinationKey);
+                    if (!centeredOnce) {
+                        map.panTo(current, { animate: true });
+                        centeredOnce = true;
+                    }
+                },
+                () => {
+                    alert('Live tracking failed. Check your location permissions.');
+                    stopLiveTracking();
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
+            );
+
+            updateLiveTrackButton(true);
+        }
+
+        function toggleLiveTracking() {
+            if (liveTrackWatchId !== null) {
+                stopLiveTracking();
+                return;
+            }
+            const endKey = resolveVenueKey(document.getElementById('toSelect').value);
+            startLiveTracking(endKey);
+        }
 
         // Custom Manual Paths (Student Shortcuts)
         const customRoutes = {
@@ -705,6 +923,11 @@
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         window.userLocation = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                        const nearest = findNearestVenueKey(window.userLocation);
+                        if (nearest.key && nearest.distance < 180) {
+                            const fromSelect = document.getElementById('fromSelect');
+                            if (fromSelect) fromSelect.value = nearest.key;
+                        }
                     },
                     (err) => {
                         console.log("Location access denied or error, falling back to manual input");
@@ -746,8 +969,8 @@
         }
 
         function calculateRoute() {
-            const startKey = document.getElementById('fromSelect').value;
-            const endKey = document.getElementById('toSelect').value;
+            const startKey = resolveVenueKey(document.getElementById('fromSelect').value) || document.getElementById('fromSelect').value;
+            const endKey = resolveVenueKey(document.getElementById('toSelect').value);
             
             if (!endKey) {
                 alert("Please select a destination.");
@@ -755,11 +978,8 @@
             }
 
             // Check for custom manual path first
-            const routeKey = `${startKey}_${endKey}`;
-            const reverseKey = `${endKey}_${startKey}`;
-            
-            if (customRoutes[routeKey] || customRoutes[reverseKey]) {
-                const rawPath = customRoutes[routeKey] || customRoutes[reverseKey].slice().reverse();
+            const rawPath = getCustomRoutePoints(startKey, endKey);
+            if (rawPath && venues[startKey]) {
                 
                 // Snap path to exact Start/End pins to avoid visual gaps
                 const startPin = [venues[startKey].lat, venues[startKey].lng];
@@ -769,6 +989,7 @@
                 const path = [startPin, ...rawPath, endPin];
                 
                 drawCustomRoute(path);
+                if (startKey === 'current') startLiveTracking(endKey);
                 return;
             }
 
@@ -779,6 +1000,7 @@
             if (startKey === 'current') {
                 if (window.userLocation) {
                     drawRoute(window.userLocation, endCoords);
+                    startLiveTracking(endKey);
                 } else if (navigator.geolocation) {
                     const btn = document.querySelector('.nav-btn');
                     // ... (rest of geo logic)
@@ -790,6 +1012,7 @@
                         (pos) => {
                             window.userLocation = L.latLng(pos.coords.latitude, pos.coords.longitude);
                             drawRoute(window.userLocation, endCoords);
+                            startLiveTracking(endKey);
                             btn.textContent = originalText;
                             btn.disabled = false;
                         }, 
@@ -807,11 +1030,12 @@
             } else {
                 startCoords = L.latLng(venues[startKey].lat, venues[startKey].lng);
                 drawRoute(startCoords, endCoords);
+                stopLiveTracking();
             }
         }
 
         let customPolyline = null;
-        function drawCustomRoute(latlngs) {
+        function drawCustomRoute(latlngs, fitBounds = true) {
             if (routingControl) {
                 map.removeControl(routingControl);
                 routingControl = null;
@@ -826,10 +1050,16 @@
                 opacity: 0.8
             }).addTo(map);
             
-            map.fitBounds(customPolyline.getBounds(), {padding: [50, 50]});
+            if (fitBounds) {
+                map.fitBounds(customPolyline.getBounds(), {padding: [50, 50]});
+            }
         }
 
         function drawRoute(start, end) {
+            if (customPolyline) {
+                map.removeLayer(customPolyline);
+                customPolyline = null;
+            }
             if (routingControl) {
                 map.removeControl(routingControl);
             }
