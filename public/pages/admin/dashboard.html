@@ -119,6 +119,8 @@
                 <a href="#" onclick="switchPanel('users', event)"><span class="nav-icon">👥</span> Users</a>
                 <a href="#" onclick="switchPanel('timetable', event)"><span class="nav-icon">📅</span> Timetable</a>
                 <a href="#" onclick="switchPanel('upload', event)"><span class="nav-icon">⬆️</span> Upload Timetable</a>
+                <a href="#" onclick="switchPanel('quality', event)"><span class="nav-icon">🧹</span> Data Quality</a>
+                <a href="#" onclick="switchPanel('security', event)"><span class="nav-icon">🔐</span> Security</a>
                 <a href="#" onclick="switchPanel('create', event)"><span class="nav-icon">➕</span> Create User</a>
             </nav>
             <button class="logout-btn" onclick="sessionStorage.clear(); window.location.href='../auth.html'">Sign Out</button>
@@ -336,6 +338,32 @@
                 </div>
 
                 <!-- PANEL: Create User -->
+                <div id="panel-quality" class="tab-panel">
+                    <div class="section-header" style="margin-bottom: 12px;">
+                        <div>
+                            <div class="section-title">Duplicate Lecturer Resolution</div>
+                            <p class="section-subtext">Detect likely duplicate lecturer accounts and merge safely without terminal access.</p>
+                        </div>
+                        <button class="btn btn-success" type="button" onclick="loadLecturerDuplicates()">🔄 Refresh</button>
+                    </div>
+                    <div id="lecturerDuplicatesContainer" class="panel-card">
+                        <p style="color: var(--text-muted);">Run a scan to detect duplicate lecturer accounts.</p>
+                    </div>
+                </div>
+
+                <div id="panel-security" class="tab-panel">
+                    <div class="section-header" style="margin-bottom: 12px;">
+                        <div>
+                            <div class="section-title">Security Update Checks</div>
+                            <p class="section-subtext">Shows configuration areas that need attention in this environment.</p>
+                        </div>
+                        <button class="btn btn-success" type="button" onclick="loadSecurityChecks()">🔄 Refresh</button>
+                    </div>
+                    <div id="securityChecksContainer" class="panel-card">
+                        <p style="color: var(--text-muted);">Loading security checks...</p>
+                    </div>
+                </div>
+
                 <div id="panel-create" class="tab-panel">
                     <div class="section-header"><div class="section-title">Create New User</div></div>
                     <form id="createUserForm" onsubmit="createUser(event)">
@@ -404,6 +432,17 @@
                 loadUploadHistory();
                 loadBackups();
             }
+            if (name === 'quality') loadLecturerDuplicates();
+            if (name === 'security') loadSecurityChecks();
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         async function loadStats() {
@@ -583,6 +622,156 @@
                     alert('❌ ' + (res.message || 'Failed to create user'));
                 }
             } catch(e) { alert('❌ Error creating user'); }
+        }
+
+        async function loadLecturerDuplicates() {
+            const container = document.getElementById('lecturerDuplicatesContainer');
+            if (!container) return;
+            container.innerHTML = '<p style="color: var(--text-muted);">Scanning lecturer records...</p>';
+
+            try {
+                const data = await API.get('/api/admin/data-quality/lecturer-duplicates');
+                const duplicates = data.duplicates || [];
+
+                if (!duplicates.length) {
+                    container.innerHTML = '<div style="background:#ECFDF5; border-left:4px solid #059669; padding:14px; border-radius:8px; color:#065F46;"><strong>✅ No duplicate lecturer groups found.</strong></div>';
+                    return;
+                }
+
+                let html = `<div style="background:#FFFBEB; border-left:4px solid #B45309; padding:14px; border-radius:8px; margin-bottom:14px; color:#92400E;"><strong>⚠️ ${duplicates.length} duplicate group(s) detected.</strong> Review each group and merge aliases into the canonical account.</div>`;
+
+                duplicates.forEach((group, index) => {
+                    const members = group.members || [];
+                    if (!members.length) return;
+                    const target = members[0];
+                    const sourceOptions = members
+                        .slice(1)
+                        .map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.fullName)} (${escapeHtml(m.id)}) - ${m.classCount} classes</option>`)
+                        .join('');
+
+                    html += `
+                        <div style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:12px;">
+                            <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+                                <div>
+                                    <div style="font-size:0.8rem; color:var(--text-muted);">Suggested canonical</div>
+                                    <div style="font-weight:700;">${escapeHtml(group.canonicalName || target.fullName)}</div>
+                                </div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Members: <strong>${members.length}</strong></div>
+                            </div>
+                            <div class="table-wrap" style="margin-bottom:10px;">
+                                <table class="data-table">
+                                    <thead><tr><th>Account ID</th><th>Name</th><th>Email</th><th>Classes</th></tr></thead>
+                                    <tbody>
+                                        ${members.map((m) => `
+                                            <tr>
+                                                <td><strong>${escapeHtml(m.id)}</strong>${m.id === target.id ? ' <span class="role-badge role-admin" style="font-size:0.6rem;">TARGET</span>' : ''}</td>
+                                                <td>${escapeHtml(m.fullName)}</td>
+                                                <td>${escapeHtml(m.email || '—')}</td>
+                                                <td>${m.classCount}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ${members.length > 1 ? `
+                                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                                    <select id="merge-source-${index}" style="min-width: 280px; padding: 8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text);">
+                                        ${sourceOptions}
+                                    </select>
+                                    <button class="btn btn-danger" type="button" onclick="mergeLecturerGroup('${escapeHtml(target.id)}', 'merge-source-${index}')">Merge Into ${escapeHtml(target.id)}</button>
+                                </div>
+                            ` : '<div style="font-size:0.82rem; color:var(--text-muted);">No merge action needed.</div>'}
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Duplicate scan error:', err);
+                container.innerHTML = '<p style="color:#DC2626;">Failed to load duplicate lecturer groups.</p>';
+            }
+        }
+
+        async function mergeLecturerGroup(targetId, selectId) {
+            const select = document.getElementById(selectId);
+            if (!select || !select.value) {
+                alert('❌ Select a source lecturer first.');
+                return;
+            }
+
+            const sourceId = select.value;
+            if (sourceId === targetId) {
+                alert('❌ Source and target cannot be the same.');
+                return;
+            }
+
+            if (!confirm(`Merge lecturer ${sourceId} into ${targetId}?\n\nThis rewires timetable, sessions and announcements.`)) {
+                return;
+            }
+
+            try {
+                const result = await API.post('/api/admin/data-quality/lecturer-merge', {
+                    sourceId,
+                    targetId,
+                    deleteSource: true
+                });
+
+                alert(`✅ ${result.message}`);
+                loadLecturerDuplicates();
+                loadUsers();
+                loadStats();
+                loadTimetable();
+            } catch (err) {
+                console.error('Merge error:', err);
+                alert('❌ Merge failed. Please review server logs and retry.');
+            }
+        }
+
+        async function loadSecurityChecks() {
+            const container = document.getElementById('securityChecksContainer');
+            if (!container) return;
+            container.innerHTML = '<p style="color: var(--text-muted);">Checking security posture...</p>';
+
+            try {
+                const data = await API.get('/api/admin/security/checks');
+                const checks = data.checks || [];
+                const needsAttention = data.needsAttention || 0;
+
+                const summaryColor = needsAttention > 0 ? '#B45309' : '#065F46';
+                const summaryBg = needsAttention > 0 ? '#FFFBEB' : '#ECFDF5';
+                const summaryBorder = needsAttention > 0 ? '#FCD34D' : '#6EE7B7';
+
+                let html = `
+                    <div style="background:${summaryBg}; border-left:4px solid ${summaryBorder}; padding:14px; border-radius:8px; margin-bottom:14px; color:${summaryColor};">
+                        <strong>${needsAttention > 0 ? `⚠️ ${needsAttention} check(s) need attention` : '✅ All checks look good'}</strong>
+                    </div>
+                `;
+
+                html += `
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+                            <tbody>
+                                ${checks.map((c) => {
+                                    const statusText = c.status === 'ok' ? '✅ OK' : '⚠️ Needs Update';
+                                    return `
+                                        <tr>
+                                            <td><strong>${escapeHtml(c.label)}</strong></td>
+                                            <td>${statusText}</td>
+                                            <td>${escapeHtml(c.detail)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Security checks error:', err);
+                container.innerHTML = '<p style="color:#DC2626;">Failed to load security checks.</p>';
+            }
         }
 
         // ==========================================

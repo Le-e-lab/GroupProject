@@ -16,6 +16,7 @@ const validator = require('validator');
 const authMiddleware = require('../middleware/authMiddleware');
 const uploadHandler = require('../utils/timetableUploadHandler');
 const parser = require('../utils/timetableParser');
+const { shouldGroupNames, recommendedCanonicalName } = require('../utils/lecturerIdentity');
 
 function rowSignature(row) {
     return [
@@ -361,6 +362,234 @@ router.get('/timetable/upload-status', async (req, res) => {
     } catch (err) {
         console.error('Error getting upload status:', err);
         res.status(500).json({ message: 'Error fetching upload status' });
+    }
+});
+
+/**
+ * GET /api/admin/data-quality/lecturer-duplicates
+ * Finds likely duplicate lecturer accounts conservatively.
+ */
+router.get('/data-quality/lecturer-duplicates', async (req, res) => {
+    try {
+        const lecturers = await User.findAll({
+            where: { role: 'lecturer' },
+            attributes: ['id', 'fullName', 'email'],
+            raw: true
+        });
+
+        const groups = [];
+        for (const lec of lecturers) {
+            let placed = false;
+            for (const group of groups) {
+                if (group.some((existing) => shouldGroupNames(existing.fullName, lec.fullName))) {
+                    group.push(lec);
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) groups.push([lec]);
+        }
+
+        const duplicates = [];
+        for (const group of groups) {
+            if (group.length < 2) continue;
+
+            const canonicalName = recommendedCanonicalName(group.map((g) => g.fullName));
+            const withStats = [];
+            for (const g of group) {
+                const classCount = await Class.count({ where: { LecturerId: g.id } });
+                withStats.push({ ...g, classCount });
+            }
+
+            duplicates.push({
+                canonicalName,
+                members: withStats.sort((a, b) => b.classCount - a.classCount || b.fullName.length - a.fullName.length)
+            });
+        }
+
+        return res.json({ duplicates, totalLecturers: lecturers.length });
+    } catch (err) {
+        console.error('Duplicate lecturer detection error:', err);
+        return res.status(500).json({ message: 'Error detecting duplicate lecturers' });
+    }
+});
+
+/**
+ * GET /api/admin/data-quality/student-duplicates
+ * Finds potential duplicate student accounts (same name, same program/year).
+ */
+router.get('/data-quality/student-duplicates', async (req, res) => {
+    try {
+        const students = await User.findAll({
+            where: { role: 'student' },
+            attributes: ['id', 'fullName', 'program', 'year', 'email'],
+            raw: true
+        });
+
+        // Group by normalized name + program + year
+        const nameGroupMap = new Map();
+        for (const student of students) {
+            const key = `${student.fullName.toLowerCase()}|${student.program || 'N/A'}|${student.year || 'N/A'}`;
+            if (!nameGroupMap.has(key)) {
+                nameGroupMap.set(key, []);
+            }
+            nameGroupMap.get(key).push(student);
+        }
+
+        const duplicates = [];
+        for (const [key, group] of nameGroupMap) {
+            if (group.length < 2) continue;
+            const [name, prog, year] = key.split('|');
+            
+            duplicates.push({
+                groupKey: key,
+                name,
+                program: prog === 'N/A' ? null : prog,
+                year: year === 'N/A' ? null : parseInt(year),
+                members: group.sort((a, b) => (a.id > b.id ? 1 : -1))
+            });
+        }
+
+        return res.json({ 
+            studentDuplicates: duplicates.sort((a, b) => b.members.length - a.members.length),
+            totalStudents: students.length 
+        });
+    } catch (err) {
+        console.error('Duplicate student detection error:', err);
+        return res.status(500).json({ message: 'Error detecting duplicate students' });
+    }
+});
+
+/**
+ * POST /api/admin/data-quality/lecturer-merge
+ * Merge one lecturer account into another safely.
+ */
+router.post('/data-quality/lecturer-merge', async (req, res) => {
+    const sourceId = validator.escape(validator.trim(String(req.body.sourceId || '')));
+    const targetId = validator.escape(validator.trim(String(req.body.targetId || '')));
+    const deleteSource = req.body.deleteSource !== false;
+
+    if (!sourceId || !targetId || sourceId === targetId) {
+        return res.status(400).json({ message: 'Valid sourceId and targetId are required' });
+    }
+
+    try {
+        const source = await User.findByPk(sourceId);
+        const target = await User.findByPk(targetId);
+        if (!source || !target) {
+            return res.status(404).json({ message: 'Source or target lecturer not found' });
+        }
+        if (source.role !== 'lecturer' || target.role !== 'lecturer') {
+            return res.status(400).json({ message: 'Both source and target must be lecturer accounts' });
+        }
+        if (!shouldGroupNames(source.fullName, target.fullName)) {
+            return res.status(400).json({ message: 'Merge blocked: names are not a safe duplicate match' });
+        }
+
+        const t = await sequelize.transaction();
+        try {
+            const [ttUpdate] = await sequelize.query(
+                `UPDATE timetable SET LecturerId = :targetId, Lecturer = :targetName WHERE LecturerId = :sourceId OR Lecturer = :sourceName`,
+                {
+                    replacements: {
+                        targetId: target.id,
+                        targetName: target.fullName,
+                        sourceId: source.id,
+                        sourceName: source.fullName
+                    },
+                    transaction: t
+                }
+            );
+
+            const annCount = await Announcement.update(
+                { lecturerId: target.id, lecturerName: target.fullName },
+                { where: { lecturerId: source.id }, transaction: t }
+            );
+
+            const sessionCount = await Session.update(
+                { lecturerId: target.id, lecturerName: target.fullName },
+                { where: { lecturerId: source.id }, transaction: t }
+            );
+
+            if (deleteSource) {
+                await source.destroy({ transaction: t });
+            }
+
+            await TimetableUploadLog.create({
+                uploadedBy: req.user.id,
+                filename: `MERGE:${source.id}->${target.id}`,
+                rowsInserted: 0,
+                resetAttendance: false,
+                deletedAttendanceRecords: 0,
+                status: 'success',
+                errorSummary: null
+            }, { transaction: t });
+
+            await t.commit();
+
+            return res.json({
+                success: true,
+                message: `Merged ${source.fullName} into ${target.fullName}`,
+                data: {
+                    timetableRowsUpdated: ttUpdate,
+                    announcementsUpdated: annCount[0] || 0,
+                    sessionsUpdated: sessionCount[0] || 0,
+                    sourceDeleted: deleteSource
+                }
+            });
+        } catch (err) {
+            await t.rollback();
+            throw err;
+        }
+    } catch (err) {
+        console.error('Lecturer merge error:', err);
+        return res.status(500).json({ message: 'Error merging lecturer accounts', errors: [err.message] });
+    }
+});
+
+/**
+ * GET /api/admin/security/checks
+ * Returns actionable security checks for admin UI.
+ */
+router.get('/security/checks', async (req, res) => {
+    try {
+        const jwtSecret = process.env.JWT_SECRET || '';
+        const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean);
+
+        const checks = [
+            {
+                id: 'jwt-secret-length',
+                label: 'JWT secret length',
+                status: jwtSecret.length >= 32 ? 'ok' : 'warning',
+                detail: jwtSecret.length >= 32 ? 'JWT secret length is acceptable.' : 'JWT secret should be at least 32 characters.'
+            },
+            {
+                id: 'debug-routes',
+                label: 'Debug routes disabled',
+                status: process.env.ENABLE_DEBUG_ROUTES === 'true' ? 'warning' : 'ok',
+                detail: process.env.ENABLE_DEBUG_ROUTES === 'true' ? 'Debug routes are enabled.' : 'Debug routes are disabled.'
+            },
+            {
+                id: 'cors-origins',
+                label: 'Allowed origins configured',
+                status: allowedOrigins.length > 0 ? 'ok' : 'warning',
+                detail: allowedOrigins.length > 0 ? `${allowedOrigins.length} allowed origin(s) configured.` : 'No ALLOWED_ORIGINS configured.'
+            },
+            {
+                id: 'seed-default-admin',
+                label: 'Default admin seed disabled',
+                status: process.env.SEED_DEFAULT_ADMIN === 'true' ? 'warning' : 'ok',
+                detail: process.env.SEED_DEFAULT_ADMIN === 'true' ? 'SEED_DEFAULT_ADMIN is enabled.' : 'SEED_DEFAULT_ADMIN is disabled.'
+            }
+        ];
+
+        return res.json({
+            checks,
+            needsAttention: checks.filter((c) => c.status !== 'ok').length
+        });
+    } catch (err) {
+        console.error('Security checks error:', err);
+        return res.status(500).json({ message: 'Error evaluating security checks' });
     }
 });
 

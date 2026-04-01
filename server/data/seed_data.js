@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { shouldGroupNames, recommendedCanonicalName } = require('../utils/lecturerIdentity');
 
 // Read the parsed timetable JSON
 const rawDataPath = path.join(__dirname, 'parsed_timetable.json');
@@ -15,14 +16,36 @@ const seedData = {
     classes: [],
     
     generateLecturers: function() {
-        // Extract unique lecturers from json
+        // Extract unique lecturers from json and canonicalize safe initial/full-name variants.
         const uniqueLecs = [...new Set(jsonData.map(c => c.lecturer))].filter(Boolean);
+        const canonicalMap = new Map();
+
+        // Group lecturer names conservatively by surname + first-name/initial compatibility.
+        const groups = [];
+        for (const name of uniqueLecs) {
+            let placed = false;
+            for (const g of groups) {
+                if (g.some((existing) => shouldGroupNames(existing, name))) {
+                    g.push(name);
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) groups.push([name]);
+        }
+
+        for (const g of groups) {
+            const canonical = recommendedCanonicalName(g);
+            g.forEach((name) => canonicalMap.set(name, canonical));
+        }
         
         let lecIdCounter = 210100;
-        
-        uniqueLecs.forEach(lecName => {
+
+        const canonicalNames = [...new Set(uniqueLecs.map((name) => canonicalMap.get(name) || name))];
+
+        canonicalNames.forEach(lecName => {
             // Find finding their primary college from the data
-            const lecsClass = jsonData.find(c => c.lecturer === lecName);
+            const lecsClass = jsonData.find(c => (canonicalMap.get(c.lecturer) || c.lecturer) === lecName);
             const collegeName = lecsClass ? lecsClass.college : 'Computing';
             
             lecIdCounter++;
@@ -47,7 +70,12 @@ const seedData = {
     generateClasses: function() {
         this.classes = jsonData.map((c, i) => {
             // Find matched lecturer ID
-            const lec = this.lecturers.find(l => l.fullName === c.lecturer);
+            const canonicalLecturerName = this.lecturers.find((l) => {
+                const cname = l.fullName;
+                return shouldGroupNames(cname, c.lecturer) || cname === c.lecturer;
+            })?.fullName || c.lecturer;
+
+            const lec = this.lecturers.find(l => l.fullName === canonicalLecturerName);
             const lecId = lec ? lec.id : '210000';
             
             // Extract roughly the "Year" from "Y1 S2" => 1
@@ -87,7 +115,7 @@ const seedData = {
                 time: formattedTime,
                 room: c.venue,
                 lecturerId: lecId,
-                lecturerName: c.lecturer,
+                lecturerName: canonicalLecturerName,
                 
                 // Keep the raw program & section & college so `seed_all.js` or others can access it
                 rawCollege: c.college,
