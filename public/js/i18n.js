@@ -34,6 +34,36 @@
             'lecturer.noMoreClassesToday': 'No More Classes Today',
             'lecturer.nextClassOn': 'Your next class is on',
             'lecturer.sessionsPerWeek': 'sessions/week',
+            'profile.lecturerRole': 'Lecturer',
+            'profile.fullName': 'Full Name',
+            'profile.staffId': 'Staff ID',
+            'profile.email': 'Email',
+            'profile.department': 'Department',
+            'profile.phone': 'Phone',
+            'profile.courses': 'Courses',
+            'profile.sessionsPerWeek': 'Sessions/Week',
+            'profile.manageSchedule': 'Manage Schedule',
+            'profile.loadingClasses': 'Loading classes...',
+            'profile.editClassSchedule': 'Edit Class Schedule',
+            'profile.day': 'Day',
+            'profile.time': 'Time',
+            'profile.room': 'Room',
+            'profile.saveChanges': 'Save Changes',
+            'profile.edit': 'Edit',
+            'profile.noCoursesAssigned': 'No courses assigned.',
+            'profile.profileSaved': 'Profile saved successfully!',
+            'profile.scheduleSaved': 'Schedule updated successfully!',
+            'profile.failedUpdate': 'Failed to update class. Try again.',
+            'profile.saving': 'Saving...',
+            'profile.loading': 'Loading...',
+            'profile.selectLanguage.en': 'English',
+            'profile.selectLanguage.fr': 'Francais',
+            'profile.selectLanguage.pt': 'Portugues',
+            'profile.monday': 'Monday',
+            'profile.tuesday': 'Tuesday',
+            'profile.wednesday': 'Wednesday',
+            'profile.thursday': 'Thursday',
+            'profile.friday': 'Friday',
             'student.schedule.title': 'Weekly Schedule',
             'student.schedule.subtitle': 'Your academic calendar & attendance status',
             'student.reports.title': 'Attendance Reports',
@@ -258,6 +288,36 @@
             'lecturer.noMoreClassesToday': 'Sem mais aulas hoje',
             'lecturer.nextClassOn': 'Sua proxima aula e',
             'lecturer.sessionsPerWeek': 'sessoes/semana',
+            'profile.lecturerRole': 'Professor',
+            'profile.fullName': 'Nome completo',
+            'profile.staffId': 'ID do funcionario',
+            'profile.email': 'Email',
+            'profile.department': 'Departamento',
+            'profile.phone': 'Telefone',
+            'profile.courses': 'Disciplinas',
+            'profile.sessionsPerWeek': 'Sessoes/semana',
+            'profile.manageSchedule': 'Gerenciar horario',
+            'profile.loadingClasses': 'Carregando turmas...',
+            'profile.editClassSchedule': 'Editar horario da disciplina',
+            'profile.day': 'Dia',
+            'profile.time': 'Horario',
+            'profile.room': 'Sala',
+            'profile.saveChanges': 'Salvar alteracoes',
+            'profile.edit': 'Editar',
+            'profile.noCoursesAssigned': 'Nenhuma disciplina atribuida.',
+            'profile.profileSaved': 'Perfil salvo com sucesso!',
+            'profile.scheduleSaved': 'Horario atualizado com sucesso!',
+            'profile.failedUpdate': 'Falha ao atualizar a disciplina. Tente novamente.',
+            'profile.saving': 'Salvando...',
+            'profile.loading': 'Carregando...',
+            'profile.selectLanguage.en': 'Ingles',
+            'profile.selectLanguage.fr': 'Francais',
+            'profile.selectLanguage.pt': 'Portugues',
+            'profile.monday': 'Segunda-feira',
+            'profile.tuesday': 'Terca-feira',
+            'profile.wednesday': 'Quarta-feira',
+            'profile.thursday': 'Quinta-feira',
+            'profile.friday': 'Sexta-feira',
             'student.schedule.title': 'Horario semanal',
             'student.schedule.subtitle': 'Seu calendario academico e status de presenca',
             'student.reports.title': 'Relatorios de presenca',
@@ -468,6 +528,11 @@
         'Detect My Building': { fr: 'Detecter mon batiment', pt: 'Detectar meu edificio' },
         'Start Live Tracking': { fr: 'Demarrer le suivi en direct', pt: 'Iniciar rastreamento ao vivo' },
         'Stop Live Tracking': { fr: 'Arreter le suivi en direct', pt: 'Parar rastreamento ao vivo' }
+        ,'Monday': { fr: 'Lundi', pt: 'Segunda-feira' }
+        ,'Tuesday': { fr: 'Mardi', pt: 'Terca-feira' }
+        ,'Wednesday': { fr: 'Mercredi', pt: 'Quarta-feira' }
+        ,'Thursday': { fr: 'Jeudi', pt: 'Quinta-feira' }
+        ,'Friday': { fr: 'Vendredi', pt: 'Sexta-feira' }
         ,'Welcome back': { fr: 'Bon retour', pt: 'Bem-vindo de volta' }
         ,'Mark Your Attendance': { fr: 'Marquez votre presence', pt: 'Marque sua presenca' }
         ,'Enter the 6-digit code from your lecturer to mark yourself present.': { fr: 'Entrez le code a 6 chiffres de votre enseignant pour vous marquer present.', pt: 'Digite o codigo de 6 digitos do professor para marcar sua presenca.' }
@@ -496,6 +561,7 @@
         ,'View All': { fr: 'Voir tout', pt: 'Ver tudo' }
         ,'QR Code': { fr: 'Code QR', pt: 'Codigo QR' }
         ,'Manual': { fr: 'Manuel', pt: 'Manual' }
+        ,'Click again to clear': { fr: 'Cliquez encore pour effacer', pt: 'Clique novamente para limpar' }
     };
 
     function exactTextFor(language, source) {

@@ -59,7 +59,7 @@
                     <div style="width: 80px; height: 80px; background: #DC2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.8rem; font-weight: 700;" id="profileAvatar">LC</div>
                     <div>
                         <h2 style="font-size: 1.3rem; font-weight: 700;" id="profileName">Loading...</h2>
-                        <p class="text-muted" style="color: #DC2626; font-weight: 500;">Lecturer</p>
+                        <p class="text-muted" style="color: #DC2626; font-weight: 500;" data-i18n="profile.lecturerRole">Lecturer</p>
                         <p class="text-muted" style="font-size: 0.8rem;" id="profileDept"></p>
                     </div>
                 </div>
@@ -67,59 +67,59 @@
                 <form onsubmit="event.preventDefault(); saveProfile();">
                     <div class="grid-2 mb-2" style="gap: 16px;">
                         <div>
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Full Name</label>
-                            <input type="text" class="input" id="inputName" placeholder="Enter your full name">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.fullName">Full Name</label>
+                            <input type="text" class="input" id="inputName" data-i18n-placeholder="Enter your full name" placeholder="Enter your full name">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Staff ID</label>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.staffId">Staff ID</label>
                             <input type="text" class="input" id="inputId" readonly style="background: var(--bg); cursor: not-allowed;">
                         </div>
                     </div>
                     <div class="grid-2 mb-2" style="gap: 16px;">
                         <div>
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Email</label>
-                            <input type="email" class="input" id="inputEmail" placeholder="your.email@university.edu">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.email">Email</label>
+                            <input type="email" class="input" id="inputEmail" data-i18n-placeholder="your.email@university.edu" placeholder="your.email@university.edu">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Department</label>
-                            <input type="text" class="input" id="inputDept" placeholder="e.g., Computer Science">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.department">Department</label>
+                            <input type="text" class="input" id="inputDept" data-i18n-placeholder="e.g., Computer Science" placeholder="e.g., Computer Science">
                         </div>
                     </div>
                     <div style="margin-bottom: 16px;">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Phone</label>
-                        <input type="tel" class="input" id="inputPhone" placeholder="+263 7XX XXX XXX">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.phone">Phone</label>
+                        <input type="tel" class="input" id="inputPhone" data-i18n-placeholder="+263 7XX XXX XXX" placeholder="+263 7XX XXX XXX">
                     </div>
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.language">Preferred Language</label>
                         <select id="inputLanguage" class="input" style="width: 100%;">
-                            <option value="en">English</option>
-                            <option value="fr">Francais</option>
-                            <option value="pt">Portugues</option>
+                            <option value="en" data-i18n="profile.selectLanguage.en">English</option>
+                            <option value="fr" data-i18n="profile.selectLanguage.fr">Francais</option>
+                            <option value="pt" data-i18n="profile.selectLanguage.pt">Portugues</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary mt-2" id="saveBtn">Save Changes</button>
+                    <button type="submit" class="btn btn-primary mt-2" id="saveBtn" data-i18n="profile.saveChanges">Save Changes</button>
                 </form>
             </div>
 
             <div class="card" style="margin-top: 20px;">
-                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 16px;">My Teaching Statistics</h3>
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 16px;" data-i18n="profile.manageSchedule">My Teaching Statistics</h3>
                 <div class="grid-2" style="gap: 16px;">
                     <div style="text-align: center; padding: 16px; background: var(--bg); border-radius: var(--radius);">
                         <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statCourses">0</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">Courses</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="profile.courses">Courses</div>
                     </div>
                     <div style="text-align: center; padding: 16px; background: var(--bg); border-radius: var(--radius);">
                         <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statSessions">0</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">Sessions/Week</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="profile.sessionsPerWeek">Sessions/Week</div>
                     </div>
                 </div>
             </div>
             <!-- MANAGE SCHEDULE SECTION -->
             <div class="card" style="margin-top: 20px;">
-                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 16px;">Manage Schedule</h3>
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 16px;" data-i18n="profile.manageSchedule">Manage Schedule</h3>
                 <div id="scheduleList" class="grid-2" style="gap: 16px;">
                     <!-- Classes loaded here -->
-                    <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Loading classes...</div>
+                    <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);" data-i18n="profile.loadingClasses">Loading classes...</div>
                 </div>
             </div>
         </div>
@@ -128,34 +128,34 @@
     <!-- EDIT CLASS MODAL -->
     <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
         <div style="background: var(--surface); width: 90%; max-width: 400px; padding: 24px; border-radius: var(--radius-lg); position: relative;">
-            <button onclick="closeModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-            <h3 style="margin-bottom: 16px;">Edit Class Schedule</h3>
+            <button onclick="closeModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer;" aria-label="Close">&times;</button>
+            <h3 style="margin-bottom: 16px;" data-i18n="profile.editClassSchedule">Edit Class Schedule</h3>
             <form onsubmit="event.preventDefault(); saveClassChanges();">
                 <input type="hidden" id="editClassId">
                 <div style="margin-bottom: 16px;">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Day</label>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.day">Day</label>
                     <select id="editDay" class="input" style="width: 100%;">
-                        <option value="Monday">Monday</option>
-                        <option value="Tuesday">Tuesday</option>
-                        <option value="Wednesday">Wednesday</option>
-                        <option value="Thursday">Thursday</option>
-                        <option value="Friday">Friday</option>
+                        <option value="Monday" data-i18n="profile.monday">Monday</option>
+                        <option value="Tuesday" data-i18n="profile.tuesday">Tuesday</option>
+                        <option value="Wednesday" data-i18n="profile.wednesday">Wednesday</option>
+                        <option value="Thursday" data-i18n="profile.thursday">Thursday</option>
+                        <option value="Friday" data-i18n="profile.friday">Friday</option>
                     </select>
                 </div>
                 <div style="margin-bottom: 16px;">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Time</label>
-                    <input type="text" id="editTime" class="input" placeholder="e.g. 08:00 - 10:00" style="width: 100%;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.time">Time</label>
+                    <input type="text" id="editTime" class="input" data-i18n-placeholder="e.g. 08:00 - 10:00" placeholder="e.g. 08:00 - 10:00" style="width: 100%;">
                 </div>
                 <div style="margin-bottom: 24px;">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Room</label>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;" data-i18n="profile.room">Room</label>
                     <input type="text" id="editRoom" class="input" style="width: 100%;">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;" data-i18n="profile.saveChanges">Save Changes</button>
             </form>
         </div>
     </div>
 
-    <div class="success-toast" id="toast">Changes saved successfully!</div>
+    <div class="success-toast" id="toast" data-i18n="profile.profileSaved">Changes saved successfully!</div>
 
     <script src="../../js/api.js"></script>
     <script src="../../js/i18n.js"></script>
@@ -225,7 +225,7 @@
             // Render List
             const list = document.getElementById('scheduleList');
             if(myClasses.length === 0) {
-                list.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No courses assigned.</div>`;
+                list.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);" data-i18n="profile.noCoursesAssigned">No courses assigned.</div>`;
                 return;
             }
 
@@ -237,7 +237,7 @@
                             <div style="font-weight: 700;">${c.code} (${c.day})</div>
                             <div style="font-size: 0.85rem; color: var(--text-muted);">${c.time} • ${c.room}</div>
                         </div>
-                        <button onclick="openModal('${c.id}')" style="background: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Edit</button>
+                        <button onclick="openModal('${c.id}')" style="background: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" data-i18n="profile.edit">Edit</button>
                     </div>
                 `;
             });
@@ -272,10 +272,10 @@
 
             if (success) {
                 closeModal();
-                showToast('Schedule updated successfully!');
+                showToast(t('profile.scheduleSaved'));
                 await loadScheduleData(); // Refresh list
             } else {
-                alert('Failed to update class. Try again.');
+                showToast(t('profile.failedUpdate'));
             }
         }
 
@@ -291,7 +291,7 @@
             // Ideally we'd keep the existing saveProfile function but for brevity in replace block I'll assume it's fine or I should include it.
             // Since replace is block based, I'll include the previous saveProfile logic to be safe.
              const btn = document.getElementById('saveBtn');
-            btn.textContent = 'Saving...';
+            btn.textContent = t('profile.saving');
             btn.disabled = true;
             
             const newName = document.getElementById('inputName').value.trim();
@@ -322,9 +322,9 @@
                 console.warn('Language save warning:', e.message);
             } finally {
                 setTimeout(() => {
-                    btn.textContent = 'Save Changes';
+                    btn.textContent = t('profile.saveChanges');
                     btn.disabled = false;
-                    showToast('Profile saved successfully!');
+                    showToast(t('profile.profileSaved'));
                 }, 600);
             }
         }

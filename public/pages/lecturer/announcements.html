@@ -180,7 +180,7 @@
                         <h2>📨 Received from Student Reps</h2>
                         <span class="section-badge" id="receivedCount">0</span>
                     </div>
-                    <button onclick="clearReceivedHistory()" style="background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 16px; border-radius: var(--radius); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#FEE2E2'; this.style.color='#DC2626'; this.style.borderColor='#FCA5A5';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">Clear All</button>
+                    <button id="clearReceivedBtn" onclick="clearReceivedHistory()" style="background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 16px; border-radius: var(--radius); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#FEE2E2'; this.style.color='#DC2626'; this.style.borderColor='#FCA5A5';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">Clear All</button>
                 </div>
                 <div class="history-list" id="receivedNotifs">
                     <!-- Dynamically loaded -->
@@ -238,6 +238,8 @@
         let lecturerId = '210101';
         let lecturerName = 'Lecturer';
         let myCoursesCodes = [];
+        let clearReceivedArmed = false;
+        let clearReceivedTimer = null;
 
         function t(key) {
             return (window.I18N && typeof I18N.t === 'function') ? I18N.t(key) : key;
@@ -253,7 +255,22 @@
         });
 
         function clearReceivedHistory() {
-            if (confirm(t('Clear all received notifications?'))) {
+            const button = document.getElementById('clearReceivedBtn');
+            if (!clearReceivedArmed) {
+                clearReceivedArmed = true;
+                if (button) button.textContent = t('Click again to clear');
+                if (clearReceivedTimer) clearTimeout(clearReceivedTimer);
+                clearReceivedTimer = setTimeout(() => {
+                    clearReceivedArmed = false;
+                    if (button) button.textContent = t('Clear All');
+                }, 5000);
+                return;
+            }
+
+            clearReceivedArmed = false;
+            if (clearReceivedTimer) clearTimeout(clearReceivedTimer);
+            if (button) button.textContent = t('Clear All');
+            {
                 localStorage.setItem('notifs_cleared_time', Date.now().toString());
                 loadReceivedNotifs();
             }
