@@ -198,7 +198,7 @@
                             <option value="lecturer">Lecturers</option>
                             <option value="admin">Admins</option>
                         </select>
-                        <input type="text" id="userSearch" placeholder="Search by name..." oninput="filterUsersLocal()">
+                        <input type="text" id="userSearch" placeholder="Search by name..." data-i18n-placeholder="Search by name..." oninput="filterUsersLocal()">
                     </div>
                     <div id="usersTableContainer" class="table-wrap table-wrap-fill"><p>Loading...</p></div>
                 </div>
@@ -520,6 +520,10 @@
             if (user.role !== 'admin') {
                 document.querySelector('.admin-content').innerHTML = '<div style="text-align:center;padding:80px;"><h2>🚫 Access Denied</h2><p>Admin privileges required.</p><a href="../../dashboard.html">← Back</a></div>';
                 return;
+            }
+            const searchInput = document.getElementById('userSearch');
+            if (searchInput && window.I18N && typeof I18N.t === 'function') {
+                searchInput.placeholder = I18N.t('Search by name...');
             }
             window.AI_ASSISTANT_CONTEXT = {
                 page: 'admin-dashboard',
