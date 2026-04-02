@@ -19,7 +19,7 @@
         .admin-topbar { padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
         .admin-topbar h1 { font-size: 1.3rem; font-weight: 800; color: var(--text); }
         .admin-topbar .admin-badge { background: #FEE2E2; color: #DC2626; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
-        .admin-content { padding: 24px 32px; flex: 1; min-height: 0; overflow: auto; }
+        .admin-content { padding: 24px 32px; flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
         .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
@@ -58,6 +58,7 @@
         .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
         .tab-panel { display: none; }
         .tab-panel.active { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+        #panel-map.active { min-height: calc(100vh - 190px); }
 
         .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
@@ -72,7 +73,7 @@
         .panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
         .map-panel-shell { display: flex; flex-direction: column; gap: 12px; min-height: 0; flex: 1; }
         .map-panel-note { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 10px; padding: 12px 14px; font-size: 0.8rem; line-height: 1.4; flex-shrink: 0; }
-        .map-frame { width: 100%; flex: 1; min-height: 400px; border: 1px solid var(--border); border-radius: 14px; background: white; overflow: hidden; }
+        .map-frame { width: 100%; flex: 1; min-height: 560px; height: calc(100vh - 300px); border: 1px solid var(--border); border-radius: 14px; background: white; overflow: hidden; }
         .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
         .section-subtext { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
         .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
@@ -134,10 +135,11 @@
                 padding: 10px 12px;
             }
             .admin-main { height: auto; min-height: calc(100vh - 72px); }
-            .admin-content { padding: 16px; }
+            .admin-content { padding: 16px; display: block; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .upload-actions .btn { width: 100%; }
             .table-wrap { max-height: none; }
+            .map-frame { min-height: 420px; height: calc(100vh - 260px); }
         }
     </style>
 </head>
@@ -553,6 +555,24 @@
                 document.getElementById('aiPromptInput').focus();
             }
             if (name === 'security') loadSecurityChecks();
+            if (name === 'map') refreshAdminMapEmbed();
+        }
+
+        function refreshAdminMapEmbed() {
+            const frame = document.querySelector('#panel-map .map-frame');
+            if (!frame) return;
+
+            // When iframe content is initialized while hidden, some map libraries render at half-size.
+            if (!frame.dataset.baseSrc) {
+                frame.dataset.baseSrc = frame.getAttribute('src') || '../student/map.html?mode=admin';
+            }
+
+            const base = frame.dataset.baseSrc;
+            frame.setAttribute('src', `${base}${base.includes('?') ? '&' : '?'}embed=admin&t=${Date.now()}`);
+
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 120);
         }
 
         function escapeHtml(value) {

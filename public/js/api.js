@@ -415,6 +415,7 @@ const API = {
         try {
             const response = await fetch(`${this.baseUrl}/attendance/bulk-mark`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     classId, 
@@ -431,6 +432,36 @@ const API = {
             if (typeof Toast !== 'undefined') Toast.warning('Saved locally (Server offline)');
             return { success: true, message: 'Attendance saved successfully' };
         }
+    },
+
+    async getAttendanceStudents(classCode) {
+        return this.get(`/api/attendance/students/${encodeURIComponent(classCode)}`);
+    },
+
+    async getTodayCheckInsByClass(classCode) {
+        return this.get(`/api/attendance/today-by-class/${encodeURIComponent(classCode)}`);
+    },
+
+    async exportRegisteredStudents(classCode) {
+        const response = await fetch(`${this.baseUrl}/attendance/students/${encodeURIComponent(classCode)}/export`, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || 'Failed to download class list');
+        }
+        return response.blob();
+    },
+
+    async exportTodayCheckIns(classCode) {
+        const response = await fetch(`${this.baseUrl}/attendance/today-by-class/${encodeURIComponent(classCode)}/export`, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || 'Failed to export today check-ins');
+        }
+        return response.blob();
     },
 
     async generateSessionCode(classId, forceNew = false) {

@@ -85,6 +85,8 @@
     <script>
         let currentClass = null;
         let classList = [];
+        let checkedInStudentIds = new Set();
+        let studentLookup = {};
         window.AI_ASSISTANT_CONTEXT = { page: 'manual-attendance' };
 
         async function initPage() {
@@ -130,26 +132,22 @@
 
             try {
                 // Fetch students AND today's check-ins in parallel
-                const [studentsRes, checkedInRes] = await Promise.all([
-                    fetch(`/api/attendance/students/${classCode}`),
-                    fetch(`/api/attendance/today-by-class/${classCode}`)
+                const [studentsData, checkedInData] = await Promise.all([
+                    API.getAttendanceStudents(classCode),
+                    API.getTodayCheckInsByClass(classCode).catch(() => ({ checkedInStudents: [] }))
                 ]);
-                
-                if (!studentsRes.ok) throw new Error('API error');
-                
-                const data = await studentsRes.json();
-                const students = data.students || [];
+
+                const students = (studentsData && studentsData.students) || [];
                 
                 // Build set of student IDs who already checked in today
                 let checkedInSet = new Set();
                 let checkedInMethods = {};
-                if (checkedInRes.ok) {
-                    const checkedInData = await checkedInRes.json();
-                    (checkedInData.checkedInStudents || []).forEach(c => {
-                        checkedInSet.add(c.userId);
-                        checkedInMethods[c.userId] = c.method || 'unknown';
-                    });
-                }
+                (checkedInData.checkedInStudents || []).forEach(c => {
+                    checkedInSet.add(c.userId);
+                    checkedInMethods[c.userId] = c.method || 'unknown';
+                });
+                checkedInStudentIds = checkedInSet;
+                studentLookup = {};
                 
                 if (students.length === 0) {
                     container.innerHTML = `
@@ -193,6 +191,7 @@
 
                 // Render List with check-in status and risk badges
                 const listHtml = students.map(s => {
+                    studentLookup[s.id] = s;
                     const isCheckedIn = checkedInSet.has(s.id);
                     const method = checkedInMethods[s.id];
                     const methodLabel = method === 'totp' ? 'TOTP Code' : method === 'qr' ? 'QR Scan' : method === 'manual' ? 'Manual' : 'Auto';
@@ -217,12 +216,12 @@
                     
                     return `
                     <div class="list-item" style="cursor: pointer; display:flex; align-items:center; ${isCheckedIn ? 'background: #F0FDF4; border-left: 3px solid #059669;' : ''}">
-                        <input type="checkbox" value="${s.id}" ${isCheckedIn ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: var(--primary);">
+                        <input type="checkbox" value="${s.id}" ${isCheckedIn ? 'checked data-locked="true"' : ''} style="width: 20px; height: 20px; accent-color: var(--primary);">
                         <div class="list-item-content" style="flex:1; margin-left:12px;">
                             <div class="list-item-title">${s.fullName} ${checkinBadge} ${badge}</div>
                             <div class="list-item-subtitle">${s.id} • ${s.attended}/${s.total} sessions</div>
                         </div>
-                        <button class="btn btn-sm btn-secondary" onclick="alert('Student ID: ${s.id}\\nProgram: ${s.program}\\nYear: ${s.year}\\nAttendance: ${s.attended}/${s.total} (${s.percentage}%)${isCheckedIn ? '\\nToday: ✓ Checked in via ' + methodLabel : '\\nToday: Not checked in'}')" style="font-size:0.7rem; padding:4px 8px;">Details</button>
+                        <button class="btn btn-sm btn-secondary" onclick="showStudentDetails('${s.id}', '${methodLabel}', ${isCheckedIn})" style="font-size:0.7rem; padding:4px 8px;">Details</button>
                     </div>
                 `}).join('');
 
@@ -235,29 +234,34 @@
         }
 
         function addStudentPrompt() {
-            const id = prompt("Enter Student ID to add:");
-            if (id) {
-                alert(`Student ${id} added to class roster (Simulation).`);
-                // In real app, we'd call API.enrollStudent(id, currentClass.code)
-            }
+            showNotificationModal(
+                'success',
+                'Add Student',
+                'Use Manage Students to enroll a student into this class roster. This quick-add simulation was removed to avoid popup interruptions.'
+            );
         }
 
         function selectAll() {
-            document.querySelectorAll('#studentList input[type="checkbox"]').forEach(cb => cb.checked = true);
+            document.querySelectorAll('#studentList input[type="checkbox"]').forEach(cb => {
+                if (cb.dataset.locked !== 'true') cb.checked = true;
+            });
         }
 
         function clearAll() {
-            document.querySelectorAll('#studentList input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('#studentList input[type="checkbox"]').forEach(cb => {
+                if (cb.dataset.locked !== 'true') cb.checked = false;
+            });
+            showNotificationModal('success', 'Selection Cleared', 'Cleared manual selections. Already checked-in students remain selected.');
         }
 
         async function saveAttendance() {
             if (!currentClass) return;
             
-            const inputs = document.querySelectorAll('#studentList input[type="checkbox"]:checked');
+            const inputs = document.querySelectorAll('#studentList input[type="checkbox"]:checked:not([data-locked="true"])');
             const studentIds = Array.from(inputs).map(cb => cb.value);
             
             if (studentIds.length === 0) {
-                alert('Please select at least one student.');
+                showNotificationModal('error', 'No New Selection', 'Please select at least one student who is not already checked in.');
                 return;
             }
 
@@ -272,7 +276,7 @@
                 
                 // Visual Feedback
                 showNotificationModal('success', 'Attendance Saved', `Attendance has been saved for ${studentIds.length} student(s)!`);
-                clearAll(); // Reset selection
+                await loadStudents(currentClass.code);
             } catch (error) {
                 console.error(error);
                 showNotificationModal('error', 'Save Failed', 'Failed to save attendance records. Please try again.');
@@ -282,6 +286,14 @@
             }
         }
 
+        function showStudentDetails(studentId, methodLabel, isCheckedIn) {
+            const s = studentLookup[studentId];
+            if (!s) return;
+            const todayStatus = isCheckedIn ? `Today: Checked in via ${methodLabel}` : 'Today: Not checked in';
+            const details = `ID: ${s.id}\nProgram: ${s.program || 'N/A'}\nYear: ${s.year || 'N/A'}\nAttendance: ${s.attended}/${s.total} (${s.percentage}%)\n${todayStatus}`;
+            showNotificationModal('success', s.fullName, details);
+        }
+
         async function downloadRegisteredStudents() {
             if (!currentClass || !currentClass.code) {
                 showNotificationModal('error', 'Select a Class', 'Please select a class before downloading.');
@@ -289,16 +301,7 @@
             }
 
             try {
-                const response = await fetch(`/api/attendance/students/${encodeURIComponent(currentClass.code)}/export`, {
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(err.message || 'Failed to download class list');
-                }
-
-                const blob = await response.blob();
+                const blob = await API.exportRegisteredStudents(currentClass.code);
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -322,16 +325,7 @@
             }
 
             try {
-                const response = await fetch(`/api/attendance/today-by-class/${encodeURIComponent(currentClass.code)}/export`, {
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(err.message || 'Failed to download today\'s check-ins');
-                }
-
-                const blob = await response.blob();
+                const blob = await API.exportTodayCheckIns(currentClass.code);
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
