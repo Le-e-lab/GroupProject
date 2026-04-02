@@ -70,6 +70,9 @@
         .filter-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; background: var(--surface); color: var(--text); }
 
         .panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+        .map-panel-shell { display: flex; flex-direction: column; gap: 12px; min-height: 0; flex: 1; }
+        .map-panel-note { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 10px; padding: 12px 14px; font-size: 0.8rem; line-height: 1.4; flex-shrink: 0; }
+        .map-frame { width: 100%; flex: 1; min-height: 400px; border: 1px solid var(--border); border-radius: 14px; background: white; overflow: hidden; }
         .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
         .section-subtext { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
         .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
@@ -97,10 +100,39 @@
 
         @media (max-width: 768px) {
             .admin-layout { flex-direction: column; }
-            .admin-sidebar { width: 100%; height: auto; position: static; flex-direction: row; padding: 12px; overflow-x: auto; overflow-y: hidden; }
-            .admin-sidebar .logo { margin-bottom: 0; margin-right: 16px; }
-            .admin-sidebar .nav { display: flex; gap: 4px; }
-            .admin-sidebar .nav a { white-space: nowrap; padding: 8px 12px; }
+            .admin-sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                align-items: center;
+                gap: 10px;
+                padding: 12px;
+                overflow: hidden;
+            }
+            .admin-sidebar .logo {
+                margin-bottom: 0;
+                margin-right: 0;
+                white-space: nowrap;
+                font-size: 1.05rem;
+            }
+            .admin-sidebar .nav {
+                grid-column: 1 / -1;
+                display: flex;
+                gap: 6px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                scrollbar-width: thin;
+                padding-bottom: 2px;
+            }
+            .admin-sidebar .nav::-webkit-scrollbar { height: 6px; }
+            .admin-sidebar .nav a { white-space: nowrap; padding: 8px 12px; margin-bottom: 0; }
+            .logout-btn {
+                margin-top: 0;
+                white-space: nowrap;
+                padding: 10px 12px;
+            }
             .admin-main { height: auto; min-height: calc(100vh - 72px); }
             .admin-content { padding: 16px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -109,7 +141,7 @@
         }
     </style>
 </head>
-<body>
+<body data-ai-context="admin-dashboard">
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="admin-sidebar">
@@ -118,9 +150,11 @@
                 <a href="#" class="active" onclick="switchPanel('overview', event)"><span class="nav-icon">📊</span> Overview</a>
                 <a href="#" onclick="switchPanel('users', event)"><span class="nav-icon">👥</span> Users</a>
                 <a href="#" onclick="switchPanel('timetable', event)"><span class="nav-icon">📅</span> Timetable</a>
+                <a href="#" onclick="switchPanel('map', event)"><span class="nav-icon">🗺️</span> Map & Routes</a>
                 <a href="#" onclick="switchPanel('upload', event)"><span class="nav-icon">⬆️</span> Upload Timetable</a>
                 <a href="#" onclick="switchPanel('quality', event)"><span class="nav-icon">🧹</span> Data Quality</a>
                 <a href="#" onclick="switchPanel('students', event)"><span class="nav-icon">👨‍🎓</span> Dup. Students</a>
+                <a href="#" onclick="switchPanel('ai', event)"><span class="nav-icon">🤖</span> AI Management</a>
                 <a href="#" onclick="switchPanel('security', event)"><span class="nav-icon">🔐</span> Security</a>
                 <a href="#" onclick="switchPanel('create', event)"><span class="nav-icon">➕</span> Create User</a>
             </nav>
@@ -130,7 +164,7 @@
         <!-- Main -->
         <div class="admin-main">
             <div class="admin-topbar">
-                <h1>System Administration</h1>
+                <h1 data-i18n="admin.systemAdministration">System Administration</h1>
                 <span class="admin-badge">ADMIN</span>
             </div>
             <div class="admin-content">
@@ -192,6 +226,25 @@
                         </select>
                     </div>
                     <div id="timetableContainer" class="table-wrap table-wrap-fill"><p>Loading...</p></div>
+                </div>
+
+                <!-- PANEL: Map & Routes -->
+                <div id="panel-map" class="tab-panel">
+                    <div class="section-header" style="margin-bottom: 16px;">
+                        <div>
+                            <div class="section-title">Map & Route Creation</div>
+                            <p class="section-subtext">Use the campus map to draw and copy new routes. Live tracking will keep using the saved route network.</p>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn btn-secondary" type="button" onclick="window.open('../student/map.html?mode=admin', '_blank')">Open Full Map</button>
+                        </div>
+                    </div>
+                    <div class="map-panel-shell">
+                        <div class="map-panel-note">
+                            This tab loads the student map in <strong>admin mode</strong>. The route recorder is available here only, so you can create or copy paths without exposing the recorder on the student dashboard.
+                        </div>
+                        <iframe class="map-frame" src="../student/map.html?mode=admin" title="Campus map for route creation" loading="lazy"></iframe>
+                    </div>
                 </div>
 
                 <!-- PANEL: Upload Timetable -->
@@ -365,6 +418,46 @@
                     </div>
                 </div>
 
+                <!-- PANEL: AI Management -->
+                <div id="panel-ai" class="tab-panel">
+                    <div class="section-header" style="margin-bottom: 12px;">
+                        <div>
+                            <div class="section-title">🤖 AI Assistant Management</div>
+                            <p class="section-subtext">Test, debug, and monitor the AI assistant behavior and responses.</p>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.85rem;">
+                            <input type="checkbox" id="aiDebugToggle" onchange="toggleAIDebugMode()">
+                            <span>Debug Mode</span>
+                        </label>
+                    </div>
+                    <div class="panel-card">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: 600px;">
+                            <!-- Chat Column -->
+                            <div style="display: flex; flex-direction: column; border-right: 1px solid var(--border);">
+                                <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-muted); font-size: 0.8rem;">CONVERSATION</div>
+                                <div id="aiChatBox" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg); margin-bottom: 12px; font-size: 0.85rem; line-height: 1.5;">
+                                    <p style="color: var(--text-muted);">Conversation will appear here...</p>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <textarea id="aiPromptInput" placeholder="Ask a question to test the AI..." style="padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; resize: none; height: 60px;"></textarea>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button class="btn btn-primary" onclick="sendAITestPrompt()" style="flex: 1;">Send</button>
+                                        <button class="btn btn-secondary" onclick="clearAIChat()" style="flex: 1;">Clear Chat</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Debug Info Column -->
+                            <div style="display: flex; flex-direction: column; overflow: hidden;">
+                                <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-muted); font-size: 0.8rem;">DEBUG INFO</div>
+                                <div id="aiDebugPanel" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg); font-family: 'Courier New', monospace; font-size: 0.75rem; line-height: 1.4; color: var(--text); white-space: pre-wrap; word-break: break-all;">
+                                    <span style="color: var(--text-muted);">Debug info will appear when Debug Mode is enabled...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="panel-security" class="tab-panel">
                     <div class="section-header" style="margin-bottom: 12px;">
                         <div>
@@ -413,6 +506,8 @@
     </div>
 
     <script src="../../js/api.js?v=2"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
         let allUsers = [];
 
@@ -424,6 +519,11 @@
                 document.querySelector('.admin-content').innerHTML = '<div style="text-align:center;padding:80px;"><h2>🚫 Access Denied</h2><p>Admin privileges required.</p><a href="../../dashboard.html">← Back</a></div>';
                 return;
             }
+            window.AI_ASSISTANT_CONTEXT = {
+                page: 'admin-dashboard',
+                adminId: user.id,
+                adminName: user.fullName || ''
+            };
             loadStats();
             loadUsers();
             loadFilterData();
@@ -448,6 +548,10 @@
             }
             if (name === 'quality') loadLecturerDuplicates();
             if (name === 'students') loadStudentDuplicates();
+            if (name === 'ai') {
+                // Initialize AI panel if needed
+                document.getElementById('aiPromptInput').focus();
+            }
             if (name === 'security') loadSecurityChecks();
         }
 
@@ -854,35 +958,41 @@
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('ttFile');
 
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.style.background = '#F0FDF4';
-            dropZone.style.borderColor = '#6EE7B7';
-        });
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.style.background = 'var(--bg)';
-            dropZone.style.borderColor = 'var(--border)';
-        });
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.style.background = 'var(--bg)';
-            dropZone.style.borderColor = 'var(--border)';
-            if (e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
-                updateFileDisplay();
-            }
-        });
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.background = '#F0FDF4';
+                dropZone.style.borderColor = '#6EE7B7';
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.background = 'var(--bg)';
+                dropZone.style.borderColor = 'var(--border)';
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.background = 'var(--bg)';
+                dropZone.style.borderColor = 'var(--border)';
+                if (e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    updateFileDisplay();
+                }
+            });
 
-        fileInput.addEventListener('change', updateFileDisplay);
+            fileInput.addEventListener('change', updateFileDisplay);
+        }
 
         const resetAttendanceInput = document.getElementById('resetAttendance');
-        resetAttendanceInput.addEventListener('change', updateChecklistState);
+        if (resetAttendanceInput) {
+            resetAttendanceInput.addEventListener('change', updateChecklistState);
+        }
 
         function updateFileDisplay() {
+            if (!fileInput) return;
             const file = fileInput.files[0];
             const display = document.getElementById('fileNameDisplay');
             const nameSpan = document.getElementById('selectedFileName');
+            if (!display || !nameSpan) return;
             
             if (file) {
                 nameSpan.textContent = `${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
@@ -897,9 +1007,11 @@
         function updateChecklistState() {
             const submitBtn = document.querySelector('#uploadTimetableForm button[type="submit"]');
             const checklistStatus = document.getElementById('checklistStatus');
-            const resetChecked = resetAttendanceInput.checked;
+            const resetChecked = resetAttendanceInput ? resetAttendanceInput.checked : false;
             const resetItem = document.getElementById('checkResetItem');
             const resetConfirm = document.getElementById('checkResetConfirm');
+
+            if (!submitBtn || !checklistStatus || !resetItem || !resetConfirm || !fileInput) return;
 
             resetItem.style.display = resetChecked ? 'flex' : 'none';
             if (!resetChecked) {
@@ -1281,6 +1393,175 @@
         }
 
         updateChecklistState();
+
+        // ==========================================
+        // AI ASSISTANT MANAGEMENT
+        // ==========================================
+
+        let aiDebugMode = false;
+        let aiChatHistory = [];
+
+        function toggleAIDebugMode() {
+            aiDebugMode = document.getElementById('aiDebugToggle').checked;
+            const debugPanel = document.getElementById('aiDebugPanel');
+            if (!aiDebugMode) {
+                debugPanel.textContent = 'Debug Mode is OFF. Enable to see request/response details.';
+            }
+        }
+
+        async function sendAITestPrompt() {
+            const promptInput = document.getElementById('aiPromptInput');
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+
+            const chatBox = document.getElementById('aiChatBox');
+            const debugPanel = document.getElementById('aiDebugPanel');
+
+            // Add user message to chat
+            aiChatHistory.push({ role: 'user', message: prompt });
+            appendToChat('user', prompt);
+
+            try {
+                // Show loading state
+                appendToChat('system', 'Thinking...');
+                const startedAt = performance.now();
+                const requestPayload = {
+                    prompt,
+                    page: 'admin-ai',
+                    context: {
+                        adminId: sessionStorage.getItem('user.id'),
+                        collaborativeMode: true
+                    },
+                    debug: aiDebugMode
+                };
+
+                // Call AI assistant
+                const response = await fetch('/api/ai/assistant', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestPayload)
+                });
+
+                const finishedAt = performance.now();
+                const roundTripMs = Math.round(finishedAt - startedAt);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+                }
+
+                const data = await response.json();
+
+                // Remove loading message
+                removeLastMessage();
+
+                if (data.success) {
+                    // Add AI response to chat
+                    aiChatHistory.push({ role: 'assistant', message: data.answer });
+                    appendToChat('assistant', data.answer);
+
+                    // Show debug info if enabled
+                    if (aiDebugMode && data.debug) {
+                        const debugInfo = `
+HTTP:
+    Endpoint: /api/ai/assistant
+    Method: POST
+    Status: ${response.status}
+    Round Trip: ${roundTripMs}ms
+
+Request:
+    Request ID: ${data.debug.requestId || 'N/A'}
+    Page: ${data.debug.request?.page || requestPayload.page}
+    Role: ${data.debug.request?.role || 'admin'}
+    User: ${data.debug.request?.userId || 'N/A'}
+    Prompt Length: ${data.debug.request?.promptLength || prompt.length}
+    Language: ${data.debug.language || 'en'}
+
+Scope:
+  Scopes: ${data.debug.scopes?.join(', ') || 'N/A'}
+  Confidence: ${data.debug.confidence || 'N/A'}
+    Request Time: ${data.debug.request_time || 'N/A'}
+
+Provider:
+    Name: ${data.debug.provider?.name || 'Google Gemini'}
+    Model: ${data.debug.provider?.model || data.model || 'N/A'}
+    API: ${data.debug.provider?.endpoint || 'N/A'}
+
+Server Timing:
+    Handler Duration: ${data.debug.timing?.durationMs || 'N/A'}ms
+
+Model Configuration:
+  Temperature: ${data.debug.model_config?.temperature}
+  Top P: ${data.debug.model_config?.topP}
+  Max Tokens: ${data.debug.model_config?.maxOutputTokens}
+
+Usage:
+  Input Tokens: ${data.usage?.promptTokenCount || 'N/A'}
+  Output Tokens: ${data.usage?.candidatesTokenCount || 'N/A'}
+  Total: ${data.usage?.totalTokenCount || 'N/A'}
+                        `.trim();
+                        debugPanel.textContent = debugInfo;
+                    }
+                } else if (data.scope_validation && !data.scope_validation.isInScope) {
+                    // Scope rejection
+                    aiChatHistory.push({ role: 'assistant', message: data.answer });
+                    appendToChat('assistant', `⚠️ Out of Scope\n${data.answer}`);
+                    
+                    if (aiDebugMode) {
+                        debugPanel.textContent = `Scope Validation REJECTED\n\n${JSON.stringify(data.scope_validation, null, 2)}\n\nDebug:\n${JSON.stringify(data.debug || {}, null, 2)}`;
+                    }
+                } else {
+                    throw new Error(data.message || 'Unknown error');
+                }
+
+                promptInput.value = '';
+
+            } catch (error) {
+                removeLastMessage();
+                const errorMsg = `❌ Error: ${error.message}`;
+                aiChatHistory.push({ role: 'error', message: errorMsg });
+                appendToChat('error', errorMsg);
+
+                if (aiDebugMode) {
+                    debugPanel.textContent = `Error Details:\n${error.toString()}\n\nStack:\n${error.stack || 'N/A'}`;
+                }
+            }
+        }
+
+        function appendToChat(role, message) {
+            const chatBox = document.getElementById('aiChatBox');
+            const msgDiv = document.createElement('div');
+            msgDiv.style.marginBottom = '10px';
+            msgDiv.style.paddingBottom = '10px';
+            msgDiv.style.borderBottom = '1px solid var(--border)';
+            
+            const roleLabel = { user: 'You', assistant: 'AI', system: 'System', error: 'Error' }[role] || role;
+            const roleColor = { user: '#2563EB', assistant: '#059669', system: '#6B7280', error: '#DC2626' }[role] || '#666';
+            
+            msgDiv.innerHTML = `<strong style="color: ${roleColor}; font-size: 0.8rem;">${roleLabel}</strong><br><span style="font-size: 0.85rem; line-height: 1.4; white-space: pre-wrap;">${escapeHtml(message)}</span>`;
+            
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function removeLastMessage() {
+            const chatBox = document.getElementById('aiChatBox');
+            if (chatBox.lastChild) {
+                chatBox.removeChild(chatBox.lastChild);
+            }
+        }
+
+        function clearAIChat() {
+            if (!confirm('Clear all chat history?')) return;
+            document.getElementById('aiChatBox').innerHTML = '<p style="color: var(--text-muted);">Conversation cleared.</p>';
+            aiChatHistory = [];
+            document.getElementById('aiPromptInput').value = '';
+        }
 
     </script>
 </body>

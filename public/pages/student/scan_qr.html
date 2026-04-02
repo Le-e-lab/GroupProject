@@ -75,9 +75,9 @@
             <span class="navbar-role">Student</span>
         </a>
         <div class="navbar-nav">
-            <a href="../../dashboard.html" class="navbar-link">Overview</a>
-            <a href="schedule.html" class="navbar-link">Classes</a>
-            <a href="reports.html" class="navbar-link">Attendance</a>
+            <a href="../../dashboard.html" class="navbar-link" data-i18n="nav.overview">Overview</a>
+            <a href="schedule.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
+            <a href="reports.html" class="navbar-link" data-i18n="nav.attendance">Attendance</a>
         </div>
         <div class="navbar-actions">
             <a href="profile.html" class="navbar-avatar" id="userAvatar">ST</a>
@@ -116,7 +116,10 @@
 
     <script src="../../js/api.js"></script>
     <script src="../../js/toast.js"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
+        window.AI_ASSISTANT_CONTEXT = { page: 'student-scan-qr' };
         let html5QrcodeScanner;
 
         // User Data Loader
@@ -162,11 +165,11 @@
                 }
 
                 if (data && data.code && data.classId) {
-                    await processAttendance(data.classId, data.code);
+                    await processAttendance(data.classId, data.code, data.action || 'checkin');
                 } else if (decodedText.startsWith('UPATH-')) {
                     const parts = decodedText.split('-');
                     if (parts.length >= 3) {
-                        await processAttendance(parts[1], parts[2]);
+                        await processAttendance(parts[1], parts[2], 'checkin');
                     } else {
                         Toast.error('Invalid QR Format');
                         setTimeout(() => location.reload(), 2000);
@@ -209,7 +212,7 @@
             });
         }
 
-        async function processAttendance(classId, code) {
+        async function processAttendance(classId, code, action = 'checkin') {
             Toast.info('Verifying Code...');
             
             // Trigger Location Request NOW (Just-in-Time)
@@ -221,9 +224,30 @@
                  // Toast.warning("Location access missing");
             }
 
-            const result = await API.validateSessionCode(classId, code, userLat, userLon);
+            let result = action === 'checkout'
+                ? await API.validateCheckOutCode(classId, code)
+                : await API.validateCheckInCode(classId, code);
+
+            if (result && result.message && /check-in is not currently open/i.test(result.message)) {
+                result = await API.validateCheckOutCode(classId, code);
+            } else if (result && result.message && /check-out is not currently open/i.test(result.message)) {
+                result = await API.validateCheckInCode(classId, code);
+            }
+
+            if (result && result.requiresVerification) {
+                if (typeof Toast !== 'undefined') {
+                    Toast.warning('Identity verification is required. Continue on Enter Code screen.');
+                }
+                setTimeout(() => {
+                    window.location.href = `enter_code.html?class=${encodeURIComponent(classId)}&action=${encodeURIComponent(action)}`;
+                }, 1200);
+                return;
+            }
             
-            if (result.message && (result.message.includes('success') || result.message.includes('Marked'))) {
+            const successMessage = result && result.message
+                && /(success|marked|check-in recorded|attendance successfully recorded|attendance already completed)/i.test(result.message);
+
+            if (successMessage) {
                 if (typeof Toast !== 'undefined') Toast.success('Attendance Marked Successfully!');
                 setTimeout(() => window.location.href = '../../dashboard.html', 1500);
             } else {

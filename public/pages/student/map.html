@@ -128,6 +128,41 @@
         .nav-btn:hover {
             background: var(--primary-hover);
         }
+        .indoor-guide {
+            margin-top: 14px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg);
+            display: none;
+            gap: 10px;
+            flex-direction: column;
+        }
+        .indoor-guide.visible {
+            display: flex;
+        }
+        .indoor-guide h4 {
+            font-size: 0.86rem;
+            margin: 0;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .indoor-guide p {
+            font-size: 0.76rem;
+            margin: 0;
+            color: var(--text-muted);
+        }
+        .indoor-guide ul {
+            margin: 0;
+            padding-left: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .indoor-guide li {
+            font-size: 0.76rem;
+            color: var(--text);
+        }
         
         /* Offline Badge */
         .offline-badge {
@@ -164,7 +199,7 @@
         }
     </style>
 </head>
-<body>
+<body data-ai-context="student-map">
     <nav class="navbar">
         <a href="../../dashboard.html" class="navbar-brand">
             <div class="navbar-logo">U</div>
@@ -172,10 +207,10 @@
             <span class="navbar-role">Student</span>
         </a>
         <div class="navbar-nav">
-            <a href="../../dashboard.html" class="navbar-link">Overview</a>
-            <a href="../../pages/student/schedule.html" class="navbar-link">Classes</a>
-            <a href="../../pages/student/reports.html" class="navbar-link">Attendance</a>
-            <a href="../../pages/student/map.html" class="navbar-link active">Map</a>
+            <a href="../../dashboard.html" class="navbar-link" data-i18n="nav.overview">Overview</a>
+            <a href="../../pages/student/schedule.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
+            <a href="../../pages/student/reports.html" class="navbar-link" data-i18n="nav.attendance">Attendance</a>
+            <a href="../../pages/student/map.html" class="navbar-link active" data-i18n="nav.map">Map</a>
         </div>
         <div class="navbar-actions" style="display: flex; align-items: center; gap: 16px;">
             <div class="offline-badge" id="offlineBadge">
@@ -188,7 +223,7 @@
                     <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
                     <line x1="12" y1="20" x2="12.01" y2="20"></line>
                 </svg>
-                OFFLINE
+                <span data-i18n="map.offline">OFFLINE</span>
             </div>
             <!-- New Notification Bell Icon -->
             <a href="../../pages/student/notifications.html" style="text-decoration: none; position: relative; color: var(--text-muted); transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">
@@ -204,15 +239,16 @@
         <div class="page-container">
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Campus Map</h1>
-                    <p class="page-subtitle">Navigation powered by OpenStreetMap</p>
+                    <h1 class="page-title" data-i18n="map.title">Campus Map</h1>
+                    <p class="page-subtitle" data-i18n="map.subtitle">Navigation powered by OpenStreetMap</p>
                 </div>
                 <div id="nextClassHint" style="display:none; font-size: 0.9rem; color: var(--primary); font-weight: 500; align-items: center; gap: 8px;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    Next: <span id="nextClassName" style="cursor: pointer; text-decoration: underline;">Loading...</span>
+                    <span id="nextClassLabel" data-i18n="map.next">Next:</span>
+                    <span id="nextClassName" style="cursor: pointer; text-decoration: underline;" data-i18n="map.loading">Loading...</span>
                 </div>
             </div>
 
@@ -225,65 +261,70 @@
                 <!-- Sidebar -->
                 <div class="sidebar">
                     <div class="sidebar-card">
-                        <h3 class="sidebar-title">Key Locations</h3>
+                        <h3 class="sidebar-title" data-i18n="map.locations">Key Locations</h3>
                         <div class="building-list" id="buildingList">
                             <!-- Items populated by JS or static -->
                             <div class="building-item" onclick="panToBuilding('ict')">
                                 <div class="building-icon">ICT</div>
                                 <div class="building-info">
-                                    <h4>ICT Complex</h4>
-                                    <p>Mai Mugabe, Labs</p>
+                                    <h4 data-map-venue-title="ict">ICT Complex</h4>
+                                    <p data-map-venue-desc="ict">Mai Mugabe, Labs</p>
                                 </div>
                             </div>
                             <div class="building-item" onclick="panToBuilding('library')">
                                 <div class="building-icon">YL</div>
                                 <div class="building-info">
-                                    <h4>Yokyo Library</h4>
-                                    <p>Main Library</p>
+                                    <h4 data-map-venue-title="library">Yokyo Library</h4>
+                                    <p data-map-venue-desc="library">Main Library</p>
                                 </div>
                             </div>
                             <div class="building-item" onclick="panToBuilding('chapel')">
                                 <div class="building-icon">KNC</div>
                                 <div class="building-info">
-                                    <h4>Kwame Nkrumah Chapel</h4>
-                                    <p>Assembly Hall</p>
+                                    <h4 data-map-venue-title="chapel">Kwame Nkrumah Chapel</h4>
+                                    <p data-map-venue-desc="chapel">Assembly Hall</p>
                                 </div>
                             </div>
                             <div class="building-item" onclick="panToBuilding('halls')">
                                 <div class="building-icon">HR</div>
                                 <div class="building-info">
-                                    <h4>Halls of Residence</h4>
-                                    <p>Student Housing</p>
+                                    <h4 data-map-venue-title="halls">Halls of Residence</h4>
+                                    <p data-map-venue-desc="halls">Student Housing</p>
                                 </div>
                             </div>
                              <div class="building-item" onclick="panToBuilding('union')">
                                 <div class="building-icon">SU</div>
                                 <div class="building-info">
-                                    <h4>Student Union</h4>
-                                    <p>Cafeteria & Shops</p>
+                                    <h4 data-map-venue-title="union">Student Union</h4>
+                                    <p data-map-venue-desc="union">Cafeteria & Shops</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="nav-section">
-                            <p class="nav-label">Get Directions</p>
+                            <p class="nav-label" data-i18n="map.directions">Get Directions</p>
                             <select class="nav-select" id="fromSelect">
-                                <option value="current">Current Location (GPS)</option>
-                                <option value="entrance">Main Gate</option>
-                                <option value="accommodation">Halls of Residence</option>
-                                <option value="ict">Yokyo Library</option>
+                                <option value="current" data-map-option="currentLocation">Current Location (GPS)</option>
+                                <option value="entrance" data-map-venue-title="entrance">Main Gate</option>
+                                <option value="accommodation" data-map-venue-title="accommodation">Halls of Residence</option>
+                                <option value="ict" data-map-venue-title="library">Yokyo Library</option>
                             </select>
                             <select class="nav-select" id="toSelect">
-                                <option value="">Select destination</option>
-                                <option value="ict">ICT Complex</option>
-                                <option value="ict">Yokyo Library</option>
-                                <option value="chapel">Kwame Nkrumah Chapel</option>
-                                <option value="accommodation">Halls of Residence</option>
-                                <option value="su">Student Union</option>
+                                <option value="" data-map-option="destination">Select destination</option>
+                                <option value="ict" data-map-venue-title="ict">ICT Complex</option>
+                                <option value="ict" data-map-venue-title="library">Yokyo Library</option>
+                                <option value="chapel" data-map-venue-title="chapel">Kwame Nkrumah Chapel</option>
+                                <option value="accommodation" data-map-venue-title="halls">Halls of Residence</option>
+                                <option value="su" data-map-venue-title="union">Student Union</option>
                             </select>
-                            <button class="nav-btn" onclick="calculateRoute()">Navigate</button>
-                            <button class="nav-btn" type="button" onclick="detectCurrentBuilding()" style="margin-top: 8px; background: var(--surface); color: var(--text); border: 1px solid var(--border);">Detect My Building</button>
-                            <button class="nav-btn" id="liveTrackBtn" type="button" onclick="toggleLiveTracking()" style="margin-top: 8px; background: #0f766e;">Start Live Tracking</button>
+                            <button class="nav-btn" id="navigateBtn" onclick="calculateRoute()" data-i18n="map.navigate">Navigate</button>
+                            <button class="nav-btn" id="detectBtn" type="button" onclick="detectCurrentBuilding()" style="margin-top: 8px; background: var(--surface); color: var(--text); border: 1px solid var(--border);" data-i18n="map.detect">Detect My Building</button>
+                            <button class="nav-btn" id="liveTrackBtn" type="button" onclick="toggleLiveTracking()" style="margin-top: 8px; background: #0f766e;" data-i18n="map.liveStart">Start Live Tracking</button>
+                            <div class="indoor-guide" id="indoorGuide">
+                                <h4 id="indoorGuideTitle">Inside Building Guide</h4>
+                                <p id="indoorGuideHint">Choose a destination to get floor-by-floor directions.</p>
+                                <ul id="indoorGuideSteps"></ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -293,6 +334,8 @@
 
     <!-- Scripts -->
     <script src="../../js/api.js"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     
@@ -306,6 +349,8 @@
         let activeDestinationKey = null;
         let liveTrackWatchId = null;
         let liveUserMarker = null;
+        const mapMode = new URLSearchParams(window.location.search).get('mode') || 'student';
+        let currentUserRole = null;
 
         const venueAliases = {
             library: 'ict',
@@ -408,6 +453,328 @@
             }
         };
 
+        const MAP_TRANSLATIONS = {
+            en: {
+                studentRole: 'Student',
+                currentLocation: 'Current Location (GPS)',
+                destination: 'Select destination',
+                at: 'at',
+                liveStart: 'Start Live Tracking',
+                liveStop: 'Stop Live Tracking',
+                offline: 'OFFLINE',
+                next: 'Next:',
+                loading: 'Loading...',
+                detecting: 'Detecting...',
+                buildingUnknown: 'Building not recognized on the campus map.',
+                locationUnsupported: 'Geolocation is not supported in this browser.',
+                locationUnsupportedShort: 'Geolocation not supported. Please select a start point.',
+                unmapped: 'Could not match your location to a mapped building.',
+                nearest: 'Nearest mapped building:',
+                permission: 'Could not read your GPS location. Check location permissions.',
+                selectDestination: 'Please select a destination.',
+                locationDenied: 'Could not get your location. Please select a starting point manually.',
+                startTracking: 'Select a destination first.',
+                liveTrackingFailed: 'Live tracking failed. Check your location permissions.',
+                modalInstructions: 'Click inside, Select All (Ctrl+A), and Copy (Ctrl+C)',
+                close: 'Close',
+                copy: 'Copy to Clipboard',
+                copied: 'Copied to clipboard!',
+                recordPath: '⏺ Record Path',
+                savePath: '💾 Save Path',
+                clear: '❌ Clear',
+                clickStart: 'Click Start Pin...',
+                startLabel: 'Started:',
+                finishHint: 'Click map points, then click another pin to finish.',
+                promptStart: 'Enter Start Location Key (e.g., entrance, ict):',
+                promptEnd: 'Enter End Location Key (e.g., ict, chapel):',
+                recordSaveTitle: 'Path:',
+                indoorTitle: 'Inside Building Guide',
+                indoorHint: 'Choose a destination to get floor-by-floor directions.',
+                indoorNoGuide: 'No indoor guide is available for this destination yet.',
+                indoorGround: 'Downstairs',
+                indoorUpstairs: 'Upstairs',
+                indoorIctGeneric: 'At ICT: Smart classrooms are downstairs; Computer Lab 1, Mai Mugabe Lab, and General Purpose Lab are upstairs.',
+                indoorIctSm1: 'SM1 is downstairs and is usually the first classroom near the main entrance corridor.',
+                indoorIctSmart: 'Smart classrooms are downstairs near the front corridor.',
+                indoorIctLabs: 'Computer Lab 1, Mai Mugabe Lab, and General Purpose Lab are upstairs.',
+                venue: {
+                    entrance: { title: 'Main Gate', desc: 'Campus entrance' },
+                    lecturers: { title: "Lecturer's Residences", desc: 'Staff housing' },
+                    ceas: { title: 'CEAS Building', desc: 'Science and engineering facilities' },
+                    agric: { title: 'Agriculture Building', desc: 'Agriculture and applied studies' },
+                    clinic: { title: 'Clinic', desc: 'Health services' },
+                    accommodation: { title: 'Student Accommodation', desc: 'Student housing' },
+                    su: { title: 'Dining Hall / Student Union', desc: 'Cafeteria and student services' },
+                    admin: { title: 'Main Office', desc: 'Administration offices' },
+                    chapel: { title: 'Chapel', desc: 'Worship and assembly space' },
+                    tmlt: { title: 'TMLT', desc: 'Teaching and learning space' },
+                    theology: { title: 'Theology Building', desc: 'Theology and related studies' },
+                    health: { title: 'Health Sciences', desc: 'Health sciences facilities' },
+                    ict: { title: 'ICT Complex / Library', desc: 'ICT and library services' },
+                    ubuntu: { title: 'Ubuntu Block', desc: 'Campus block' },
+                    law_library: { title: 'Law Library', desc: 'Law resources and study space' }
+                }
+            },
+            fr: {
+                studentRole: 'Etudiant',
+                currentLocation: 'Position actuelle (GPS)',
+                destination: 'Choisir la destination',
+                at: 'a',
+                liveStart: 'Demarrer le suivi en direct',
+                liveStop: 'Arreter le suivi en direct',
+                offline: 'HORS LIGNE',
+                next: 'Suivant:',
+                loading: 'Chargement...',
+                detecting: 'Detection...',
+                buildingUnknown: 'Batiment non reconnu sur la carte du campus.',
+                locationUnsupported: 'La geolocalisation nest pas prise en charge par ce navigateur.',
+                locationUnsupportedShort: 'Geolocalisation non prise en charge. Veuillez choisir un point de depart.',
+                unmapped: 'Impossible de faire correspondre votre position a un batiment de la carte.',
+                nearest: 'Batiment cartographie le plus proche:',
+                permission: 'Impossible de lire votre position GPS. Verifiez les autorisations de localisation.',
+                selectDestination: 'Veuillez selectionner une destination.',
+                locationDenied: 'Impossible dobtenir votre position. Veuillez choisir un point de depart manuellement.',
+                startTracking: 'Choisissez dabord une destination.',
+                liveTrackingFailed: 'Le suivi en direct a echoue. Verifiez vos autorisations de localisation.',
+                modalInstructions: 'Cliquez a linterieur, Tout selectionner (Ctrl+A), puis Copier (Ctrl+C)',
+                close: 'Fermer',
+                copy: 'Copier dans le presse-papiers',
+                copied: 'Copie dans le presse-papiers !',
+                recordPath: '⏺ Enregistrer le trajet',
+                savePath: '💾 Enregistrer le trajet',
+                clear: '❌ Effacer',
+                clickStart: 'Cliquez sur le point de depart...',
+                startLabel: 'Demarre :',
+                finishHint: 'Cliquez sur les points de la carte, puis sur un autre repere pour terminer.',
+                promptStart: 'Entrez la cle du point de depart (par ex. entrance, ict):',
+                promptEnd: 'Entrez la cle du point darrivee (par ex. ict, chapel):',
+                recordSaveTitle: 'Trajet :',
+                indoorTitle: 'Guide interne du batiment',
+                indoorHint: 'Choisissez une destination pour obtenir un itineraire par etage.',
+                indoorNoGuide: 'Aucun guide interne nest encore disponible pour cette destination.',
+                indoorGround: 'Rez-de-chaussee',
+                indoorUpstairs: 'Etage',
+                indoorIctGeneric: 'Au batiment ICT: les salles Smart sont en bas; Computer Lab 1, Mai Mugabe Lab et General Purpose Lab sont a letage.',
+                indoorIctSm1: 'SM1 est au rez-de-chaussee, souvent la premiere salle visible depuis lentrée principale.',
+                indoorIctSmart: 'Les salles Smart se trouvent au rez-de-chaussee pres du couloir principal.',
+                indoorIctLabs: 'Computer Lab 1, Mai Mugabe Lab et General Purpose Lab sont a letage.',
+                venue: {
+                    entrance: { title: 'Porte principale', desc: 'Entree du campus' },
+                    lecturers: { title: 'Residences des enseignants', desc: 'Logement du personnel' },
+                    ceas: { title: 'Batiment CEAS', desc: 'Installations scientifiques et dingenerie' },
+                    agric: { title: 'Batiment dagriculture', desc: 'Agriculture et etudes appliquees' },
+                    clinic: { title: 'Clinique', desc: 'Services de sante' },
+                    accommodation: { title: 'Logement etudiant', desc: 'Residence etudiante' },
+                    su: { title: 'Salle a manger / Union des etudiants', desc: 'Cafeteria et services etudiants' },
+                    admin: { title: 'Bureau principal', desc: 'Bureaux administratifs' },
+                    chapel: { title: 'Chapelle', desc: 'Espace de culte et dassemblee' },
+                    tmlt: { title: 'TMLT', desc: 'Espace denseignement et dapprentissage' },
+                    theology: { title: 'Batiment de theologie', desc: 'Theologie et etudes connexes' },
+                    health: { title: 'Sciences de la sante', desc: 'Installations de sciences de la sante' },
+                    ict: { title: 'Complexe ICT / Bibliotheque', desc: 'Services ICT et bibliotheque' },
+                    ubuntu: { title: 'Bloc Ubuntu', desc: 'Bloc du campus' },
+                    law_library: { title: 'Bibliotheque de droit', desc: 'Ressources juridiques et espace detude' }
+                }
+            },
+            pt: {
+                studentRole: 'Estudante',
+                currentLocation: 'Local atual (GPS)',
+                destination: 'Selecione o destino',
+                at: 'em',
+                liveStart: 'Iniciar rastreamento ao vivo',
+                liveStop: 'Parar rastreamento ao vivo',
+                offline: 'OFFLINE',
+                next: 'Próximo:',
+                loading: 'Carregando...',
+                detecting: 'Detectando...',
+                buildingUnknown: 'Edificio nao reconhecido no mapa do campus.',
+                locationUnsupported: 'A geolocalizacao nao e suportada neste navegador.',
+                locationUnsupportedShort: 'Geolocalizacao nao suportada. Selecione um ponto de partida.',
+                unmapped: 'Nao foi possivel associar sua localizacao a um edificio mapeado.',
+                nearest: 'Edificio mapeado mais proximo:',
+                permission: 'Nao foi possivel ler sua localizacao GPS. Verifique as permissoes.',
+                selectDestination: 'Selecione um destino.',
+                locationDenied: 'Nao foi possivel obter sua localizacao. Selecione um ponto de partida manualmente.',
+                startTracking: 'Selecione um destino primeiro.',
+                liveTrackingFailed: 'O rastreamento ao vivo falhou. Verifique as permissoes de localizacao.',
+                modalInstructions: 'Clique dentro, selecione tudo (Ctrl+A) e copie (Ctrl+C)',
+                close: 'Fechar',
+                copy: 'Copiar para a area de transferencia',
+                copied: 'Copiado para a area de transferencia!',
+                recordPath: '⏺ Registrar rota',
+                savePath: '💾 Salvar rota',
+                clear: '❌ Limpar',
+                clickStart: 'Clique no ponto de partida...',
+                startLabel: 'Iniciado:',
+                finishHint: 'Clique nos pontos do mapa e depois em outro pin para finalizar.',
+                promptStart: 'Digite a chave do local de partida (ex.: entrance, ict):',
+                promptEnd: 'Digite a chave do local de destino (ex.: ict, chapel):',
+                recordSaveTitle: 'Rota:',
+                indoorTitle: 'Guia interno do edificio',
+                indoorHint: 'Escolha um destino para receber direcoes por andar.',
+                indoorNoGuide: 'Ainda nao ha guia interno disponivel para este destino.',
+                indoorGround: 'Terreo',
+                indoorUpstairs: 'Andar superior',
+                indoorIctGeneric: 'No edificio ICT: salas Smart ficam no terreo; Computer Lab 1, Mai Mugabe Lab e General Purpose Lab ficam no andar superior.',
+                indoorIctSm1: 'SM1 fica no terreo e costuma ser a primeira sala visivel no corredor de entrada.',
+                indoorIctSmart: 'As salas Smart ficam no terreo, perto do corredor principal.',
+                indoorIctLabs: 'Computer Lab 1, Mai Mugabe Lab e General Purpose Lab ficam no andar superior.',
+                venue: {
+                    entrance: { title: 'Portao principal', desc: 'Entrada do campus' },
+                    lecturers: { title: 'Residencias dos professores', desc: 'Alojamento do corpo docente' },
+                    ceas: { title: 'Edificio CEAS', desc: 'Instalacoes de ciencia e engenharia' },
+                    agric: { title: 'Edificio de agricultura', desc: 'Agricultura e estudos aplicados' },
+                    clinic: { title: 'Clinica', desc: 'Servicos de saude' },
+                    accommodation: { title: 'Alojamento estudantil', desc: 'Moradia estudantil' },
+                    su: { title: 'Refeitorio / Uniao estudantil', desc: 'Cafeteria e servicos estudantis' },
+                    admin: { title: 'Escritorio principal', desc: 'Escritorios administrativos' },
+                    chapel: { title: 'Capela', desc: 'Espaco de culto e assembleia' },
+                    tmlt: { title: 'TMLT', desc: 'Espaco de ensino e aprendizagem' },
+                    theology: { title: 'Edificio de teologia', desc: 'Teologia e estudos relacionados' },
+                    health: { title: 'Ciencias da saude', desc: 'Instalacoes de ciencias da saude' },
+                    ict: { title: 'Complexo ICT / Biblioteca', desc: 'Servicos de ICT e biblioteca' },
+                    ubuntu: { title: 'Bloco Ubuntu', desc: 'Bloco do campus' },
+                    law_library: { title: 'Biblioteca de direito', desc: 'Recursos juridicos e espaco de estudo' }
+                }
+            }
+        };
+
+        function mapLanguage() {
+            return window.I18N ? I18N.currentLanguage() : 'en';
+        }
+
+        function mapText(key) {
+            const language = mapLanguage();
+            return (MAP_TRANSLATIONS[language] && MAP_TRANSLATIONS[language][key])
+                || (MAP_TRANSLATIONS.en && MAP_TRANSLATIONS.en[key])
+                || (window.I18N ? I18N.t(key) : key);
+        }
+
+        function getVenueTitle(key) {
+            const language = mapLanguage();
+            const venue = (MAP_TRANSLATIONS[language] && MAP_TRANSLATIONS[language].venue && MAP_TRANSLATIONS[language].venue[key])
+                || MAP_TRANSLATIONS.en.venue[key];
+            return venue ? venue.title : (venues[key] ? venues[key].name : key);
+        }
+
+        function getVenueDescription(key) {
+            const language = mapLanguage();
+            const venue = (MAP_TRANSLATIONS[language] && MAP_TRANSLATIONS[language].venue && MAP_TRANSLATIONS[language].venue[key])
+                || MAP_TRANSLATIONS.en.venue[key];
+            return venue ? venue.desc : '';
+        }
+
+        const indoorGuides = {
+            ict: {
+                defaultSteps: [
+                    { floor: 'ground', textKey: 'indoorIctSmart' },
+                    { floor: 'ground', textKey: 'indoorIctSm1' },
+                    { floor: 'upstairs', textKey: 'indoorIctLabs' }
+                ],
+                roomRules: [
+                    {
+                        match: /(sm\s*1|smart\s*1|smart\s*class\s*1)/i,
+                        steps: [
+                            { floor: 'ground', textKey: 'indoorIctSm1' },
+                            { floor: 'ground', textKey: 'indoorIctSmart' }
+                        ]
+                    },
+                    {
+                        match: /(smart|sm\s*[0-9]+)/i,
+                        steps: [
+                            { floor: 'ground', textKey: 'indoorIctSmart' }
+                        ]
+                    },
+                    {
+                        match: /(computer\s*lab\s*1|comp\s*lab\s*1|mai\s*mugabe|general\s*purpose|gpl|lab\s*1)/i,
+                        steps: [
+                            { floor: 'upstairs', textKey: 'indoorIctLabs' }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        function getIndoorGuide(buildingKey, roomText) {
+            const guide = indoorGuides[buildingKey];
+            if (!guide) return null;
+
+            const room = String(roomText || '').trim();
+            if (room) {
+                const rule = guide.roomRules.find((entry) => entry.match.test(room));
+                if (rule) return rule.steps;
+            }
+
+            return guide.defaultSteps;
+        }
+
+        function renderIndoorGuide(buildingKey, roomText) {
+            const card = document.getElementById('indoorGuide');
+            const title = document.getElementById('indoorGuideTitle');
+            const hint = document.getElementById('indoorGuideHint');
+            const stepsList = document.getElementById('indoorGuideSteps');
+            if (!card || !title || !hint || !stepsList) return;
+
+            title.textContent = mapText('indoorTitle');
+            stepsList.innerHTML = '';
+
+            if (!buildingKey) {
+                card.classList.remove('visible');
+                hint.textContent = mapText('indoorHint');
+                hint.dataset.custom = 'false';
+                return;
+            }
+
+            const steps = getIndoorGuide(buildingKey, roomText);
+            if (!steps || !steps.length) {
+                hint.textContent = mapText('indoorNoGuide');
+                hint.dataset.custom = 'true';
+                card.classList.add('visible');
+                return;
+            }
+
+            hint.textContent = roomText
+                ? `${getVenueTitle(buildingKey)} • ${roomText}`
+                : `${getVenueTitle(buildingKey)} • ${mapText('indoorIctGeneric')}`;
+            hint.dataset.custom = 'true';
+
+            steps.forEach((step) => {
+                const li = document.createElement('li');
+                const floorLabel = step.floor === 'upstairs' ? mapText('indoorUpstairs') : mapText('indoorGround');
+                li.textContent = `${floorLabel}: ${mapText(step.textKey)}`;
+                stepsList.appendChild(li);
+            });
+
+            card.classList.add('visible');
+        }
+
+        function applyMapTranslations(root) {
+            const target = root || document;
+            target.querySelectorAll('[data-map-venue-title]').forEach((node) => {
+                node.textContent = getVenueTitle(node.getAttribute('data-map-venue-title'));
+            });
+            target.querySelectorAll('[data-map-venue-desc]').forEach((node) => {
+                node.textContent = getVenueDescription(node.getAttribute('data-map-venue-desc'));
+            });
+            target.querySelectorAll('[data-map-option]').forEach((node) => {
+                node.textContent = mapText(node.getAttribute('data-map-option'));
+            });
+            const role = target.querySelector('.navbar-role');
+            if (role) role.textContent = mapText('studentRole');
+            const nextLabel = target.getElementById('nextClassLabel');
+            if (nextLabel) nextLabel.textContent = mapText('next');
+            const nextName = target.getElementById('nextClassName');
+            if (nextName && nextName.dataset.loading === 'true') {
+                nextName.textContent = mapText('loading');
+            }
+            const indoorTitle = target.getElementById('indoorGuideTitle');
+            if (indoorTitle) indoorTitle.textContent = mapText('indoorTitle');
+            const indoorHint = target.getElementById('indoorGuideHint');
+            if (indoorHint && indoorHint.dataset.custom !== 'true') {
+                indoorHint.textContent = mapText('indoorHint');
+            }
+        }
+
         // Venue Map from Schedule
         const venueMap = {
             // Existing Schedule Mappings
@@ -463,7 +830,7 @@
         function panToBuilding(buildingKey) {
             const resolvedKey = resolveVenueKey(buildingKey);
             if (!resolvedKey) {
-                alert('Building not recognized on the campus map.');
+                alert(mapText('buildingUnknown'));
                 return;
             }
 
@@ -487,18 +854,20 @@
             if (toSelect && toSelect.querySelector(`option[value="${resolvedKey}"]`)) {
                 toSelect.value = resolvedKey;
             }
+
+            renderIndoorGuide(resolvedKey);
         }
 
         function detectCurrentBuilding() {
             if (!navigator.geolocation) {
-                alert('Geolocation is not supported in this browser.');
+                alert(mapText('locationUnsupported'));
                 return;
             }
 
             const detectBtn = document.querySelector('button[onclick="detectCurrentBuilding()"]');
             const originalText = detectBtn ? detectBtn.textContent : '';
             if (detectBtn) {
-                detectBtn.textContent = 'Detecting...';
+                detectBtn.textContent = mapText('detecting');
                 detectBtn.disabled = true;
             }
 
@@ -509,11 +878,11 @@
                     const nearest = findNearestVenueKey(current);
 
                     if (!nearest.key) {
-                        alert('Could not match your location to a mapped building.');
+                        alert(mapText('unmapped'));
                     } else {
                         panToBuilding(nearest.key);
                         if (nearest.distance > 250) {
-                            alert(`Nearest mapped building: ${venues[nearest.key].name} (${Math.round(nearest.distance)}m away).`);
+                            alert(`${mapText('nearest')} ${getVenueTitle(nearest.key)} (${Math.round(nearest.distance)}m away).`);
                         }
                     }
 
@@ -523,7 +892,7 @@
                     }
                 },
                 () => {
-                    alert('Could not read your GPS location. Check location permissions.');
+                    alert(mapText('permission'));
                     if (detectBtn) {
                         detectBtn.textContent = originalText;
                         detectBtn.disabled = false;
@@ -566,10 +935,10 @@
             const btn = document.getElementById('liveTrackBtn');
             if (!btn) return;
             if (active) {
-                btn.textContent = 'Stop Live Tracking';
+                btn.textContent = mapText('liveStop');
                 btn.style.background = '#b91c1c';
             } else {
-                btn.textContent = 'Start Live Tracking';
+                btn.textContent = mapText('liveStart');
                 btn.style.background = '#0f766e';
             }
         }
@@ -585,11 +954,11 @@
 
         function startLiveTracking(endKey) {
             if (!navigator.geolocation) {
-                alert('Geolocation is not supported in this browser.');
+                alert(mapText('locationUnsupported'));
                 return;
             }
             if (!endKey || !venues[endKey]) {
-                alert('Select a destination first.');
+                alert(mapText('startTracking'));
                 return;
             }
 
@@ -612,7 +981,7 @@
                             fillOpacity: 0.9,
                             weight: 2
                         }).addTo(map);
-                        liveUserMarker.bindPopup('<b>You are here</b>');
+                        liveUserMarker.bindPopup(`<b>${mapText('currentLocation')}</b>`);
                     } else {
                         liveUserMarker.setLatLng(current);
                     }
@@ -624,7 +993,7 @@
                     }
                 },
                 () => {
-                    alert('Live tracking failed. Check your location permissions.');
+                    alert(mapText('liveTrackingFailed'));
                     stopLiveTracking();
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
@@ -748,11 +1117,11 @@
             
             modal.innerHTML = `
                 <h3>${title}</h3>
-                <p>Click inside, Select All (Ctrl+A), and Copy (Ctrl+C)</p>
+                <p>${mapText('modalInstructions')}</p>
                 <textarea id="copyArea" style="width: 100%; height: 100px; margin-bottom: 10px;">${text}</textarea>
                 <br>
-                <button onclick="document.getElementById('copyModal').style.display='none'" style="padding: 5px 10px; cursor: pointer;">Close</button>
-                <button onclick="copyToClipboard()" style="padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; margin-left: 10px;">Copy to Clipboard</button>
+                <button onclick="document.getElementById('copyModal').style.display='none'" style="padding: 5px 10px; cursor: pointer;">${mapText('close')}</button>
+                <button onclick="copyToClipboard()" style="padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; margin-left: 10px;">${mapText('copy')}</button>
             `;
             modal.style.display = 'block';
             document.getElementById('copyArea').select();
@@ -764,13 +1133,13 @@
             copyText.select();
             copyText.setSelectionRange(0, 99999); 
             navigator.clipboard.writeText(copyText.value).then(() => {
-                alert("Copied to clipboard!");
+                alert(mapText('copied'));
             });
         };
 
         function finishRecording(endKey = null) {
             isRecording = false;
-            document.getElementById('recordBtn').innerText = "⏺ Record Path";
+            document.getElementById('recordBtn').innerText = mapText('recordPath');
             document.getElementById('recordBtn').style.background = "white";
             document.getElementById('savePathBtn').style.display = 'none';
             document.getElementById('clearPathBtn').style.display = 'none';
@@ -779,13 +1148,13 @@
             recordingMarkers.forEach(m => map.removeLayer(m));
             recordingMarkers = [];
 
-            const start = recordingStartKey || prompt("Enter Start Location Key (e.g., entrance, ict):") || "start";
-            const end = endKey || prompt("Enter End Location Key (e.g., ict, chapel):") || "end";
+            const start = recordingStartKey || prompt(mapText('promptStart')) || "start";
+            const end = endKey || prompt(mapText('promptEnd')) || "end";
             
             const routeKey = `${start}_${end}`;
             const json = JSON.stringify(recordingPath);
             
-            showCopyModal(`Path: ${routeKey}`, `"${routeKey}": ${json},`);
+            showCopyModal(`${mapText('recordSaveTitle')} ${routeKey}`, `"${routeKey}": ${json},`);
             
             // Reset
             recordingStartKey = null;
@@ -815,7 +1184,7 @@
                     icon: createCustomPin(v.color)
                 }).addTo(map);
                 
-                marker.bindPopup(`<b>${v.name}</b>`);
+                marker.bindPopup(`<b>${getVenueTitle(key)}</b>`);
 
                 marker.on('click', function(e) {
                     if (isRecording) {
@@ -826,7 +1195,7 @@
                             recordingPath.push([v.lat, v.lng]);
                             L.popup()
                                 .setLatLng(e.latlng)
-                                .setContent(`<b>Started: ${v.name}</b><br>Click map points, then click another pin to finish.`)
+                                .setContent(`<b>${mapText('startLabel')} ${getVenueTitle(key)}</b><br>${mapText('finishHint')}`)
                                 .openOn(map);
                         } else if (key !== recordingStartKey) {
                             // Finish
@@ -870,53 +1239,62 @@
                 }
             });
 
-            // Add "Record Path" Button
-            const recordBtn = L.control({position: 'bottomright'});
-            recordBtn.onAdd = function (map) {
-                const div = L.DomUtil.create('div', 'record-control');
-                div.innerHTML = `
-                    <button id="recordBtn" style="padding: 10px; font-weight: bold; cursor: pointer; background: white; border: 2px solid orange; margin-bottom: 5px;">⏺ Record Path</button>
-                    <button id="savePathBtn" style="display:none; padding: 10px; font-weight: bold; cursor: pointer; background: #4CAF50; color: white; border: none;">💾 Save Path</button>
-                    <button id="clearPathBtn" style="display:none; padding: 10px; font-weight: bold; cursor: pointer; background: #f44336; color: white; border: none; margin-left: 5px;">❌ Clear</button>
-                `;
-                
-                div.querySelector('#recordBtn').onclick = function() {
-                    if (!isRecording) {
-                        isRecording = true;
+            if (mapMode === 'admin' && currentUserRole === 'admin') {
+                const recordBtn = L.control({position: 'bottomright'});
+                recordBtn.onAdd = function (map) {
+                    const div = L.DomUtil.create('div', 'record-control');
+                    div.innerHTML = `
+                        <button id="recordBtn" style="padding: 10px; font-weight: bold; cursor: pointer; background: white; border: 2px solid orange; margin-bottom: 5px;">${mapText('recordPath')}</button>
+                        <button id="savePathBtn" style="display:none; padding: 10px; font-weight: bold; cursor: pointer; background: #4CAF50; color: white; border: none;">${mapText('savePath')}</button>
+                        <button id="clearPathBtn" style="display:none; padding: 10px; font-weight: bold; cursor: pointer; background: #f44336; color: white; border: none; margin-left: 5px;">${mapText('clear')}</button>
+                    `;
+
+                    div.querySelector('#recordBtn').onclick = function() {
+                        if (!isRecording) {
+                            isRecording = true;
+                            recordingPath = [];
+                            recordingStartKey = null;
+                            this.innerText = mapText('clickStart');
+                            this.style.background = "#ffcccc";
+                            document.getElementById('savePathBtn').style.display = 'inline-block';
+                            document.getElementById('clearPathBtn').style.display = 'inline-block';
+                        }
+                    };
+
+                    div.querySelector('#clearPathBtn').onclick = function() {
+                        recordingMarkers.forEach(m => map.removeLayer(m));
+                        recordingMarkers = [];
                         recordingPath = [];
                         recordingStartKey = null;
-                        this.innerText = "Click Start Pin...";
-                        this.style.background = "#ffcccc";
-                        document.getElementById('savePathBtn').style.display = 'inline-block';
-                        document.getElementById('clearPathBtn').style.display = 'inline-block';
-                    }
-                };
+                        document.getElementById('recordBtn').innerText = mapText('recordPath');
+                    };
 
-                div.querySelector('#clearPathBtn').onclick = function() {
-                    recordingMarkers.forEach(m => map.removeLayer(m));
-                    recordingMarkers = [];
-                    recordingPath = [];
-                    recordingStartKey = null;
-                    document.getElementById('recordBtn').innerText = "Click Start Pin...";
-                };
+                    div.querySelector('#savePathBtn').onclick = function() {
+                        // Manual save (if user didn't click end pin)
+                        finishRecording(null);
+                    };
 
-                div.querySelector('#savePathBtn').onclick = function() {
-                    // Manual save (if user didn't click end pin)
-                    finishRecording(null); 
+                    return div;
                 };
-
-                return div;
-            };
-            recordBtn.addTo(map);
+                recordBtn.addTo(map);
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            loadUser();
             initMap();
             generateSmartRoutes(); // Build the network from manual segments
-            loadUser();
             checkOffline();
             findNextClass();
             populateDropdowns();
+
+            const toSelect = document.getElementById('toSelect');
+            if (toSelect) {
+                toSelect.addEventListener('change', () => {
+                    const selected = resolveVenueKey(toSelect.value);
+                    renderIndoorGuide(selected || null);
+                });
+            }
             
             // Try to get user location immediately for better responsiveness
             if (navigator.geolocation && document.getElementById('fromSelect').value === 'current') {
@@ -942,15 +1320,15 @@
 
         function populateDropdowns() {
             const markup = Object.keys(venues).map(key => 
-                `<option value="${key}">${venues[key].name}</option>`
+                `<option value="${key}" data-map-venue-title="${key}">${getVenueTitle(key)}</option>`
             ).join('');
             
             // Keep "Current Location" as first option for From
             const fromSelect = document.getElementById('fromSelect');
-            fromSelect.innerHTML = `<option value="current">Current Location (GPS)</option>` + markup;
+            fromSelect.innerHTML = `<option value="current" data-map-option="currentLocation">${mapText('currentLocation')}</option>` + markup;
             
             // Add "Select destination" for To
-            document.getElementById('toSelect').innerHTML = `<option value="">Select destination</option>` + markup;
+            document.getElementById('toSelect').innerHTML = `<option value="" data-map-option="destination">${mapText('destination')}</option>` + markup;
             
             // Re-render sidebar list
             const list = document.getElementById('buildingList');
@@ -962,10 +1340,14 @@
                         </svg>
                     </div>
                     <div class="building-info">
-                        <h4>${venues[key].name}</h4>
+                        <h4 data-map-venue-title="${key}">${getVenueTitle(key)}</h4>
+                        <p data-map-venue-desc="${key}">${getVenueDescription(key)}</p>
                     </div>
                 </div>
             `).join('');
+
+            applyMapTranslations(document);
+            renderIndoorGuide(null);
         }
 
         function calculateRoute() {
@@ -973,7 +1355,7 @@
             const endKey = resolveVenueKey(document.getElementById('toSelect').value);
             
             if (!endKey) {
-                alert("Please select a destination.");
+                alert(mapText('selectDestination'));
                 return;
             }
 
@@ -989,6 +1371,7 @@
                 const path = [startPin, ...rawPath, endPin];
                 
                 drawCustomRoute(path);
+                renderIndoorGuide(endKey);
                 if (startKey === 'current') startLiveTracking(endKey);
                 return;
             }
@@ -1000,24 +1383,26 @@
             if (startKey === 'current') {
                 if (window.userLocation) {
                     drawRoute(window.userLocation, endCoords);
+                    renderIndoorGuide(endKey);
                     startLiveTracking(endKey);
                 } else if (navigator.geolocation) {
                     const btn = document.querySelector('.nav-btn');
                     // ... (rest of geo logic)
                     const originalText = btn.textContent;
-                    btn.textContent = "Locating...";
+                    btn.textContent = mapText('detecting');
                     btn.disabled = true;
 
                     navigator.geolocation.getCurrentPosition(
                         (pos) => {
                             window.userLocation = L.latLng(pos.coords.latitude, pos.coords.longitude);
                             drawRoute(window.userLocation, endCoords);
+                            renderIndoorGuide(endKey);
                             startLiveTracking(endKey);
                             btn.textContent = originalText;
                             btn.disabled = false;
                         }, 
                         () => {
-                            alert("Could not get your location. Please select a starting point manually.");
+                            alert(mapText('locationDenied'));
                             btn.textContent = originalText;
                             btn.disabled = false;
                             document.getElementById('fromSelect').focus();
@@ -1025,11 +1410,12 @@
                         { enableHighAccuracy: true, timeout: 5000 }
                     );
                 } else {
-                    alert("Geolocation not supported. Please select a start point.");
+                    alert(mapText('locationUnsupportedShort'));
                 }
             } else {
                 startCoords = L.latLng(venues[startKey].lat, venues[startKey].lng);
                 drawRoute(startCoords, endCoords);
+                renderIndoorGuide(endKey);
                 stopLiveTracking();
             }
         }
@@ -1092,11 +1478,23 @@
             const userStr = sessionStorage.getItem('upath_user');
             if (userStr) {
                 const user = JSON.parse(userStr);
+                currentUserRole = user.role || null;
                 if (user.fullName) {
                     const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                     document.getElementById('userAvatar').textContent = initials;
                 }
+
+                window.AI_ASSISTANT_CONTEXT = {
+                    page: 'student-map',
+                    studentId: user.id,
+                    preferredLanguage: user.language || (window.I18N ? I18N.currentLanguage() : 'en'),
+                    notes: 'User is on campus map and may need building navigation help.'
+                };
             }
+        }
+
+        if (window.I18N) {
+            I18N.apply(document);
         }
 
         function checkOffline() {
@@ -1106,6 +1504,7 @@
             } else {
                 badge.classList.add('visible');
             }
+            applyMapTranslations(document);
         }
 
         async function findNextClass() {
@@ -1138,7 +1537,8 @@
                     const hintDiv = document.getElementById('nextClassHint');
                     const hintText = document.getElementById('nextClassName');
                     hintDiv.style.display = 'flex';
-                    hintText.textContent = `${nextClass.code} at ${nextClass.room}`;
+                    hintText.dataset.loading = 'false';
+                    hintText.textContent = `${nextClass.code} ${mapText('at')} ${nextClass.room}`;
                     
                     hintText.onclick = () => {
                         let targetKey = 'ict';
@@ -1149,6 +1549,7 @@
                             }
                         }
                         document.getElementById('toSelect').value = targetKey;
+                        renderIndoorGuide(targetKey, nextClass.room || '');
                         panToBuilding(targetKey);
                     };
                 }
@@ -1156,6 +1557,8 @@
                 console.log("No schedule data");
             }
         }
+
+        applyMapTranslations(document);
     </script>
 </body>
 </html>

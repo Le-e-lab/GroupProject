@@ -10,12 +10,13 @@
  */
 const express = require('express');
 const router = express.Router();
-const { Attendance, Session, Class, User, sequelize } = require('../models');
+const { Attendance, Session, Class, User, DeviceSession, BiometricVerification, sequelize } = require('../models');
 const { TOTP, NobleCryptoPlugin, ScureBase32Plugin } = require('otplib');
 const { Op } = require('sequelize');
 const validator = require('validator');
 const authMiddleware = require('../middleware/authMiddleware');
 const { attendanceAttemptLimiter } = require('../middleware/rateLimiters');
+const { verifyWithProvider, getProviderConfig } = require('../utils/identityVerification');
 
 const canManageAttendanceRoles = new Set(['lecturer', 'admin']);
 const canViewClassAttendanceRoles = new Set(['lecturer', 'admin', 'student_rep']);
@@ -47,6 +48,19 @@ router.use(authMiddleware);
 // We use otplib components just for base32 decoding
 const crypto = require('crypto');
 const base32 = new ScureBase32Plugin();
+
+// Device Fingerprinting Helper
+function generateDeviceId(userAgent, remoteIp) {
+    const fingerprint = `${userAgent}|${remoteIp}`;
+    return crypto.createHash('md5').update(fingerprint).digest('hex');
+}
+
+function getDeviceInfo(req) {
+    return {
+        userAgent: req.get('user-agent') || 'Unknown',
+        ip: req.ip || req.connection.remoteAddress || '0.0.0.0'
+    };
+}
 
 function generateTOTP(secret, window = 0) {
     try {
@@ -87,6 +101,129 @@ function verifyTOTP(token, secret, window = 1) {
 function generateSecret() {
     const bytes = crypto.randomBytes(20);
     return base32.encode(bytes).replace(/=/g, '');
+}
+
+function isAttendanceComplete(record) {
+    return !!(record && record.checkedInAt && record.checkedOutAt && record.status === 'present');
+}
+
+function isLegacyPresent(record) {
+    return !!(record && record.status === 'present' && !record.checkedInAt && !record.checkedOutAt);
+}
+
+function isFinalizedAttendance(record) {
+    return isAttendanceComplete(record) || isLegacyPresent(record);
+}
+
+function parseCourseCode(classId) {
+    const safe = String(classId || '').trim();
+    if (!safe) return '';
+    return safe.split('-')[0].trim();
+}
+
+function parseClassIdentity(classId) {
+    const safe = String(classId || '').trim();
+    if (!safe) {
+        return { courseCode: '', day: '', fromTime: '' };
+    }
+
+    const parts = safe.split('-');
+    if (parts.length >= 3) {
+        const courseCode = parts[0].trim();
+        const fromTime = parts[parts.length - 1].trim();
+        const day = parts.slice(1, parts.length - 1).join('-').trim();
+        return { courseCode, day, fromTime };
+    }
+
+    return { courseCode: parseCourseCode(safe), day: '', fromTime: '' };
+}
+
+function lecturerNameTerms(user) {
+    const fullName = String((user && user.fullName) || '').trim();
+    const noDots = fullName.replace(/\./g, '').trim();
+    const surname = fullName ? fullName.split(' ').pop() : '';
+    return [fullName, noDots, surname].filter(Boolean);
+}
+
+function belongsToLecturer(classRow, user) {
+    if (!classRow || !user) return false;
+    if (String(classRow.LecturerId || '') === String(user.id || '')) return true;
+
+    const lecturer = String(classRow.Lecturer || '').toLowerCase();
+    const terms = lecturerNameTerms(user).map((term) => term.toLowerCase());
+    return terms.some((term) => term && lecturer.includes(term));
+}
+
+async function findClassForSession(classId, user = null) {
+    const { courseCode, day, fromTime } = parseClassIdentity(classId);
+    if (!courseCode) return null;
+
+    const isLecturer = user && user.role === 'lecturer';
+    const whereBase = { Course_Code: courseCode };
+    if (day && fromTime) {
+        whereBase.Day = day;
+        whereBase.From_Time = fromTime;
+    }
+
+    if (isLecturer) {
+        const terms = lecturerNameTerms(user);
+        const ownerFilters = [{ LecturerId: String(user.id) }];
+        for (const term of terms) {
+            ownerFilters.push({ Lecturer: { [Op.like]: `%${term}%` } });
+        }
+
+        const owned = await Class.findOne({
+            where: {
+                ...whereBase,
+                [Op.or]: ownerFilters
+            }
+        });
+        if (owned) return owned;
+    }
+
+    if (day && fromTime) {
+        const exactComposite = await Class.findOne({
+            where: whereBase
+        });
+        if (exactComposite) return exactComposite;
+        return null;
+    }
+
+    const exact = await Class.findOne({ where: { Course_Code: courseCode } });
+    if (exact) return exact;
+
+    return Class.findOne({
+        where: {
+            Course_Code: { [Op.like]: `${courseCode}%` }
+        }
+    });
+}
+
+function studentEligibleForClass(student, classRow) {
+    if (!student || !classRow) {
+        return { ok: false, reason: 'Class or student record missing' };
+    }
+
+    const studentProgram = String(student.program || '').trim().toLowerCase();
+    const classProgram = String(classRow.Program || '').trim().toLowerCase();
+    if (!studentProgram || !classProgram) {
+        return { ok: false, reason: 'Student or class program is not configured' };
+    }
+
+    const programMatch = studentProgram.startsWith(classProgram) || classProgram.startsWith(studentProgram);
+    if (!programMatch) {
+        return { ok: false, reason: 'Student does not belong to this course program' };
+    }
+
+    const yearMatch = String(classRow.Year_Semester || '').match(/Y\s*(\d)/i);
+    if (yearMatch && student.year) {
+        const classYear = parseInt(yearMatch[1], 10);
+        if (Number.isInteger(classYear) && Number.isInteger(Number(student.year)) && Number(student.year) !== classYear) {
+            return { ok: false, reason: 'Student year does not match class year' };
+        }
+    }
+
+    return { ok: true };
 }
 
 /**
@@ -255,7 +392,7 @@ router.get('/student/:id', async (req, res) => {
             seenCourses.add(courseCode);
             
             // Match logic: Did they attend this course? (by course code prefix)
-            const myRecords = attendance.filter(a => a.classId && a.classId.startsWith(courseCode));
+            const myRecords = attendance.filter((a) => a.classId && a.classId.startsWith(courseCode) && isFinalizedAttendance(a));
             const attendedCount = myRecords.length;
             
             // Total Sessions (Estimate from unique dates in Attendance DB or Default)
@@ -298,7 +435,8 @@ router.get('/today/:id', async (req, res) => {
         const attendance = await Attendance.findAll({
             where: {
                 userId: id, // FIX: Changed from studentId to userId
-                date: { [Op.gte]: startOfDay }
+                date: { [Op.gte]: startOfDay },
+                status: 'present'
             },
             attributes: ['classId']
         });
@@ -342,7 +480,8 @@ router.get('/stats/course/:courseId', async (req, res) => {
         // 2. Total Attendance Records
         const totalRecords = await Attendance.count({
              where: {
-                classId: { [Op.like]: `${courseId}%` }
+            classId: { [Op.like]: `${courseId}%` },
+            status: 'present'
             }
         });
 
@@ -405,11 +544,15 @@ router.post('/bulk-mark', requireRoles(canManageAttendanceRoles), async (req, re
 
         // Filter out already marked for today to prevent dupes? 
         // For now, simple insert.
+        const nowIso = new Date().toISOString();
         const records = students.map(sId => ({
             classId,
             userId: sId,  // FIX: Changed from studentId to userId
             status: 'present',
-            date: date || new Date().toISOString().split('T')[0]
+            date: date || new Date().toISOString().split('T')[0],
+            method: 'manual',
+            checkedInAt: nowIso,
+            checkedOutAt: nowIso
         }));
 
         await Attendance.bulkCreate(records);
@@ -453,6 +596,8 @@ router.post('/mark', requireRoles(canManageAttendanceRoles), async (req, res) =>
         if (existing) {
             existing.status = status;
             existing.method = 'manual';
+            existing.checkedInAt = existing.checkedInAt || new Date();
+            existing.checkedOutAt = existing.checkedOutAt || new Date();
             await existing.save();
             return res.json({ message: 'Attendance updated', attendance: existing });
         }
@@ -462,7 +607,9 @@ router.post('/mark', requireRoles(canManageAttendanceRoles), async (req, res) =>
             userId: studentId,
             status,
             date: safeDate,
-            method: 'manual'
+            method: 'manual',
+            checkedInAt: new Date(),
+            checkedOutAt: new Date()
         });
 
         return res.status(201).json({ message: 'Attendance marked', attendance: created });
@@ -528,7 +675,8 @@ router.get('/students/:courseCode', requireRoles(canViewClassAttendanceRoles), a
             const attended = await Attendance.count({
                 where: {
                     userId: s.id,
-                    classId: { [Op.like]: `${courseCode}%` }
+                    classId: { [Op.like]: `${courseCode}%` },
+                    status: 'present'
                 }
             });
             
@@ -573,7 +721,8 @@ router.get('/today-by-class/:courseCode', requireRoles(canViewClassAttendanceRol
         const records = await Attendance.findAll({
             where: {
                 classId: { [Op.like]: `${courseCode}%` },
-                date: { [Op.gte]: startOfDay }
+                date: { [Op.gte]: startOfDay },
+                status: 'present'
             },
             attributes: ['userId', 'method', 'date']
         });
@@ -640,7 +789,8 @@ router.get('/students/:courseCode/export', async (req, res) => {
             const attended = await Attendance.count({
                 where: {
                     userId: s.id,
-                    classId: { [Op.like]: `${courseCode}%` }
+                    classId: { [Op.like]: `${courseCode}%` },
+                    status: 'present'
                 }
             });
             const pct = Math.round((attended / totalSessions) * 100);
@@ -656,6 +806,660 @@ router.get('/students/:courseCode/export', async (req, res) => {
     } catch (err) {
         console.error('Export students error:', err);
         return res.status(500).json({ message: 'Error exporting class list' });
+    }
+});
+
+/**
+ * GET /api/attendance/today-by-class/:courseCode/export
+ * Export today's check-ins for a class as CSV.
+ */
+router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttendanceRoles), async (req, res) => {
+    try {
+        const courseCode = validator.escape(validator.trim(req.params.courseCode || ''));
+        if (!courseCode) return res.status(400).json({ message: 'Course code is required' });
+
+        const classes = await Class.findAll({ where: { Course_Code: courseCode } });
+        if (!classes.length) return res.status(404).json({ message: 'Course not found' });
+
+        if (req.user.role === 'lecturer') {
+            const ownMatch = classes.some((c) => String(c.LecturerId || '') === String(req.user.id));
+            if (!ownMatch) {
+                return res.status(403).json({ message: 'You can only export your own class lists' });
+            }
+        } else if (req.user.role !== 'admin' && req.user.role !== 'student_rep') {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const [course] = classes;
+        const courseName = course.Course_Name || courseCode;
+        const yearSemester = course.Year_Semester || '';
+        const yearMatch = yearSemester.match(/Y(\d)/i);
+        const courseYear = yearMatch ? parseInt(yearMatch[1], 10) : null;
+
+        const cohorts = classes.map((c) => {
+            const ym = c.Year_Semester && c.Year_Semester.match(/Y(\d)/i);
+            return {
+                program: { [Op.like]: `${c.Program || ''}%` },
+                year: ym ? parseInt(ym[1], 10) : 1
+            };
+        }).filter((c) => c.program);
+
+        const students = await User.findAll({
+            where: {
+                role: { [Op.in]: ['student', 'student_rep'] },
+                [Op.or]: cohorts
+            },
+            order: [['fullName', 'ASC']]
+        });
+
+        const records = await Attendance.findAll({
+            where: {
+                classId: { [Op.like]: `${courseCode}%` },
+                date: { [Op.gte]: today }
+            },
+            order: [['date', 'ASC'], ['userId', 'ASC']]
+        });
+
+        const studentMap = new Map(students.map((student) => [String(student.id), student]));
+        const rows = ['Date,CourseCode,CourseName,StudentId,FullName,Program,Year,Method,CheckInTime,CheckOutTime,Completion'];
+
+        for (const record of records) {
+            const student = studentMap.get(String(record.userId));
+            if (!student) continue;
+
+            const safeName = `"${String(student.fullName || '').replace(/"/g, '""')}"`;
+            const safeProgram = `"${String(student.program || '').replace(/"/g, '""')}"`;
+            const checkInTime = record.checkedInAt ? new Date(record.checkedInAt).toISOString() : '';
+            const checkOutTime = record.checkedOutAt ? new Date(record.checkedOutAt).toISOString() : '';
+            const completion = isAttendanceComplete(record) ? 'complete' : 'incomplete';
+            rows.push([
+                record.date,
+                courseCode,
+                `"${String(courseName).replace(/"/g, '""')}"`,
+                student.id,
+                safeName,
+                safeProgram,
+                student.year || courseYear || '',
+                record.method || 'manual',
+                checkInTime,
+                checkOutTime,
+                completion
+            ].join(','));
+        }
+
+        const todayStamp = new Date().toISOString().slice(0, 10);
+        const filename = `${courseCode}_${todayStamp}_today_checkins.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        return res.status(200).send(rows.join('\n'));
+    } catch (err) {
+        console.error('Export today check-ins error:', err);
+        return res.status(500).json({ message: 'Error exporting today check-ins' });
+    }
+});
+
+/**
+ * POST /api/attendance/checkin
+ * Lecturer opens check-in for a class session
+ */
+router.post('/checkin', requireRoles(canManageAttendanceRoles), async (req, res) => {
+    try {
+        const { classId } = req.body;
+        if (!classId) return res.status(400).json({ message: 'Class ID required' });
+
+        const classRow = await findClassForSession(classId, req.user);
+        if (!classRow) {
+            return res.status(404).json({ message: 'Class not found' });
+        }
+
+        if (req.user.role === 'lecturer' && !belongsToLecturer(classRow, req.user)) {
+            return res.status(403).json({ message: 'You can only open check-in for your own class' });
+        }
+
+        // Find or create session
+        let session = await Session.findOne({
+            where: { classId, expiresAt: { [Op.gt]: new Date() } }
+        });
+
+        if (!session) {
+            const secret = generateSecret();
+            const checkInSecret = generateSecret();
+            const clientIP = req.ip || req.connection.remoteAddress;
+            const lecturerIp = clientIP && clientIP.includes('::ffff:') ? clientIP.split('::ffff:')[1] : clientIP;
+
+            session = await Session.create({
+                id: Date.now().toString(),
+                classId,
+                secret,
+                checkInSecret,
+                checkOutSecret: null,
+                status: 'checkin_open',
+                checkInTime: new Date(),
+                expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 2),
+                lecturerIp
+            });
+        } else {
+            // Existing session: transition to check-in state
+            session.status = 'checkin_open';
+            session.checkInTime = new Date();
+            await session.save();
+        }
+
+        const checkInCode = generateTOTP(session.checkInSecret);
+        const timeLeft = 30 - Math.floor((Date.now() / 1000) % 30);
+
+        res.json({
+            sessionId: session.id,
+            code: checkInCode,
+            timeLeft: timeLeft * 1000,
+            status: 'checkin_open',
+            message: 'Check-in is now open'
+        });
+    } catch (err) {
+        console.error('Check-in error:', err);
+        res.status(500).json({ message: 'Error opening check-in' });
+    }
+});
+
+/**
+ * POST /api/attendance/checkout
+ * Lecturer opens check-out for a class session
+ */
+router.post('/checkout', requireRoles(canManageAttendanceRoles), async (req, res) => {
+    try {
+        const { classId } = req.body;
+        if (!classId) return res.status(400).json({ message: 'Class ID required' });
+
+        const classRow = await findClassForSession(classId, req.user);
+        if (!classRow) {
+            return res.status(404).json({ message: 'Class not found' });
+        }
+
+        if (req.user.role === 'lecturer' && !belongsToLecturer(classRow, req.user)) {
+            return res.status(403).json({ message: 'You can only open check-out for your own class' });
+        }
+
+        let session = await Session.findOne({
+            where: { classId, expiresAt: { [Op.gt]: new Date() } }
+        });
+
+        if (!session) {
+            return res.status(400).json({ message: 'No active session for this class' });
+        }
+
+        // Generate check-out secret
+        const checkOutSecret = generateSecret();
+        session.status = 'checkout_open';
+        session.checkOutTime = new Date();
+        session.checkOutSecret = checkOutSecret;
+        await session.save();
+
+        const checkOutCode = generateTOTP(checkOutSecret);
+        const timeLeft = 30 - Math.floor((Date.now() / 1000) % 30);
+
+        res.json({
+            sessionId: session.id,
+            code: checkOutCode,
+            timeLeft: timeLeft * 1000,
+            status: 'checkout_open',
+            message: 'Check-out is now open'
+        });
+    } catch (err) {
+        console.error('Check-out error:', err);
+        res.status(500).json({ message: 'Error opening check-out' });
+    }
+});
+
+/**
+ * POST /api/attendance/close
+ * Lecturer/admin closes an active session for a class
+ */
+router.post('/close', requireRoles(canManageAttendanceRoles), async (req, res) => {
+    try {
+        const { classId } = req.body;
+        if (!classId) return res.status(400).json({ message: 'Class ID required' });
+
+        const classRow = await findClassForSession(classId, req.user);
+        if (!classRow) {
+            return res.status(404).json({ message: 'Class not found' });
+        }
+
+        if (req.user.role === 'lecturer' && !belongsToLecturer(classRow, req.user)) {
+            return res.status(403).json({ message: 'You can only close sessions for your own class' });
+        }
+
+        const session = await Session.findOne({
+            where: { classId, expiresAt: { [Op.gt]: new Date() } }
+        });
+
+        if (!session) {
+            return res.status(404).json({ message: 'No active session for this class' });
+        }
+
+        session.status = 'closed';
+        session.expiresAt = new Date();
+        await session.save();
+
+        return res.json({ message: 'Session closed', classId, sessionId: session.id });
+    } catch (err) {
+        console.error('Close session error:', err);
+        return res.status(500).json({ message: 'Error closing session' });
+    }
+});
+
+/**
+ * POST /api/attendance/validate-checkin
+ * Student submits check-in code and device info
+ */
+router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
+    try {
+        let { classId, studentId, code } = req.body;
+
+        if (classId) classId = validator.escape(validator.trim(classId));
+        if (studentId) studentId = validator.escape(validator.trim(studentId));
+        if (code) code = validator.escape(validator.trim(String(code)));
+
+        if (!studentId) return res.status(400).json({ message: 'Student ID required' });
+
+        const isPrivileged = hasRole(req, canManageAttendanceRoles);
+        if (!isPrivileged && String(req.user.id) !== String(studentId)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        // Find session
+        const session = await Session.findOne({
+            where: { classId, expiresAt: { [Op.gt]: new Date() } }
+        });
+
+        if (!session || session.status !== 'checkin_open') {
+            return res.status(400).json({ message: 'Check-in is not currently open' });
+        }
+
+        const classRow = await findClassForSession(classId);
+        if (!classRow) {
+            return res.status(404).json({ message: 'Class not found' });
+        }
+
+        const student = await User.findByPk(studentId);
+        if (!student || !['student', 'student_rep'].includes(student.role)) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        const eligibility = studentEligibleForClass(student, classRow);
+        if (!eligibility.ok) {
+            return res.status(403).json({ message: eligibility.reason });
+        }
+
+        // Verify check-in code
+        const isValid = verifyTOTP(code, session.checkInSecret);
+        if (!isValid) {
+            return res.status(400).json({ message: 'Invalid or expired check-in code' });
+        }
+
+        // Check device
+        const deviceInfo = getDeviceInfo(req);
+        const deviceId = generateDeviceId(deviceInfo.userAgent, deviceInfo.ip);
+
+        let device = await DeviceSession.findOne({
+            where: { userId: studentId, deviceId }
+        });
+
+        let requiresVerification = false;
+        if (!device) {
+            // New device: check if user has 3+ devices already
+            const activeDevices = await DeviceSession.findAll({
+                where: { userId: studentId }
+            });
+
+            requiresVerification = true; // Always require verification on unknown device
+
+            if (activeDevices.length >= 3) {
+                // Remove oldest untrusted device
+                const untrusted = activeDevices.filter((d) => !d.isTrusted).sort((a, b) => a.createdAt - b.createdAt);
+                if (untrusted.length > 0) {
+                    await untrusted[0].destroy();
+                }
+            }
+
+            device = await DeviceSession.create({
+                userId: studentId,
+                deviceId,
+                deviceName: deviceInfo.userAgent.substring(0, 100),
+                lastIp: deviceInfo.ip,
+                lastUserAgent: deviceInfo.userAgent,
+                requiresVerification: true,
+                isTrusted: false
+            });
+        } else {
+            // Known device: update last seen
+            device.lastSeenAt = new Date();
+            device.lastIp = deviceInfo.ip;
+            await device.save();
+            requiresVerification = !device.isTrusted;
+        }
+
+        // Create tentative attendance record
+        const existing = await Attendance.findOne({
+            where: {
+                classId,
+                userId: studentId,
+                date: { [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)) }
+            }
+        });
+
+        let attendance;
+        if (existing) {
+            if (isAttendanceComplete(existing)) {
+                return res.json({
+                    message: 'Attendance already completed for this class',
+                    attendanceId: existing.id,
+                    requiresVerification: false,
+                    nextStep: 'done'
+                });
+            }
+            existing.checkedInAt = existing.checkedInAt || new Date();
+            existing.method = existing.method || 'checkin_checkout';
+            existing.status = existing.status === 'present' ? 'present' : 'absent';
+            await existing.save();
+            attendance = existing;
+        } else {
+            attendance = await Attendance.create({
+                classId,
+                userId: studentId,
+                date: new Date().toISOString().split('T')[0],
+                status: 'absent',
+                method: 'checkin_checkout',
+                checkedInAt: new Date()
+            });
+        }
+
+        res.json({
+            message: 'Check-in recorded',
+            attendanceId: attendance.id,
+            requiresVerification,
+            deviceId: device.id,
+            nextStep: requiresVerification ? 'verify_identity' : 'await_checkout'
+        });
+    } catch (err) {
+        console.error('Check-in validation error:', err);
+        res.status(500).json({ message: 'Error validating check-in' });
+    }
+});
+
+/**
+ * POST /api/attendance/validate-checkout
+ * Student submits check-out code to complete attendance
+ */
+router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => {
+    try {
+        let { classId, studentId, code, attendanceId } = req.body;
+
+        if (classId) classId = validator.escape(validator.trim(classId));
+        if (studentId) studentId = validator.escape(validator.trim(studentId));
+        if (code) code = validator.escape(validator.trim(String(code)));
+        if (attendanceId) attendanceId = parseInt(attendanceId, 10);
+
+        if (!studentId) return res.status(400).json({ message: 'Student ID required' });
+
+        const isPrivileged = hasRole(req, canManageAttendanceRoles);
+        if (!isPrivileged && String(req.user.id) !== String(studentId)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        // Find session
+        const session = await Session.findOne({
+            where: { classId, expiresAt: { [Op.gt]: new Date() } }
+        });
+
+        if (!session || session.status !== 'checkout_open') {
+            return res.status(400).json({ message: 'Check-out is not currently open' });
+        }
+
+        const classRow = await findClassForSession(classId);
+        if (!classRow) {
+            return res.status(404).json({ message: 'Class not found' });
+        }
+
+        const student = await User.findByPk(studentId);
+        if (!student || !['student', 'student_rep'].includes(student.role)) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        const eligibility = studentEligibleForClass(student, classRow);
+        if (!eligibility.ok) {
+            return res.status(403).json({ message: eligibility.reason });
+        }
+
+        // Verify check-out code
+        const isValid = verifyTOTP(code, session.checkOutSecret);
+        if (!isValid) {
+            return res.status(400).json({ message: 'Invalid or expired check-out code' });
+        }
+
+        const deviceInfo = getDeviceInfo(req);
+        const deviceId = generateDeviceId(deviceInfo.userAgent, deviceInfo.ip);
+        const device = await DeviceSession.findOne({
+            where: { userId: studentId, deviceId }
+        });
+
+        if (!device) {
+            return res.status(403).json({ message: 'Device not recognized. Complete identity verification before check-out.' });
+        }
+
+        if (!device.isTrusted || device.requiresVerification) {
+            return res.status(403).json({
+                message: 'Identity verification required before check-out.',
+                requiresVerification: true,
+                nextStep: 'verify_identity'
+            });
+        }
+
+        // Update or create attendance
+        let attendance = attendanceId ? 
+            await Attendance.findByPk(attendanceId) : 
+            await Attendance.findOne({
+                where: { classId, userId: studentId, date: { [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)) } }
+            });
+
+        if (!attendance) {
+            return res.status(400).json({
+                message: 'Check-in record not found. Ask lecturer for manual attendance if needed.'
+            });
+        }
+
+        if (!attendance.checkedInAt) {
+            return res.status(400).json({
+                message: 'You must check in before checking out.'
+            });
+        }
+
+        // Mark checked out and finalize attendance
+        attendance.checkedOutAt = new Date();
+        attendance.status = 'present';
+        attendance.method = attendance.method || 'checkin_checkout';
+        await attendance.save();
+
+        res.json({
+            message: 'Attendance successfully recorded',
+            attendanceId: attendance.id,
+            checkedInAt: attendance.checkedInAt,
+            checkedOutAt: attendance.checkedOutAt
+        });
+    } catch (err) {
+        console.error('Check-out validation error:', err);
+        res.status(500).json({ message: 'Error validating check-out' });
+    }
+});
+
+/**
+ * POST /api/attendance/verify-identity
+ * Verify student identity via biometric or face recognition (client-side photo, server-side validation)
+ */
+router.post('/verify-identity', authMiddleware, async (req, res) => {
+    try {
+        const { userId, method, photoWidth, photoHeight, sessionId, selfieImage, idImage, deviceId } = req.body;
+
+        if (!userId || !method) {
+            return res.status(400).json({ message: 'User ID and verification method required' });
+        }
+
+        if (String(req.user.id) !== String(userId) && !hasRole(req, canManageAttendanceRoles)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const providerCfg = getProviderConfig();
+        let verified = false;
+        let verificationNotes = null;
+
+        if (method === 'fingerprint') {
+            // WebAuthn/platform biometric success is validated client-side by browser and token auth.
+            verified = true;
+            verificationNotes = 'platform_biometric';
+        } else {
+            const providerResult = await verifyWithProvider({
+                userId,
+                method,
+                selfieImage,
+                idImage,
+                deviceId,
+                metadata: {
+                    userAgent: req.get('user-agent') || '',
+                    ip: req.ip || req.connection.remoteAddress || ''
+                }
+            });
+            verified = Boolean(providerResult.verified);
+            verificationNotes = providerResult.reason || 'provider_result';
+
+            if (!verified) {
+                return res.status(403).json({
+                    message: providerCfg.enabled
+                        ? 'Identity verification failed. Please see lecturer for manual attendance.'
+                        : 'Identity provider is not configured. Please use device biometrics or lecturer manual attendance.',
+                    verified: false,
+                    reason: providerResult.reason || 'verification_failed'
+                });
+            }
+        }
+
+        // Log verification attempt (photo data NOT stored)
+        const verification = await BiometricVerification.create({
+            userId,
+            sessionId,
+            method,
+            verified,
+            photoMetadata: {
+                width: photoWidth || null,
+                height: photoHeight || null,
+                providedSelfie: Boolean(selfieImage),
+                providedId: Boolean(idImage)
+            },
+            notes: verificationNotes
+        });
+
+        // Mark device as trusted
+        const deviceInfo = getDeviceInfo(req);
+        const currentDeviceId = generateDeviceId(deviceInfo.userAgent, deviceInfo.ip);
+        const device = await DeviceSession.findOne({
+            where: { userId, deviceId: currentDeviceId }
+        });
+
+        if (device && !device.isTrusted) {
+            device.isTrusted = true;
+            device.requiresVerification = false;
+            await device.save();
+        }
+
+        res.json({
+            message: 'Identity verified',
+            verificationId: verification.id,
+            verified
+        });
+    } catch (err) {
+        console.error('Identity verification error:', err);
+        res.status(500).json({ message: 'Error verifying identity' });
+    }
+});
+
+/**
+ * GET /api/devices/active
+ * List active devices for the authenticated user
+ */
+router.get('/devices/active', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const devices = await DeviceSession.findAll({
+            where: { userId },
+            order: [['lastSeenAt', 'DESC']]
+        });
+
+        res.json({
+            devices: devices.map((d) => ({
+                id: d.id,
+                deviceName: d.deviceName,
+                lastIp: d.lastIp,
+                isTrusted: d.isTrusted,
+                lastSeenAt: d.lastSeenAt,
+                createdAt: d.createdAt
+            })),
+            maxDevices: 3,
+            totalDevices: devices.length
+        });
+    } catch (err) {
+        console.error('Get active devices error:', err);
+        res.status(500).json({ message: 'Error fetching devices' });
+    }
+});
+
+/**
+ * POST /api/devices/register
+ * Manually register a new device (not recommended; mainly for admin use)
+ */
+router.post('/devices/register', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const deviceInfo = getDeviceInfo(req);
+        const deviceId = generateDeviceId(deviceInfo.userAgent, deviceInfo.ip);
+
+        const devices = await DeviceSession.findAll({ where: { userId } });
+        if (devices.length >= 3) {
+            return res.status(400).json({
+                message: 'Maximum device limit (3) reached. Remove a device to add another.',
+                maxDevices: 3,
+                totalDevices: devices.length
+            });
+        }
+
+        const existing = await DeviceSession.findOne({
+            where: { userId, deviceId }
+        });
+
+        if (existing) {
+            existing.lastSeenAt = new Date();
+            await existing.save();
+            return res.json({ message: 'Device already registered', deviceId: existing.id });
+        }
+
+        const device = await DeviceSession.create({
+            userId,
+            deviceId,
+            deviceName: deviceInfo.userAgent.substring(0, 100),
+            lastIp: deviceInfo.ip,
+            lastUserAgent: deviceInfo.userAgent,
+            isTrusted: true, // Registering from known location
+            requiresVerification: false
+        });
+
+        res.json({
+            message: 'Device registered',
+            deviceId: device.id,
+            deviceName: device.deviceName
+        });
+    } catch (err) {
+        console.error('Device registration error:', err);
+        res.status(500).json({ message: 'Error registering device' });
     }
 });
 

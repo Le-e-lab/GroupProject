@@ -6,6 +6,23 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 router.use(authMiddleware);
 
+const CLASS_CACHE_TTL_MS = 60 * 1000;
+const classCache = new Map();
+
+function getCache(key) {
+    const entry = classCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.ts > CLASS_CACHE_TTL_MS) {
+        classCache.delete(key);
+        return null;
+    }
+    return entry.value;
+}
+
+function setCache(key, value) {
+    classCache.set(key, { ts: Date.now(), value });
+}
+
 /**
  * GET /api/classes
  * Retrieve all available classes
@@ -13,6 +30,11 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
     try {
         const { year, program, day } = req.query; // Added 'day' to destructuring
+        const cacheKey = `all:${year || ''}:${program || ''}:${day || ''}`;
+        const cached = getCache(cacheKey);
+        if (cached) {
+            return res.json(cached);
+        }
         
         const whereClause = {};
 
@@ -37,7 +59,23 @@ router.get('/', async (req, res) => {
             whereClause.Day = day;
         }
 
-        const classes = await Class.findAll({ where: whereClause });
+        const classes = await Class.findAll({
+            where: whereClause,
+            raw: true,
+            attributes: [
+                'Course_Code',
+                'Course_Name',
+                'Year_Semester',
+                'Day',
+                'From_Time',
+                'To_Time',
+                'Venue',
+                'Lecturer',
+                'LecturerId',
+                'Program',
+                'College'
+            ]
+        });
         
         // CRITICAL FIX: Filter to only valid weekdays (DB has corrupted Day values)
         const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -64,10 +102,12 @@ router.get('/', async (req, res) => {
             time: `${c.From_Time} - ${c.To_Time}`,
             room: c.Venue,
             lecturerName: c.Lecturer,
+            lecturerId: c.LecturerId || null,
             program: c.Program,
             college: c.College
         }));
 
+        setCache(cacheKey, formatted);
         res.json(formatted);
 
     } catch (err) {
@@ -83,6 +123,11 @@ router.get('/', async (req, res) => {
 router.get('/lecturer/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const cacheKey = `lecturer:${id}`;
+        const cached = getCache(cacheKey);
+        if (cached) {
+            return res.json(cached);
+        }
         
         // 1. Get Lecturer Name from User Table
         const lecturerUser = await User.findByPk(id);
@@ -92,17 +137,48 @@ router.get('/lecturer/:id', async (req, res) => {
         
         console.log(`Fetching classes for lecturer: ${lecturerUser.fullName} (${id})`);
 
-        // Search by LecturerId (Robust) OR fallback to Fuzzy Name (Legacy support)
-        const classes = await Class.findAll({
+        // Merge strict LecturerId matches with fuzzy name matches to handle partially migrated timetable rows.
+        const surname = lecturerUser.fullName ? lecturerUser.fullName.split(' ').pop() : '';
+        const byId = await Class.findAll({
+            where: { LecturerId: id },
+            raw: true,
+            attributes: [
+                'Course_Code',
+                'Course_Name',
+                'Year_Semester',
+                'Day',
+                'From_Time',
+                'To_Time',
+                'Venue',
+                'Lecturer',
+                'LecturerId',
+                'Program',
+                'College'
+            ]
+        });
+        const byName = await Class.findAll({
             where: {
                 [Op.or]: [
-                    { LecturerId: id },
-                    { Lecturer: { [Op.like]: `%${lecturerUser.fullName}%` } }, // Full name match
-                    // Try matching just the surname if full name fails (e.g. "Mr. Makambwa" vs "B. Makambwa")
-                    { Lecturer: { [Op.like]: `%${lecturerUser.fullName.split(' ').pop()}%` } } 
+                    { Lecturer: { [Op.like]: `%${lecturerUser.fullName || ''}%` } },
+                    { Lecturer: { [Op.like]: `%${surname}%` } }
                 ]
-            }
+            },
+            raw: true,
+            attributes: [
+                'Course_Code',
+                'Course_Name',
+                'Year_Semester',
+                'Day',
+                'From_Time',
+                'To_Time',
+                'Venue',
+                'Lecturer',
+                'LecturerId',
+                'Program',
+                'College'
+            ]
         });
+        const classes = [...byId, ...byName];
         
         // Deduplicate: The OR query can return the same row multiple times
         // if multiple conditions match (e.g. full name AND surname both match)
@@ -124,10 +200,12 @@ router.get('/lecturer/:id', async (req, res) => {
             time: `${c.From_Time} - ${c.To_Time}`,
             room: c.Venue,
             lecturerName: c.Lecturer,
+            lecturerId: c.LecturerId || null,
             program: c.Program,
             college: c.College
         }));
 
+        setCache(cacheKey, formatted);
         res.json(formatted);
     } catch (err) {
         console.error("Error fetching lecturer classes:", err);
@@ -151,6 +229,21 @@ router.post('/', async (req, res) => {
         if (!fromTime || !toTime) {
             return res.status(400).json({ message: 'Time must be in "HH:MM - HH:MM" format' });
         }
+
+        const duplicate = await Class.findOne({
+            where: {
+                Course_Code: code,
+                Day: day,
+                From_Time: fromTime,
+                Program: program || (String(code).substring(0, 4) || ''),
+                Year_Semester: `Y${year || 2}S1`,
+                Section: section || '1'
+            }
+        });
+
+        if (duplicate) {
+            return res.status(409).json({ message: 'A class entry for this course/day/time already exists.' });
+        }
         
         const newClass = await Class.create({
             Course_Code: code,
@@ -166,6 +259,8 @@ router.post('/', async (req, res) => {
             Section: section || '1',
             College: college || 'Computing'
         });
+
+        classCache.clear();
 
         res.json({ message: 'Class created', class: newClass });
     } catch (err) {
@@ -213,6 +308,8 @@ router.put('/:id', async (req, res) => {
         if (room) classObj.Venue = room;
 
         await classObj.save();
+
+        classCache.clear();
 
         res.json({ message: 'Class updated', class: classObj });
     } catch (err) {

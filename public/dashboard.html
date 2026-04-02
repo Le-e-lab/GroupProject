@@ -318,20 +318,10 @@
         .today-classes {
           grid-template-columns: 1fr;
         }
-        .navbar-nav {
-          display: flex;
-          overflow-x: auto;
-          white-space: nowrap;
-          padding-bottom: 5px; /* Prevent scrollbar clipping */
-        }
-        /* Hide scrollbar for cleaner look but keep scrolling functional */
-        .navbar-nav::-webkit-scrollbar {
-          display: none;
-        }
       }
     </style>
   </head>
-  <body>
+  <body data-ai-context="student-dashboard">
     <nav class="navbar">
       <a href="/dashboard.html" class="navbar-brand">
         <div class="navbar-logo">U</div>
@@ -339,10 +329,10 @@
         <span class="navbar-role" id="navbarRole">Student</span>
       </a>
       <div class="navbar-nav">
-        <a href="/dashboard.html" class="navbar-link active">Overview</a>
-        <a href="/pages/student/schedule.html" class="navbar-link">Classes</a>
-        <a href="/pages/student/reports.html" class="navbar-link">Attendance</a>
-        <a href="/pages/student/map.html" class="navbar-link">Map</a>
+        <a href="/dashboard.html" class="navbar-link active" data-i18n="nav.overview">Overview</a>
+        <a href="/pages/student/schedule.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
+        <a href="/pages/student/reports.html" class="navbar-link" data-i18n="nav.attendance">Attendance</a>
+        <a href="/pages/student/map.html" class="navbar-link" data-i18n="nav.map">Map</a>
       </div>
       <div class="navbar-actions" style="display: flex; align-items: center; gap: 16px;">
         <!-- New Notification Bell Icon -->
@@ -452,29 +442,31 @@
         </div>
 
         <!-- Quick Actions -->
-        <div class="section-title">Quick Actions</div>
+        <div class="section-title" data-i18n="dashboard.quickActions">Quick Actions</div>
         <div class="quick-actions">
           <a href="/pages/student/schedule.html" class="quick-action">
             <div class="quick-action-icon">SC</div>
-            <div class="quick-action-text">View Schedule</div>
+            <div class="quick-action-text" data-i18n="dashboard.viewSchedule">View Schedule</div>
           </a>
           <a href="/pages/student/reports.html" class="quick-action">
             <div class="quick-action-icon">RE</div>
-            <div class="quick-action-text">My Reports</div>
+            <div class="quick-action-text" data-i18n="dashboard.myReports">My Reports</div>
           </a>
           <a href="/pages/student/map.html" class="quick-action">
             <div class="quick-action-icon">📍</div>
-            <div class="quick-action-text">Campus Map</div>
+            <div class="quick-action-text" data-i18n="map.title">Campus Map</div>
           </a>
           <a href="/pages/student/profile.html" class="quick-action">
             <div class="quick-action-icon">PR</div>
-            <div class="quick-action-text">My Profile</div>
+            <div class="quick-action-text" data-i18n="profile.title">My Profile</div>
           </a>
         </div>
       </div>
     </main>
 
     <script src="js/api.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/ai-assistant.js?v=3"></script>
     <script>
       const dayNames = [
         "Sunday",
@@ -486,6 +478,26 @@
         "Saturday",
       ];
       let userYear = 2; // Default to Y2
+      window.AI_ASSISTANT_CONTEXT = { page: 'student-dashboard' };
+
+      function updateStudentAssistantContext(patch) {
+        window.AI_ASSISTANT_CONTEXT = {
+          ...(window.AI_ASSISTANT_CONTEXT || { page: 'student-dashboard' }),
+          page: 'student-dashboard',
+          ...(patch || {})
+        };
+      }
+
+      function t(key, fallback) {
+        return (window.I18N && typeof I18N.t === 'function') ? I18N.t(key) : fallback;
+      }
+
+      function currentLocale() {
+        const lang = (window.I18N && typeof I18N.currentLanguage === 'function') ? I18N.currentLanguage() : 'en';
+        if (lang === 'fr') return 'fr-FR';
+        if (lang === 'pt') return 'pt-PT';
+        return 'en-US';
+      }
 
       /**
        * LOAD USER DATA (Critical Path)
@@ -556,7 +568,7 @@
             ? user.fullName.split(" ")[0]
             : "Student";
           document.getElementById("welcomeTitle").textContent =
-            `Welcome back, ${firstName}`;
+            `${t('dashboard.welcome', 'Welcome back')}, ${firstName}`;
 
           if (user.fullName) {
             const initials = user.fullName
@@ -589,6 +601,16 @@
             "Year:",
             userYear,
           );
+
+          updateStudentAssistantContext({
+            studentId: user.id,
+            fullName: user.fullName || '',
+            year: userYear,
+            program: user.program || '',
+            college: user.college || '',
+            department: user.department || '',
+            preferredLanguage: user.language || (window.I18N ? I18N.currentLanguage() : 'en')
+          });
 
           // Update Role Badge and add Rep Console button if user is a student_rep
           if (user.role === 'student_rep') {
@@ -623,7 +645,7 @@
           day: "numeric",
         };
         document.getElementById("dateDisplay").textContent =
-          now.toLocaleDateString("en-US", options);
+          now.toLocaleDateString(currentLocale(), options);
       }
 
       async function loadTodayClasses() {
@@ -681,6 +703,20 @@
         // Render classes
         const container = document.getElementById("todayClasses");
 
+        updateStudentAssistantContext({
+          today: today,
+          classesTodayCount: todayClasses.length,
+          markedPresentCount: markedCount,
+          todayClasses: todayClasses.map((c) => ({
+            code: c.code,
+            name: c.name,
+            time: c.time,
+            room: c.room,
+            lecturerName: c.lecturerName,
+            year: c.year
+          }))
+        });
+
         if (todayClasses.length === 0) {
           // Try to find next classes
           let nextDay = "";
@@ -709,7 +745,7 @@
             });
 
             document.querySelector(".section-title").innerHTML = `
-                        Upcoming Classes (${nextDay})
+                  ${t('dashboard.upcomingClasses', 'Upcoming Classes')} (${nextDay})
                         <a href="/pages/student/schedule.html" class="section-link">View Full Schedule</a>
                     `;
 
@@ -734,8 +770,8 @@
           container.innerHTML = `
                     <div class="class-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                         <div style="font-size: 2rem; margin-bottom: 8px;">🎉</div>
-                        <div style="font-weight: 600; color: var(--text);">No Classes Today</div>
-                        <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Enjoy your free day!</div>
+                  <div style="font-weight: 600; color: var(--text);">${t('dashboard.noClassesToday', 'No Classes Today')}</div>
+                  <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">${t('dashboard.enjoyFreeDay', 'Enjoy your free day!')}</div>
                     </div>
                 `;
           return;
@@ -760,7 +796,7 @@
           html += `
                     <div class="class-card ${isCurrent ? "current" : ""}" style="${isPresent ? 'border-left: 4px solid #059669;' : ''}">
                         <div class="class-time">${c.time}
-                            ${isPresent ? '<span style="background:#059669; color:white; font-size:0.65rem; padding:3px 8px; border-radius:10px; margin-left:8px; font-weight:600;">✓ Present</span>' : ''}
+                    ${isPresent ? `<span style="background:#059669; color:white; font-size:0.65rem; padding:3px 8px; border-radius:10px; margin-left:8px; font-weight:600;">✓ ${t('dashboard.present', 'Present')}</span>` : ''}
                         </div>
                         <div class="class-name">${c.name}</div>
                         <div class="class-code">${c.code}</div>
@@ -851,8 +887,8 @@
           const minsUntil = (startHour - currentHour) * 60 - now.getMinutes();
           pills.push({
             notifId, color: '#F59E0B', bg: '#FFFBEB', icon: '📚',
-            title: `${c.name} starting soon`,
-            msg: `${c.room} • ${c.lecturerName} • In ~${Math.max(1, minsUntil)} min`
+            title: `${c.name} ${t('dashboard.startingSoon', 'starting soon')}`,
+            msg: `${c.room} • ${c.lecturerName} • ${t('dashboard.inApprox', 'In ~')}${Math.max(1, minsUntil)} ${t('dashboard.minutes', 'min')}`
           });
         });
 
@@ -928,6 +964,18 @@
               ? Math.round((totalPresent / totalSessions) * 100)
               : 0;
 
+          updateStudentAssistantContext({
+            overallAttendance: overallPct,
+            totalSessions,
+            totalPresent,
+            statsByCourse: courseList.map((c) => ({
+              code: c.code,
+              total: c.total || 0,
+              attended: c.attended || 0,
+              percentage: c.total ? Math.round(((c.attended || 0) / c.total) * 100) : 0
+            }))
+          });
+
           // Update UI - FIX: Use specific ID instead of generic class
           const val = document.getElementById("overallAttendance");
           if (val) val.textContent = overallPct + "%";
@@ -976,7 +1024,7 @@
        */
       function updateClock() {
         const now = new Date();
-        const timeStr = now.toLocaleTimeString("en-US", {
+        const timeStr = now.toLocaleTimeString(currentLocale(), {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",

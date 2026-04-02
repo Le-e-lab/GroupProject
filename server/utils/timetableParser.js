@@ -67,6 +67,27 @@ function normalizeTime(timeStr) {
         return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
     }
 
+    const amPmMatch = trimmed.match(/^([0-2]?\d)(?:\s*[:.]\s*([0-5]\d))?\s*(am|pm)$/i);
+    if (amPmMatch) {
+        let hour = parseInt(amPmMatch[1], 10);
+        const minute = amPmMatch[2] ? parseInt(amPmMatch[2], 10) : 0;
+        const suffix = amPmMatch[3].toLowerCase();
+        if (suffix === 'pm' && hour < 12) hour += 12;
+        if (suffix === 'am' && hour === 12) hour = 0;
+        return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+
+    const hourMatch = trimmed.match(/^([0-2]?\d)(?:\s*[:.]\s*00)?$/);
+    if (hourMatch) {
+        let hour = parseInt(hourMatch[1], 10);
+        if (Number.isInteger(hour) && hour >= 0 && hour <= 23) {
+            if (hour < 8 && hour !== 0) {
+                hour += 12;
+            }
+            return `${String(hour).padStart(2, '0')}:00`;
+        }
+    }
+
     const n = Number(trimmed);
     if (!Number.isNaN(n) && n > 0 && n < 1) {
         const totalMinutes = Math.round(n * 24 * 60);
@@ -79,82 +100,173 @@ function normalizeTime(timeStr) {
     return trimmed;
 }
 
-function validateRow(row, normalizedHeaders, rowNumber) {
+function cellText(value) {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') {
+        if (value.text !== undefined && value.text !== null) return String(value.text).trim();
+        if (value.result !== undefined && value.result !== null) return String(value.result).trim();
+        if (Array.isArray(value.richText)) return value.richText.map((part) => part.text || '').join('').trim();
+    }
+    return String(value).trim();
+}
+
+function isBlankRow(values) {
+    return !values.some((v) => cellText(v) !== '');
+}
+
+function canonicalRowFromValues(values, headerMap, context, rowNumber, sheetName) {
+    const get = (key) => {
+        const index = headerMap[key];
+        return index !== undefined ? cellText(values[index + 1]) : '';
+    };
+
+    return {
+        rowNumber,
+        sheetName,
+        course_code: get('course_code'),
+        course_name: get('course_name'),
+        section: get('section'),
+        day: get('day'),
+        from_time: get('from_time'),
+        to_time: get('to_time'),
+        venue: get('venue'),
+        lecturer: get('lecturer'),
+        lecturerid: get('lecturerid'),
+        college: get('college') || context.college || sheetName,
+        department: get('department') || context.department || '',
+        program: get('program') || context.program || '',
+        year_semester: get('year_semester') || context.year_semester || '',
+        college_covered: get('college_covered')
+    };
+}
+
+function createContext(sheetName) {
+    const normalizedSheet = String(sheetName || '').trim();
+    return {
+        college: normalizedSheet === 'University Wide Courses' ? 'ALL' : normalizedSheet,
+        department: '',
+        program: normalizedSheet === 'University Wide Courses' ? 'ALL' : '',
+        year_semester: ''
+    };
+}
+
+function updateContextFromLine(context, line, sheetName) {
+    const text = String(line || '').trim();
+    if (!text) return;
+
+    if (!context.college || context.college === sheetName) {
+        if (/\bCOLLEGE OF\b/i.test(text) || /\bSCHOOL OF\b/i.test(text) || /\bINTENSIVE ENGLISH\b/i.test(text) || /\bUNIVERSITY WIDE COURSES\b/i.test(text)) {
+            context.college = text;
+        }
+    }
+
+    if (!context.department && /\bDEPARTMENT OF\b/i.test(text)) {
+        context.department = text;
+    }
+
+    if (!context.program && /(BACHELOR|MASTER|DIPLOMA|HONOURS|HONORS|CERTIFICATE|BSC|MSC|LLB|LLBS|INTENSIVE ENGLISH)/i.test(text) && !/COLLEGE OF|DEPARTMENT OF/i.test(text)) {
+        context.program = text;
+    }
+
+    const yearMatch = text.match(/Y\s*(\d)\s*S\s*(\d)/i);
+    if (yearMatch) {
+        context.year_semester = `Y${yearMatch[1]} S${yearMatch[2]}`;
+    }
+}
+
+function normalizeHeaderName(name) {
+    return canonicalHeader(name)
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '');
+}
+
+function buildHeaderMap(rowValues) {
+    const map = {};
+    rowValues.forEach((value, index) => {
+        const key = normalizeHeaderName(value);
+        if (key) {
+            map[key] = index;
+        }
+    });
+    return map;
+}
+
+function looksLikeTableHeader(rowValues) {
+    const map = buildHeaderMap(rowValues);
+    return ['course_code', 'course_name', 'day', 'from_time', 'to_time'].every((key) => Object.prototype.hasOwnProperty.call(map, key));
+}
+
+function validateRawData(rawData, rowNumber) {
     const errors = [];
     const data = {};
-    const rawData = {};
 
-    Object.entries(normalizedHeaders).forEach(([normalized, original]) => {
-        rawData[normalized] = row[original] !== undefined ? String(row[original]).trim() : '';
-    });
+    const courseCode = String(rawData.course_code || '').trim();
+    const courseName = String(rawData.course_name || '').trim();
+    const day = String(rawData.day || '').trim();
+    const fromTime = normalizeTime(rawData.from_time || '');
+    const toTime = normalizeTime(rawData.to_time || '');
 
-    if (!rawData.course_code) {
+    if (!courseCode) {
         errors.push('Course Code is required and cannot be empty');
-    } else if (rawData.course_code.length > CONSTRAINTS.maxCourseCodeLength) {
+    } else if (courseCode.length > CONSTRAINTS.maxCourseCodeLength) {
         errors.push(`Course Code exceeds maximum length of ${CONSTRAINTS.maxCourseCodeLength}`);
     } else {
-        data.Course_Code = sanitizeInput(rawData.course_code);
+        data.Course_Code = sanitizeInput(courseCode);
     }
 
-    if (!rawData.course_name) {
+    if (!courseName) {
         errors.push('Course Name is required and cannot be empty');
-    } else if (rawData.course_name.length > CONSTRAINTS.maxCourseNameLength) {
+    } else if (courseName.length > CONSTRAINTS.maxCourseNameLength) {
         errors.push(`Course Name exceeds maximum length of ${CONSTRAINTS.maxCourseNameLength}`);
     } else {
-        data.Course_Name = sanitizeInput(rawData.course_name);
+        data.Course_Name = sanitizeInput(courseName);
     }
 
-    if (!rawData.day) {
+    if (!day) {
         errors.push('Day is required and cannot be empty');
-    } else if (!VALID_DAYS.some((d) => d.toLowerCase() === rawData.day.toLowerCase())) {
-        errors.push(`Invalid day: "${rawData.day}". Must be one of: ${VALID_DAYS.join(', ')}`);
+    } else if (!VALID_DAYS.some((d) => d.toLowerCase() === day.toLowerCase())) {
+        errors.push(`Invalid day: "${day}". Must be one of: ${VALID_DAYS.join(', ')}`);
     } else {
-        data.Day = VALID_DAYS.find((d) => d.toLowerCase() === rawData.day.toLowerCase());
+        data.Day = VALID_DAYS.find((d) => d.toLowerCase() === day.toLowerCase());
     }
 
-    if (!rawData.from_time) {
+    if (!fromTime) {
         errors.push('From_Time (Start Time) is required and cannot be empty');
+    } else if (!isValidTimeFormat(fromTime)) {
+        errors.push(`Invalid From_Time format: "${rawData.from_time}". Use HH:MM (e.g., "09:00")`);
     } else {
-        const from = normalizeTime(rawData.from_time);
-        if (!isValidTimeFormat(from)) {
-            errors.push(`Invalid From_Time format: "${rawData.from_time}". Use HH:MM (e.g., "09:00")`);
-        } else {
-            data.From_Time = from;
-        }
+        data.From_Time = fromTime;
     }
 
-    if (!rawData.to_time) {
+    if (!toTime) {
         errors.push('To_Time (End Time) is required and cannot be empty');
+    } else if (!isValidTimeFormat(toTime)) {
+        errors.push(`Invalid To_Time format: "${rawData.to_time}". Use HH:MM (e.g., "10:00")`);
     } else {
-        const to = normalizeTime(rawData.to_time);
-        if (!isValidTimeFormat(to)) {
-            errors.push(`Invalid To_Time format: "${rawData.to_time}". Use HH:MM (e.g., "10:00")`);
-        } else {
-            data.To_Time = to;
-        }
+        data.To_Time = toTime;
     }
 
     if (data.From_Time && data.To_Time && data.From_Time >= data.To_Time) {
         errors.push(`From_Time (${data.From_Time}) must be before To_Time (${data.To_Time})`);
     }
 
-    data.College = rawData.college ? sanitizeInput(rawData.college.slice(0, 100)) : '';
-    data.Department = rawData.department ? sanitizeInput(rawData.department.slice(0, 100)) : '';
-    data.Program = rawData.program ? sanitizeInput(rawData.program.slice(0, 100)) : '';
-    data.Year_Semester = rawData.year_semester ? sanitizeInput(rawData.year_semester.slice(0, 50)) : '';
-    data.Section = rawData.section ? sanitizeInput(rawData.section.slice(0, 20)) : '';
+    data.College = rawData.college ? sanitizeInput(String(rawData.college).slice(0, 100)) : '';
+    data.Department = rawData.department ? sanitizeInput(String(rawData.department).slice(0, 100)) : '';
+    data.Program = rawData.program ? sanitizeInput(String(rawData.program).slice(0, 100)) : '';
+    data.Year_Semester = rawData.year_semester ? sanitizeInput(String(rawData.year_semester).slice(0, 50)) : '';
+    data.Section = rawData.section ? sanitizeInput(String(rawData.section).slice(0, 20)) : '';
 
-    if (rawData.venue && rawData.venue.length > CONSTRAINTS.maxVenueLength) {
+    if (rawData.venue && String(rawData.venue).length > CONSTRAINTS.maxVenueLength) {
         errors.push(`Venue exceeds maximum length of ${CONSTRAINTS.maxVenueLength}`);
     }
-    data.Venue = rawData.venue ? sanitizeInput(rawData.venue.slice(0, CONSTRAINTS.maxVenueLength)) : 'TBD';
+    data.Venue = rawData.venue ? sanitizeInput(String(rawData.venue).slice(0, CONSTRAINTS.maxVenueLength)) : 'TBD';
 
-    if (rawData.lecturer && rawData.lecturer.length > CONSTRAINTS.maxLecturerNameLength) {
+    if (rawData.lecturer && String(rawData.lecturer).length > CONSTRAINTS.maxLecturerNameLength) {
         errors.push(`Lecturer name exceeds maximum length of ${CONSTRAINTS.maxLecturerNameLength}`);
     }
-    data.Lecturer = rawData.lecturer ? sanitizeInput(rawData.lecturer.slice(0, CONSTRAINTS.maxLecturerNameLength)) : '';
+    data.Lecturer = rawData.lecturer ? sanitizeInput(String(rawData.lecturer).slice(0, CONSTRAINTS.maxLecturerNameLength)) : '';
 
-    if (rawData.lecturerid && !/^[a-zA-Z0-9]{1,20}$/.test(rawData.lecturerid)) {
+    if (rawData.lecturerid && !/^[a-zA-Z0-9]{1,20}$/.test(String(rawData.lecturerid))) {
         errors.push(`Invalid LecturerId format: "${rawData.lecturerid}". Must be alphanumeric, max 20 characters`);
     }
     data.LecturerId = rawData.lecturerid || '';
@@ -162,32 +274,95 @@ function validateRow(row, normalizedHeaders, rowNumber) {
     return { data: errors.length ? null : data, errors, rowNumber };
 }
 
+function validateRow(row, normalizedHeaders, rowNumber) {
+    const rawData = {};
+
+    Object.entries(normalizedHeaders).forEach(([normalized, original]) => {
+        rawData[normalized] = row[original] !== undefined ? String(row[original]).trim() : '';
+    });
+
+    return validateRawData(rawData, rowNumber);
+}
+
+function validateCanonicalRow(row, rowNumber) {
+    return validateRawData({
+        course_code: row.course_code,
+        course_name: row.course_name,
+        section: row.section,
+        day: row.day,
+        from_time: row.from_time,
+        to_time: row.to_time,
+        venue: row.venue,
+        lecturer: row.lecturer,
+        lecturerid: row.lecturerid,
+        college: row.college,
+        department: row.department,
+        program: row.program,
+        year_semester: row.year_semester
+    }, rowNumber);
+}
+
 async function parseXlsx(buffer) {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(buffer);
-    const ws = wb.worksheets[0];
-    if (!ws) return [];
-
-    const headerRow = ws.getRow(1);
-    const headers = [];
-    headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
-        headers[colNumber - 1] = String(cell.value || '').trim();
-    });
-
     const rows = [];
-    ws.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return;
-        const obj = {};
-        let hasValue = false;
-        headers.forEach((h, idx) => {
-            const cell = row.getCell(idx + 1).value;
-            const raw = cell && typeof cell === 'object' && Object.prototype.hasOwnProperty.call(cell, 'text') ? cell.text : cell;
-            const val = raw === null || raw === undefined ? '' : String(raw).trim();
-            obj[h] = val;
-            if (val !== '') hasValue = true;
-        });
-        if (hasValue) rows.push(obj);
-    });
+    for (const ws of wb.worksheets) {
+        const maxRow = ws.actualRowCount || ws.rowCount || 0;
+        if (!maxRow) continue;
+
+        let activeHeaderMap = null;
+        let activeContext = createContext(ws.name);
+
+        for (let rowNumber = 1; rowNumber <= maxRow; rowNumber++) {
+            const row = ws.getRow(rowNumber);
+            const values = row.values || [];
+            const rowTexts = [];
+            for (let i = 1; i < values.length; i++) {
+                rowTexts.push(cellText(values[i]));
+            }
+
+            if (isBlankRow(values.slice(1))) {
+                continue;
+            }
+
+            if (looksLikeTableHeader(rowTexts)) {
+                activeHeaderMap = buildHeaderMap(rowTexts);
+                activeContext = createContext(ws.name);
+
+                for (let lookback = Math.max(1, rowNumber - 8); lookback < rowNumber; lookback++) {
+                    const prevValues = ws.getRow(lookback).values || [];
+                    const prevTexts = [];
+                    for (let i = 1; i < prevValues.length; i++) {
+                        const text = cellText(prevValues[i]);
+                        if (text) prevTexts.push(text);
+                    }
+                    updateContextFromLine(activeContext, prevTexts.join(' '), ws.name);
+                }
+
+                continue;
+            }
+
+            if (!activeHeaderMap) {
+                updateContextFromLine(activeContext, rowTexts.join(' '), ws.name);
+                continue;
+            }
+
+            const canonical = canonicalRowFromValues(values, activeHeaderMap, activeContext, rowNumber, ws.name);
+            const courseCodeLabel = String(canonical.course_code || '').toLowerCase();
+            const courseNameLabel = String(canonical.course_name || '').toLowerCase();
+            const dayLabel = String(canonical.day || '').toLowerCase();
+            const fromLabel = String(canonical.from_time || '').toLowerCase();
+            const toLabel = String(canonical.to_time || '').toLowerCase();
+
+            if (courseCodeLabel === 'course code' || courseCodeLabel === 'code') continue;
+            if (courseNameLabel === 'course name') continue;
+            if (dayLabel === 'day' || fromLabel === 'from' || toLabel === 'to') continue;
+
+            if (canonical.course_code && canonical.course_name && canonical.day && canonical.from_time && canonical.to_time) {
+                rows.push(canonical);
+            }
+        }
+    }
 
     return rows;
 }
@@ -234,23 +409,28 @@ async function parseFile(buffer, filename) {
             return { data: [], errors: [`File contains ${rows.length} rows. Maximum allowed: ${CONSTRAINTS.maxRowsPerUpload}`] };
         }
 
-        const firstRow = rows[0];
-        const normalizedHeaders = {};
-        Object.keys(firstRow).forEach((header) => {
-            const canonical = canonicalHeader(header);
-            if (!FORBIDDEN_KEYS.has(canonical)) normalizedHeaders[canonical] = header;
-            else errors.push(`Unsafe header detected: "${header}"`);
-        });
+        let normalizedHeaders = null;
+        if (ext !== 'xlsx') {
+            const firstRow = rows[0];
+            normalizedHeaders = {};
+            Object.keys(firstRow).forEach((header) => {
+                const canonical = canonicalHeader(header);
+                if (!FORBIDDEN_KEYS.has(canonical)) normalizedHeaders[canonical] = header;
+                else errors.push(`Unsafe header detected: "${header}"`);
+            });
 
-        REQUIRED_COLUMNS.forEach((c) => {
-            if (!normalizedHeaders[c]) errors.push(`Missing required column: "${c}"`);
-        });
+            REQUIRED_COLUMNS.forEach((c) => {
+                if (!normalizedHeaders[c]) errors.push(`Missing required column: "${c}"`);
+            });
 
-        if (errors.length) return { data: [], errors };
+            if (errors.length) return { data: [], errors };
+        }
 
         const data = [];
         rows.forEach((row, index) => {
-            const validated = validateRow(row, normalizedHeaders, index + 2);
+            const validated = ext === 'xlsx'
+                ? validateCanonicalRow(row, row.rowNumber || index + 2)
+                : validateRow(row, normalizedHeaders, index + 2);
             if (validated.errors.length) {
                 validated.errors.forEach((err) => errors.push(`Row ${validated.rowNumber}: ${err}`));
             } else {

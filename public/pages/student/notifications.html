@@ -110,10 +110,10 @@
         <span class="navbar-role">Student</span>
       </a>
       <div class="navbar-nav">
-        <a href="../../dashboard.html" class="navbar-link">Overview</a>
-        <a href="schedule.html" class="navbar-link">Classes</a>
-        <a href="reports.html" class="navbar-link">Attendance</a>
-        <a href="map.html" class="navbar-link">Map</a>
+        <a href="../../dashboard.html" class="navbar-link" data-i18n="nav.overview">Overview</a>
+        <a href="schedule.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
+        <a href="reports.html" class="navbar-link" data-i18n="nav.attendance">Attendance</a>
+        <a href="map.html" class="navbar-link" data-i18n="nav.map">Map</a>
       </div>
       <div class="navbar-actions" style="display: flex; align-items: center; gap: 16px;">
         <a href="notifications.html" style="text-decoration: none; position: relative; color: var(--primary); transition: color 0.2s;">
@@ -141,7 +141,10 @@
     </main>
 
     <script src="../../js/api.js?v=2"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
+        window.AI_ASSISTANT_CONTEXT = { page: 'student-notifications' };
         document.addEventListener('DOMContentLoaded', async () => {
             const userStr = sessionStorage.getItem('upath_user');
             if (!userStr) {

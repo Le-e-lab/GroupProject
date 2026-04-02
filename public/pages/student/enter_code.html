@@ -8,186 +8,660 @@
     <link rel="stylesheet" href="../../css/theme.css">
     <link rel="stylesheet" href="../../css/toast.css">
     <style>
+        body { background: var(--bg); }
+        .page-shell { min-height: 100vh; display: flex; flex-direction: column; }
         .code-container {
-            max-width: 400px;
-            margin: 40px auto;
-            text-align: center;
-            padding: 20px;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 28px 20px 48px;
+            display: grid;
+            gap: 20px;
         }
-        .code-input {
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 24px;
+        }
+        .panel-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+        .panel-title { font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0 0 6px; }
+        .panel-subtitle { margin: 0; color: var(--text-muted); }
+        .help-btn {
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .help-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .field-grid { display: grid; gap: 14px; }
+        .field label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+        .field select,
+        .field input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            font-family: inherit;
+            background: var(--surface);
+            color: var(--text);
+        }
+        .field input.code-input {
             font-size: 2.5rem;
             letter-spacing: 8px;
             text-align: center;
-            width: 100%;
-            padding: 16px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-lg);
-            margin-bottom: 24px;
             font-family: monospace;
-            font-weight: 700;
-            outline: none;
-            transition: all 0.2s;
+            font-weight: 800;
         }
-        .code-input:focus {
+        .field input:focus,
+        .field select:focus {
+            outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 4px var(--primary-light);
         }
-        .verify-btn {
-            width: 100%;
-            padding: 16px;
-            background: var(--primary);
-            color: white;
+        .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn-main {
+            flex: 1;
+            min-width: 180px;
+            padding: 14px 16px;
             border: none;
             border-radius: var(--radius-lg);
-            font-size: 1.1rem;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-secondary {
+            flex: 1;
+            min-width: 180px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
         }
-        .verify-btn:hover {
-            transform: translateY(-2px);
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+        .status {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: var(--radius-lg);
+            display: none;
+            font-weight: 600;
+        }
+        .status.info { display: block; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+        .status.success { display: block; background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+        .status.error { display: block; background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+        .status.warning { display: block; background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+        .class-list { display: grid; gap: 12px; }
+        .class-item {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg);
+        }
+        .class-item:hover, .class-item.active { border-color: var(--primary); background: var(--primary-light); }
+        .class-item strong { display: block; color: var(--text); margin-bottom: 4px; }
+        .class-item span { color: var(--text-muted); font-size: 0.9rem; }
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.72);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal.active { display: flex; }
+        .modal-card {
+            width: min(560px, 100%);
+            background: var(--surface);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 24px;
             box-shadow: var(--shadow-lg);
         }
-        .verify-btn:active {
-            transform: translateY(0);
+        .modal-card h2 { margin: 0 0 8px; }
+        .modal-card p { margin: 0 0 16px; color: var(--text-muted); }
+        .verification-options { display: grid; gap: 12px; }
+        .verification-options button {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
         }
-        .instruction {
-            color: var(--text-muted);
-            margin-bottom: 32px;
+        .verification-options button:hover { border-color: var(--primary); color: var(--primary); }
+        .camera-wrap { display: grid; gap: 12px; }
+        video { width: 100%; border-radius: 16px; background: #000; }
+        @media (max-width: 768px) {
+            .panel-header { flex-direction: column; }
+            .field input.code-input { font-size: 2rem; letter-spacing: 6px; }
+            .btn-main, .btn-secondary { min-width: 100%; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <a href="../../dashboard.html" class="navbar-brand">
-            <div class="navbar-logo">U</div>
-            <span class="navbar-title">UPath</span>
-        </a>
-        <div class="navbar-nav">
-            <a href="../../dashboard.html" class="navbar-link">Overview</a>
-            <a href="../../pages/student/schedule.html" class="navbar-link">Classes</a>
-            <a href="../../pages/student/enter_code.html" class="navbar-link active">Enter Code</a>
-        </div>
-    </nav>
+    <div class="page-shell">
+        <nav class="navbar">
+            <a href="../../dashboard.html" class="navbar-brand">
+                <div class="navbar-logo">U</div>
+                <span class="navbar-title">UPath</span>
+                <span class="navbar-role">Student</span>
+            </a>
+            <div class="navbar-nav">
+                <a href="../../dashboard.html" class="navbar-link" data-i18n="nav.overview">Overview</a>
+                <a href="schedule.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
+                <a href="reports.html" class="navbar-link" data-i18n="nav.attendance">Attendance</a>
+            </div>
+            <div class="navbar-actions">
+                <a href="profile.html" class="navbar-avatar" id="userAvatar">ST</a>
+            </div>
+        </nav>
 
-    <main class="page">
-        <div class="code-container">
-            <h1 class="page-title" style="margin-bottom: 8px;">Mark Attendance</h1>
-            <p class="instruction">Enter the 6-digit code provided by your lecturer to mark yourself present.</p>
-            
-            <input type="text" id="codeInput" class="code-input" placeholder="000000" maxlength="6" autofocus>
-            
-            <button class="verify-btn" onclick="submitCode()" id="submitBtn">Verify Code</button>
-            
-            <div id="statusMessage" style="margin-top: 24px; font-weight: 500;"></div>
+        <main class="code-container">
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h1 class="panel-title" data-i18n="attendance.markTitle">Mark Attendance</h1>
+                        <p class="panel-subtitle" data-i18n="attendance.markSubtitle">Choose a live class, then scan or enter the lecturer code.</p>
+                    </div>
+                    <button class="help-btn" type="button" onclick="openHelp()" data-i18n="help.button">Help</button>
+                </div>
+
+                <div class="field-grid">
+                    <div class="field">
+                        <label for="classSelect" data-i18n="attendance.liveClasses">Live Classes</label>
+                        <select id="classSelect"></select>
+                    </div>
+                    <div class="field">
+                        <label for="codeInput" data-i18n="attendance.enterCode">6-Digit Code</label>
+                        <input type="text" id="codeInput" class="code-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" autofocus>
+                    </div>
+                </div>
+
+                <div class="actions" style="margin-top: 18px;">
+                    <button class="btn-main" id="submitBtn" onclick="submitCode()" data-i18n="attendance.verify">Verify Code</button>
+                    <button class="btn-secondary" type="button" onclick="refreshLiveClasses()" data-i18n="attendance.refresh">Refresh Live Classes</button>
+                </div>
+
+                <div id="statusMessage" class="status"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header" style="margin-bottom: 16px;">
+                    <div>
+                        <h2 class="panel-title" style="font-size: 1.15rem; margin-bottom: 4px;" data-i18n="attendance.liveTitle">Current Live Classes</h2>
+                        <p class="panel-subtitle" data-i18n="attendance.liveSubtitle">Only classes that are running now or starting soon are shown here.</p>
+                    </div>
+                </div>
+                <div id="liveClassesList" class="class-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <div class="modal" id="verificationModal" aria-hidden="true">
+        <div class="modal-card">
+            <h2 data-i18n="attendance.verifyIdentity">Verify your identity</h2>
+            <p id="verificationCopy" data-i18n="attendance.verifyIdentityCopy">This device is not recognized. Use device biometrics first; if unavailable, use a live selfie and student ID check.</p>
+            <div class="verification-options">
+                <button type="button" onclick="promptBiometric()">👆 <span data-i18n="attendance.useBiometrics">Use biometrics on this phone</span></button>
+                <button type="button" onclick="promptSelfieVerification()">📸 <span data-i18n="attendance.useSelfie">Live selfie verification</span></button>
+                <button type="button" onclick="showManualFallback()">👨‍🏫 <span data-i18n="attendance.manualFallback">See lecturer for manual add</span></button>
+            </div>
         </div>
-    </main>
+    </div>
+
+    <div class="modal" id="cameraModal" aria-hidden="true">
+        <div class="modal-card">
+            <h2 id="cameraTitle">Capture live photo</h2>
+            <p id="cameraSubtitle">A live picture is used only for this verification step and is not stored.</p>
+            <div class="field" style="margin-bottom: 10px;">
+                <label for="cameraFacingSelect">Camera</label>
+                <select id="cameraFacingSelect" onchange="switchCameraFacing()">
+                    <option value="user">Front Camera</option>
+                    <option value="environment">Back Camera</option>
+                </select>
+            </div>
+            <div class="camera-wrap">
+                <video id="cameraStream" autoplay playsinline></video>
+                <div class="actions">
+                    <button class="btn-main" type="button" onclick="capturePhoto()">Capture</button>
+                    <button class="btn-secondary" type="button" onclick="closeCamera()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="../../js/api.js"></script>
     <script src="../../js/toast.js"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const preferredClassId = urlParams.get('class') || '';
+        const preferredAction = urlParams.get('action') || '';
+        const biometricKeyPrefix = 'upath_passkey_';
+
+        window.AI_ASSISTANT_CONTEXT = {
+            page: 'student-enter-code',
+            helpTopics: ['attendance', 'check-in', 'check-out', 'biometric verification', 'manual fallback']
+        };
+
+        let currentUser = null;
+        let liveClasses = [];
+        let selectedClassId = preferredClassId || '';
+        let pendingVerification = null;
+        let cameraStream = null;
+        let cameraMode = 'selfie';
+        let capturedSelfieImage = null;
+        let activeCameraFacing = 'user';
+
+        function setStatus(message, type = 'info') {
+            const msg = document.getElementById('statusMessage');
+            msg.className = `status ${type}`;
+            msg.textContent = message;
+            msg.style.display = 'block';
+        }
+
+        function currentLanguage() {
+            return window.I18N ? I18N.currentLanguage() : (navigator.language || 'en').slice(0, 2);
+        }
+
+        function t(key, fallback) {
+            return (window.I18N ? I18N.t(key) : null) || fallback || key;
+        }
+
+        function loadUser() {
+            const userStr = sessionStorage.getItem('upath_user');
+            if (!userStr) {
+                window.location.href = '../auth.html';
+                return null;
+            }
+
+            currentUser = JSON.parse(userStr);
+            if (currentUser.fullName) {
+                const initials = currentUser.fullName.split(' ').map((part) => part[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('userAvatar').textContent = initials;
+            }
+            window.AI_ASSISTANT_CONTEXT = {
+                page: 'student-enter-code',
+                studentId: currentUser.id,
+                preferredLanguage: currentUser.language || currentLanguage(),
+                helpTopics: ['attendance', 'check-in', 'check-out', 'biometric verification', 'manual fallback']
+            };
+            return currentUser;
+        }
+
+        function parseTimeToMinutes(value) {
+            const match = String(value || '').match(/(\d{1,2}):(\d{2})/);
+            if (!match) return null;
+            const hours = parseInt(match[1], 10);
+            const minutes = parseInt(match[2], 10);
+            return hours * 60 + minutes;
+        }
+
+        function decodeBase64Url(value) {
+            const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+            const padded = normalized + '==='.slice((normalized.length + 3) % 4);
+            const binary = atob(padded);
+            return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+        }
+
+        async function getTodayLiveClasses() {
+            if (!currentUser) return [];
+            const classes = await API.getClasses(currentUser.year || 1, currentUser.program || '');
+            const now = new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = days[now.getDay()];
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            return classes.filter((item) => {
+                if (item.day !== today) return false;
+                const [start, end] = String(item.time || '').split(' - ');
+                const startMinutes = parseTimeToMinutes(start);
+                const endMinutes = parseTimeToMinutes(end) || (startMinutes !== null ? startMinutes + 120 : null);
+                if (startMinutes === null) return false;
+                return currentMinutes >= (startMinutes - 60) && currentMinutes <= (endMinutes + 30);
+            });
+        }
+
+        function renderClasses(classes) {
+            const list = document.getElementById('liveClassesList');
+            const select = document.getElementById('classSelect');
+            list.innerHTML = '';
+            select.innerHTML = '';
+
+            if (!classes.length) {
+                const empty = document.createElement('div');
+                empty.className = 'class-item';
+                empty.innerHTML = `<strong>${t('attendance.noLive', 'No live classes right now')}</strong><span>${t('attendance.noLiveHint', 'Try again when class starts or select a class from your schedule.')}</span>`;
+                list.appendChild(empty);
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = t('attendance.noClassesOption', 'No live classes available');
+                select.appendChild(option);
+                return;
+            }
+
+            classes.forEach((item, index) => {
+                const option = document.createElement('option');
+                option.value = item.id || item.code;
+                option.textContent = `${item.code} - ${item.name} (${item.room})`;
+                select.appendChild(option);
+
+                const card = document.createElement('div');
+                card.className = `class-item${selectedClassId === item.code || (!selectedClassId && index === 0) ? ' active' : ''}`;
+                card.innerHTML = `<strong>${item.code} - ${item.name}</strong><span>${item.day} • ${item.time} • ${item.room}</span>`;
+                card.onclick = () => {
+                    selectedClassId = item.id || item.code;
+                    select.value = item.id || item.code;
+                    document.querySelectorAll('.class-item').forEach((node) => node.classList.remove('active'));
+                    card.classList.add('active');
+                };
+                list.appendChild(card);
+
+                if ((selectedClassId && selectedClassId === (item.id || item.code)) || (!selectedClassId && index === 0)) {
+                    select.value = item.id || item.code;
+                    selectedClassId = item.id || item.code;
+                }
+            });
+        }
+
+        async function refreshLiveClasses() {
+            try {
+                setStatus(t('attendance.loading', 'Loading live classes...'), 'info');
+                liveClasses = await getTodayLiveClasses();
+                renderClasses(liveClasses);
+                setStatus(liveClasses.length ? t('attendance.liveLoaded', 'Live classes loaded.') : t('attendance.noLive', 'No live classes right now.'), liveClasses.length ? 'success' : 'warning');
+            } catch (err) {
+                console.error(err);
+                setStatus(err.message || 'Unable to load live classes.', 'error');
+            }
+        }
+
         async function submitCode() {
             const code = document.getElementById('codeInput').value.trim();
             const btn = document.getElementById('submitBtn');
-            const msg = document.getElementById('statusMessage');
-            
-            if (code.length < 6) {
-                Toast.warning('Code must be 6 digits');
+            const classId = document.getElementById('classSelect').value || selectedClassId;
+
+            if (!classId) {
+                setStatus(t('attendance.selectClassFirst', 'Please choose a live class first.'), 'warning');
                 return;
             }
-            
-            btn.disabled = true;
-            btn.innerText = 'Verifying Location...';
-            msg.innerText = '';
-            
-            // --- SECURITY: Request Location (Just-in-Time) ---
-            let userLat = null;
-            let userLon = null;
 
-            try {
-                if (navigator.geolocation) {
-                    // One-shot location request
-                    const position = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, {
-                            enableHighAccuracy: true,
-                            timeout: 5000,
-                            maximumAge: 0
-                        });
-                    });
-                    userLat = position.coords.latitude;
-                    userLon = position.coords.longitude;
-                    btn.innerText = 'Verifying Code...';
-                } else {
-                    console.warn("Geolocation not supported");
-                    btn.innerText = 'Verifying Code...';
-                }
-            } catch (err) {
-                console.warn("Location access denied or failed", err);
-                // Location is OPTIONAL - continue without it
-                btn.innerText = 'Verifying Code...';
+            if (!/^[0-9]{6}$/.test(code)) {
+                setStatus(t('attendance.invalidCode', 'Enter a valid 6-digit code.'), 'warning');
+                return;
             }
 
+            btn.disabled = true;
+            btn.textContent = t('attendance.verifying', 'Verifying...');
+
             try {
-                const user = API.getCurrentUser();
-                const classes = await API.getTodayClasses(user.year || 2);
-                const now = new Date();
-                const currentHour = now.getHours();
-                
-                // Find potential live classes (current hour or just past)
-                const liveClasses = classes.filter(c => {
-                    const h = parseInt(c.time.split(':')[0]);
-                    return h === currentHour || h === currentHour - 1; 
-                });
-                
-                if (liveClasses.length === 0) {
-                     msg.innerText = "No classes seem to be live right now.";
-                     msg.style.color = "var(--warning)";
-                     btn.disabled = false;
-                     btn.innerText = 'Verify Code';
-                     return;
+                let result = await API.validateCheckInCode(classId, code);
+
+                if (result && result.message && /check-in is not currently open/i.test(result.message)) {
+                    result = await API.validateCheckOutCode(classId, code, result.attendanceId || null);
+                } else if (result && result.message && /check-out is not currently open/i.test(result.message)) {
+                    result = await API.validateCheckInCode(classId, code);
                 }
-                
-                let success = false;
-                
-                // Try code on all live classes
-                for (const c of liveClasses) {
-                    // PASS LOCATION DATA
-                    const res = await API.validateSessionCode(c.id, code, userLat, userLon);
-                    
-                    if (res && res.message && (res.message.includes('success') || res.message.includes('Marked'))) {
-                        success = true;
-                        if (typeof Toast !== 'undefined') Toast.success(`Marked Present for ${c.name}`);
-                        msg.innerText = `Success! Marked present for ${c.name}`;
-                        msg.style.color = "var(--success)";
-                        document.getElementById('codeInput').value = '';
-                        setTimeout(() => window.location.href = '../../dashboard.html', 1500);
-                        break;
-                    } else if (res && res.message && res.message.includes('Location')) {
-                         // Specific location error
-                         msg.innerText = res.message;
-                         msg.style.color = "var(--danger)";
-                         if (typeof Toast !== 'undefined') Toast.error(res.message);
-                         success = true; // Stop loop but show error
-                         break;
-                    }
+
+                if (result && result.requiresVerification) {
+                    pendingVerification = {
+                        classId,
+                        code,
+                        nextStep: result.nextStep || 'verify_identity',
+                        attendanceId: result.attendanceId || null,
+                        deviceId: result.deviceId || null
+                    };
+                    openVerificationModal();
+                    setStatus(t('attendance.verifyRequired', 'This device needs identity verification before continuing.'), 'warning');
+                    return;
                 }
-                
-                if (!success) {
-                    if (!msg.innerText) {
-                        Toast.error("Invalid Code or Class not active.");
-                        msg.innerText = "Invalid Code";
-                        msg.style.color = "var(--danger)";
-                    }
+
+                const successMessage = result && result.message
+                    && /(check-in recorded|attendance successfully recorded|attendance already completed)/i.test(result.message);
+
+                if (result && (result.success || successMessage)) {
+                    setStatus(result.message || t('attendance.success', 'Attendance recorded successfully.'), 'success');
+                    document.getElementById('codeInput').value = '';
+                    setTimeout(() => window.location.href = '../../dashboard.html', 1500);
+                    return;
                 }
-                
-            } catch (e) {
-                console.error(e);
-                Toast.error("Error verifying code");
+
+                setStatus((result && result.message) || t('attendance.invalidOrExpired', 'Invalid or expired code.'), 'error');
+            } catch (err) {
+                console.error(err);
+                setStatus(err.message || 'Verification failed.', 'error');
             } finally {
                 btn.disabled = false;
-                if (btn.innerText !== 'Verify Code') btn.innerText = 'Verify Code';
+                btn.textContent = t('attendance.verify', 'Verify Code');
             }
         }
+
+        function openVerificationModal() {
+            const modal = document.getElementById('verificationModal');
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeVerificationModal() {
+            const modal = document.getElementById('verificationModal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function showManualFallback() {
+            closeVerificationModal();
+            setStatus(t('attendance.manualFallbackInfo', 'Please see the lecturer so they can add you manually.'), 'warning');
+        }
+
+        async function promptBiometric() {
+            if (!window.PublicKeyCredential || !navigator.credentials || !window.crypto || !crypto.getRandomValues) {
+                return promptSelfieVerification();
+            }
+
+            try {
+                const credentialKey = `${biometricKeyPrefix}${currentUser.id}`;
+                const storedId = localStorage.getItem(credentialKey);
+                const challenge = crypto.getRandomValues(new Uint8Array(32));
+
+                if (!storedId) {
+                    const userIdBytes = new TextEncoder().encode(String(currentUser.id));
+                    const created = await navigator.credentials.create({
+                        publicKey: {
+                            challenge,
+                            rp: { name: 'UPath' },
+                            user: {
+                                id: userIdBytes,
+                                name: currentUser.email || String(currentUser.id),
+                                displayName: currentUser.fullName || 'Student'
+                            },
+                            pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+                            authenticatorSelection: {
+                                authenticatorAttachment: 'platform',
+                                userVerification: 'required',
+                                residentKey: 'preferred'
+                            },
+                            timeout: 60000,
+                            attestation: 'none'
+                        }
+                    });
+
+                    if (created && created.id) {
+                        localStorage.setItem(credentialKey, created.id);
+                    }
+                } else {
+                    const allowCredentialId = decodeBase64Url(storedId);
+                    await navigator.credentials.get({
+                        publicKey: {
+                            challenge,
+                            allowCredentials: [{ type: 'public-key', id: allowCredentialId, transports: ['internal'] }],
+                            userVerification: 'required',
+                            timeout: 60000
+                        }
+                    });
+                }
+
+                await completeIdentityVerification('fingerprint');
+            } catch (err) {
+                console.warn('Biometric verification failed:', err);
+                promptSelfieVerification();
+            }
+        }
+
+        async function promptSelfieVerification() {
+            closeVerificationModal();
+            cameraMode = 'selfie';
+            capturedSelfieImage = null;
+            document.getElementById('cameraTitle').textContent = t('attendance.selfieTitle', 'Capture a live selfie');
+            document.getElementById('cameraSubtitle').textContent = t('attendance.selfieSubtitle', 'The live image is used only for this verification step and is not saved.');
+            document.getElementById('cameraFacingSelect').value = 'user';
+            activeCameraFacing = 'user';
+            await openCamera();
+        }
+
+        async function switchCameraFacing() {
+            activeCameraFacing = document.getElementById('cameraFacingSelect').value || 'user';
+            if (document.getElementById('cameraModal').classList.contains('active')) {
+                await openCamera();
+            }
+        }
+
+        async function openCamera() {
+            try {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach((track) => track.stop());
+                    cameraStream = null;
+                }
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: activeCameraFacing }, audio: false });
+                const video = document.getElementById('cameraStream');
+                video.srcObject = cameraStream;
+                document.getElementById('cameraModal').classList.add('active');
+                document.getElementById('cameraModal').setAttribute('aria-hidden', 'false');
+            } catch (err) {
+                console.warn('Camera unavailable:', err);
+                setStatus(t('attendance.cameraUnavailable', 'Camera access is unavailable on this device.'), 'warning');
+                showManualFallback();
+            }
+        }
+
+        function closeCamera() {
+            const modal = document.getElementById('cameraModal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            const video = document.getElementById('cameraStream');
+            if (video) video.srcObject = null;
+            if (cameraStream) {
+                cameraStream.getTracks().forEach((track) => track.stop());
+                cameraStream = null;
+            }
+        }
+
+        async function capturePhoto() {
+            const video = document.getElementById('cameraStream');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const width = canvas.width;
+            const height = canvas.height;
+            const imageBase64 = canvas.toDataURL('image/jpeg', 0.92);
+
+            if (cameraMode === 'selfie') {
+                capturedSelfieImage = imageBase64;
+                cameraMode = 'id';
+                document.getElementById('cameraTitle').textContent = t('attendance.idTitle', 'Capture your student ID');
+                document.getElementById('cameraSubtitle').textContent = t('attendance.idSubtitle', 'Take a clear image of your student ID. This is used only for this verification step.');
+                document.getElementById('cameraFacingSelect').value = 'environment';
+                activeCameraFacing = 'environment';
+                await openCamera();
+                return;
+            }
+
+            closeCamera();
+            await completeIdentityVerification('face_id_comparison', width, height, capturedSelfieImage, imageBase64);
+        }
+
+        async function completeIdentityVerification(method, photoWidth = null, photoHeight = null, selfieImage = null, idImage = null) {
+            if (!pendingVerification) {
+                closeVerificationModal();
+                return;
+            }
+
+            try {
+                const result = await API.verifyIdentity({
+                    userId: currentUser.id,
+                    sessionId: pendingVerification.attendanceId || null,
+                    method,
+                    photoWidth,
+                    photoHeight,
+                    selfieImage,
+                    idImage,
+                    deviceId: pendingVerification.deviceId || null
+                });
+                if (!result || result.verified === false) {
+                    throw new Error((result && result.message) || 'Identity verification failed');
+                }
+                closeVerificationModal();
+                setStatus(t('attendance.verified', 'Identity verified. You can continue with the code.'), 'success');
+                pendingVerification = null;
+                capturedSelfieImage = null;
+            } catch (err) {
+                console.error(err);
+                setStatus(err.message || 'Verification failed.', 'error');
+            }
+        }
+
+        function openHelp() {
+            const helpText = [
+                t('attendance.help1', '1. Choose your live class from the list.'),
+                t('attendance.help2', '2. Enter the lecturer code or scan the QR code.'),
+                t('attendance.help3', '3. If this is a new device, verify with biometrics first.'),
+                t('attendance.help4', '4. If biometrics are unavailable, use the live selfie fallback or ask the lecturer to add you manually.')
+            ].join('\n');
+            alert(helpText);
+        }
+
+        document.getElementById('classSelect').addEventListener('change', (evt) => {
+            selectedClassId = evt.target.value;
+            document.querySelectorAll('.class-item').forEach((node) => node.classList.remove('active'));
+            const selectedCard = Array.from(document.querySelectorAll('.class-item')).find((node) => node.classList.contains('active'));
+            if (selectedCard) selectedCard.classList.add('active');
+        });
+
+        document.getElementById('codeInput').addEventListener('input', (evt) => {
+            evt.target.value = evt.target.value.replace(/\D/g, '').slice(0, 6);
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!loadUser()) return;
+            if (window.I18N) I18N.apply(document);
+            await refreshLiveClasses();
+            if (preferredAction) {
+                setStatus(`${t('attendance.sessionMode', 'Session mode')}: ${preferredAction}`, 'info');
+            }
+            if (preferredClassId) {
+                selectedClassId = preferredClassId;
+            }
+        });
     </script>
 </body>
-</html>
++</html>

@@ -19,8 +19,44 @@ function isLecturer(req) {
     return req.user && req.user.role === 'lecturer';
 }
 
+function normalizeLanguage(input) {
+    const short = String(input || '').trim().toLowerCase().slice(0, 2);
+    return ['en', 'fr', 'pt'].includes(short) ? short : null;
+}
+
 // Protect all user routes
 router.use(authMiddleware);
+
+router.get('/me', async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id, {
+            attributes: ['id', 'fullName', 'email', 'role', 'year', 'program', 'department', 'college', 'language']
+        });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json({ user });
+    } catch (err) {
+        console.error('Error fetching current user:', err);
+        res.status(500).json({ message: 'Error fetching current user' });
+    }
+});
+
+router.put('/me/language', async (req, res) => {
+    try {
+        const language = normalizeLanguage(req.body && req.body.language);
+        if (!language) {
+            return res.status(400).json({ message: 'Invalid language. Supported: en, fr, pt' });
+        }
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        await user.update({ language });
+        return res.json({ success: true, message: 'Language preference saved', language });
+    } catch (err) {
+        console.error('Error updating language:', err);
+        res.status(500).json({ message: 'Error updating language' });
+    }
+});
 
 /**
  * GET /api/users/stats/overview
@@ -175,7 +211,7 @@ router.get('/', async (req, res) => {
 
         const users = await User.findAll({
             where,
-            attributes: ['id', 'fullName', 'email', 'role', 'year', 'program', 'department', 'college'],
+            attributes: ['id', 'fullName', 'email', 'role', 'year', 'program', 'department', 'college', 'language'],
             order: [['fullName', 'ASC']]
         });
 
@@ -193,7 +229,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, {
-            attributes: ['id', 'fullName', 'email', 'role', 'year', 'program', 'department', 'college']
+            attributes: ['id', 'fullName', 'email', 'role', 'year', 'program', 'department', 'college', 'language']
         });
         if (!user) return res.status(404).json({ message: 'User not found' });
         res.json({ user });

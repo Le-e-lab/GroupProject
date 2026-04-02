@@ -51,15 +51,49 @@ const API = {
      * GENERIC HELPERS (Added Phase 2)
      * ========================================
      */
+    normalizeEndpoint(endpoint) {
+        const raw = String(endpoint || '').trim();
+        if (!raw) return this.baseUrl;
+        if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+        if (raw.startsWith('/api/')) return raw;
+        if (raw.startsWith('/')) return `${this.baseUrl}${raw}`;
+        return `${this.baseUrl}/${raw}`;
+    },
+
     async handleResponse(res) { if (res.status === 401) { console.warn('[API] Auth Token Invalid/Expired.'); this.logout(); throw new Error('Authentication required'); } return res.json(); },
 
-    async get(endpoint) { const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, { credentials: 'include' }); return this.handleResponse(res); },
+    async get(endpoint) { const res = await fetch(this.normalizeEndpoint(endpoint), { credentials: 'include' }); return this.handleResponse(res); },
 
-    async post(endpoint, data) { const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return this.handleResponse(res); },
+    async post(endpoint, data) { const res = await fetch(this.normalizeEndpoint(endpoint), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return this.handleResponse(res); },
 
-    async put(endpoint, data) { const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return this.handleResponse(res); },
+    async put(endpoint, data) { const res = await fetch(this.normalizeEndpoint(endpoint), { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return this.handleResponse(res); },
 
-    async delete(endpoint) { const res = await fetch(this.baseUrl.replace('/api', '') + endpoint, { method: 'DELETE', credentials: 'include' }); return this.handleResponse(res); },
+    async delete(endpoint) { const res = await fetch(this.normalizeEndpoint(endpoint), { method: 'DELETE', credentials: 'include' }); return this.handleResponse(res); },
+
+    async askAssistant(payload) {
+        const res = await fetch('/api/ai/assistant', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return this.handleResponse(res);
+    },
+
+    async getCurrentUserProfile() {
+        const res = await fetch('/api/users/me', { credentials: 'include' });
+        return this.handleResponse(res);
+    },
+
+    async updatePreferredLanguage(language) {
+        const res = await fetch('/api/users/me/language', {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ language })
+        });
+        return this.handleResponse(res);
+    },
 
 
 
@@ -124,7 +158,7 @@ const API = {
             try {
                 // FIX: Pass PROGRAM to server for exact filtering
                 const url = `${this.baseUrl}/classes?year=${year || ''}&program=${encodeURIComponent(program || '')}`;
-                const response = await fetch(url);
+                const response = await fetch(url, { credentials: 'include' });
                 if (!response.ok) throw new Error('API error');
                 const rawClasses = await response.json();
                 
@@ -181,52 +215,55 @@ const API = {
      * CRITICAL FIX: Server doesn't return lecturerId sometimes, so we match by Name too.
      */
     async getClassesByLecturer(lecturerId) {
-        try {
-            // Use the dedicated backend endpoint which handles:
-            // 1. Efficient filtering (DB side)
-            // 2. Fuzzy name matching
-            // 3. Deduplication (Critical fix)
-            const response = await fetch(`${this.baseUrl}/classes/lecturer/${lecturerId}`);
-            
-            if (response.ok) {
-                const classes = await response.json();
-                // map to client schema (backend already returns formatted data, but let's be safe)
-                return classes.map(c => ({
-                    ...c,
-                    // Backend returns 'code', 'name', 'day', 'time', 'room' etc.
-                    // Just ensure strict schema match if needed, or pass through
-                    id: c.id || `${c.code}-${c.day}-${c.time}`, // Ensure ID exists
-                    code: c.code || c.Course_Code,
-                    name: c.name || c.Course_Name,
-                    day: c.day || c.Day,
-                    time: c.time || c.Time,
-                    room: c.room || c.Venue,
-                    lecturerName: c.lecturerName || c.Lecturer,
-                    year: c.year || c.Year,
-                    program: c.program || c.Program
-                }));
-            } else {
-                throw new Error("Server Error");
-            }
-        } catch (e) {
-            console.warn('[API] Lecturer fetch failed, using fallback:', e);
-            // Fallback to local filtering if server fails
-            const allClasses = this.getLocalTimetable();
-            const user = this.getCurrentUser();
-            
-            return allClasses.filter(c => {
-                 // A. Match by ID (if available)
-                 if (c.lecturerId && String(c.lecturerId) === String(lecturerId)) return true;
-                 if (c.LecturerId && String(c.LecturerId) === String(lecturerId)) return true;
+        const cacheKey = `lecturer_classes_${lecturerId}`;
+        return this.getCached(cacheKey, async () => {
+            try {
+                // Use the dedicated backend endpoint which handles:
+                // 1. Efficient filtering (DB side)
+                // 2. Fuzzy name matching
+                // 3. Deduplication (Critical fix)
+                const response = await fetch(`${this.baseUrl}/classes/lecturer/${lecturerId}`, { credentials: 'include' });
 
-                 // B. Match by Name (Fallback)
-                 if (user && user.fullName && c.lecturerName) {
-                     const surname = user.fullName.split(' ').pop();
-                     if (c.lecturerName.includes(surname)) return true;
-                 }
-                 return false;
-            });
-        }
+                if (response.ok) {
+                    const classes = await response.json();
+                    // map to client schema (backend already returns formatted data, but let's be safe)
+                    return classes.map(c => ({
+                        ...c,
+                        // Backend returns 'code', 'name', 'day', 'time', 'room' etc.
+                        // Just ensure strict schema match if needed, or pass through
+                        id: c.id || `${c.code}-${c.day}-${c.time}`, // Ensure ID exists
+                        code: c.code || c.Course_Code,
+                        name: c.name || c.Course_Name,
+                        day: c.day || c.Day,
+                        time: c.time || c.Time,
+                        room: c.room || c.Venue,
+                        lecturerName: c.lecturerName || c.Lecturer,
+                        year: c.year || c.Year,
+                        program: c.program || c.Program
+                    }));
+                }
+
+                throw new Error('Server Error');
+            } catch (e) {
+                console.warn('[API] Lecturer fetch failed, using fallback:', e);
+                // Fallback to local filtering if server fails
+                const allClasses = this.getLocalTimetable();
+                const user = this.getCurrentUser();
+
+                return allClasses.filter(c => {
+                     // A. Match by ID (if available)
+                     if (c.lecturerId && String(c.lecturerId) === String(lecturerId)) return true;
+                     if (c.LecturerId && String(c.LecturerId) === String(lecturerId)) return true;
+
+                     // B. Match by Name (Fallback)
+                     if (user && user.fullName && c.lecturerName) {
+                         const surname = user.fullName.split(' ').pop();
+                         if (c.lecturerName.includes(surname)) return true;
+                     }
+                     return false;
+                });
+            }
+        });
     },
 
     /**
@@ -337,7 +374,7 @@ const API = {
      */
     async fetchUsers() {
         return this.getCached('users', async () => {
-             const response = await fetch(`${this.baseUrl}/auth/users`);
+             const response = await fetch(`${this.baseUrl}/auth/users`, { credentials: 'include' });
              if (!response.ok) return { students: [], lecturers: [] };
              return response.json();
         });
@@ -345,7 +382,7 @@ const API = {
 
     async fetchUser(id) {
         try {
-            const response = await fetch(`${this.baseUrl}/auth/user/${id}`);
+            const response = await fetch(`${this.baseUrl}/auth/user/${id}`, { credentials: 'include' });
             if (!response.ok) return null;
             return await response.json();
         } catch (e) {
@@ -410,6 +447,87 @@ const API = {
         }
     },
 
+    async openCheckInSession(classId) {
+        const response = await fetch(`${this.baseUrl}/attendance/checkin`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classId })
+        });
+        return response.json();
+    },
+
+    async openCheckOutSession(classId) {
+        const response = await fetch(`${this.baseUrl}/attendance/checkout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classId })
+        });
+        return response.json();
+    },
+
+    async closeAttendanceSession(classId) {
+        const response = await fetch(`${this.baseUrl}/attendance/close`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classId })
+        });
+        return response.json();
+    },
+
+    async validateCheckInCode(classId, code) {
+        const user = this.getCurrentUser();
+        if (!user) return { error: 'Not logged in' };
+
+        const response = await fetch(`${this.baseUrl}/attendance/validate-checkin`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classId, studentId: user.id, code })
+        });
+        return response.json();
+    },
+
+    async validateCheckOutCode(classId, code, attendanceId = null) {
+        const user = this.getCurrentUser();
+        if (!user) return { error: 'Not logged in' };
+
+        const response = await fetch(`${this.baseUrl}/attendance/validate-checkout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classId, studentId: user.id, code, attendanceId })
+        });
+        return response.json();
+    },
+
+    async verifyIdentity(payload) {
+        const response = await fetch(`${this.baseUrl}/attendance/verify-identity`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return response.json();
+    },
+
+    async getActiveDevices() {
+        const response = await fetch(`${this.baseUrl}/attendance/devices/active`, {
+            credentials: 'include'
+        });
+        return response.json();
+    },
+
+    async registerDevice() {
+        const response = await fetch(`${this.baseUrl}/attendance/devices/register`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        return response.json();
+    },
+
     async validateSessionCode(classId, code, userLat = null, userLon = null) {
         const user = this.getCurrentUser();
         if (!user) return { error: 'Not logged in' };
@@ -456,7 +574,7 @@ const API = {
      */
     async fetchCourseStats(courseCode) {
         try {
-            const res = await fetch(`/api/attendance/stats/course/${courseCode}`);
+            const res = await fetch(`/api/attendance/stats/course/${courseCode}`, { credentials: 'include' });
             if (!res.ok) throw new Error('Failed to fetch stats');
             return await res.json();
         } catch (err) {
@@ -466,7 +584,7 @@ const API = {
 
     async fetchStudentStats(studentId) {
         try {
-            const res = await fetch(`/api/attendance/student/${studentId}`);
+            const res = await fetch(`/api/attendance/student/${studentId}`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 // Normalize Server Stats to match Client Schema
@@ -508,7 +626,7 @@ const API = {
 
     async getTodayAttendance(studentId) {
         try {
-            const res = await fetch(`${this.baseUrl}/attendance/today/${studentId}`);
+            const res = await fetch(`${this.baseUrl}/attendance/today/${studentId}`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 return data.presentClassIds || [];
@@ -708,6 +826,44 @@ if (typeof module !== 'undefined' && module.exports) {
 // Expose to window for browser
 if (typeof window !== 'undefined') {
     window.API = API;
+
+    function ensureAiAssistantShell() {
+        if (!document.body || document.getElementById('ai-assistant-fab')) return;
+
+        const fab = document.createElement('button');
+        fab.id = 'ai-assistant-fab';
+        fab.type = 'button';
+        fab.textContent = 'AI';
+        fab.title = 'Open AI helper';
+        fab.setAttribute('aria-label', 'Open AI helper');
+        fab.style.cssText = [
+            'position:fixed',
+            'right:12px',
+            'bottom:12px',
+            'z-index:2147483647',
+            'width:58px',
+            'height:58px',
+            'border:none',
+            'border-radius:999px',
+            'background:linear-gradient(135deg, #DC2626, #111827)',
+            'color:#fff',
+            'font-weight:800',
+            'box-shadow:0 18px 40px rgba(0,0,0,0.25)',
+            'cursor:pointer',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'font-size:0.9rem'
+        ].join(';');
+
+        document.body.appendChild(fab);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureAiAssistantShell, { once: true });
+    } else {
+        ensureAiAssistantShell();
+    }
 }
 
 

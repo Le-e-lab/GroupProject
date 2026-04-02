@@ -63,13 +63,41 @@ async function run() {
             failed += 1;
             log('[SMOKE] admin login failed');
         } else {
+            const stats = await getWithCookie('/api/admin/stats', admin.cookie);
+            log(`[SMOKE] admin stats status=${stats.status}`);
+            if (!stats.ok) failed += 1;
+
+            const timetable = await getWithCookie('/api/admin/timetable', admin.cookie);
+            log(`[SMOKE] admin timetable status=${timetable.status}`);
+            if (!timetable.ok) failed += 1;
+
             const status = await getWithCookie('/api/admin/timetable/upload-status', admin.cookie);
             log(`[SMOKE] admin upload-status status=${status.status}`);
             if (!status.ok) failed += 1;
 
+            const history = await getWithCookie('/api/admin/timetable/upload-history', admin.cookie);
+            log(`[SMOKE] admin upload-history status=${history.status}`);
+            if (!history.ok) failed += 1;
+
             const backups = await getWithCookie('/api/admin/timetable/backups', admin.cookie);
             log(`[SMOKE] admin backups status=${backups.status}`);
             if (!backups.ok) failed += 1;
+
+            const lecturerDupes = await getWithCookie('/api/admin/data-quality/lecturer-duplicates', admin.cookie);
+            log(`[SMOKE] admin lecturer-duplicates status=${lecturerDupes.status}`);
+            if (!lecturerDupes.ok) failed += 1;
+
+            const studentDupes = await getWithCookie('/api/admin/data-quality/student-duplicates', admin.cookie);
+            log(`[SMOKE] admin student-duplicates status=${studentDupes.status}`);
+            if (!studentDupes.ok) failed += 1;
+
+            const security = await getWithCookie('/api/admin/security/checks', admin.cookie);
+            log(`[SMOKE] admin security-checks status=${security.status}`);
+            if (!security.ok) failed += 1;
+
+            const users = await getWithCookie('/api/users', admin.cookie);
+            log(`[SMOKE] admin users status=${users.status}`);
+            if (!users.ok) failed += 1;
         }
     } else {
         log('[SMOKE] admin credential env not set; skipping admin-authenticated checks');

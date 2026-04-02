@@ -7,6 +7,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../css/theme.css">
     <style>
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
         body {
             display: flex;
             align-items: center;
@@ -87,6 +95,28 @@
             font-size: 0.8rem;
             color: var(--text-muted);
             margin-bottom: 8px;
+        }
+        .code-mode-banner {
+            margin: 0 auto 14px;
+            width: fit-content;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            background: #EFF6FF;
+            color: #1D4ED8;
+            border: 1px solid #BFDBFE;
+        }
+        .code-mode-banner.mode-checkout {
+            background: #FFF7ED;
+            color: #C2410C;
+            border-color: #FED7AA;
+        }
+        .code-mode-banner.mode-idle {
+            background: #F1F5F9;
+            color: #475569;
+            border-color: #CBD5E1;
         }
         .code-display {
             font-size: 2.25rem;
@@ -319,7 +349,7 @@
     <!-- ─── Maximize Overlay ─── -->
     <div class="maximize-overlay" id="maximizeOverlay" onclick="closeMaximize(event)">
         <button class="maximize-close" onclick="closeMaximize(null)">✕</button>
-        <div class="maximize-label">Enter this code</div>
+        <div class="maximize-label" id="maximizeLabel">Attendance code</div>
         <div class="maximize-code" id="maximizeCode">------</div>
         <div class="maximize-qr">
             <img id="maximizeQR" src="" alt="QR Code">
@@ -341,13 +371,25 @@
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Click QR code to enlarge</div>
 
-            <p class="code-label">Students can also enter this code:</p>
+            <div class="code-mode-banner mode-idle" id="codeModeBanner">Session not started</div>
+            <p class="code-label" id="codeLabel">Attendance code will appear here:</p>
             <div class="code-display" id="codeDisplay">123456</div>
             <div class="timer">Expires in <span id="countdown">5:00</span></div>
 
+            <div style="background: #EFF6FF; border-left: 4px solid #3B82F6; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 0.85rem; color: #1D4ED8;">
+                <strong>Session State:</strong> <span id="sessionState">Not Started</span>
+            </div>
+
+            <div class="action-btns" style="display: flex; gap: 12px; margin-bottom: 12px;">
+                <button class="action-btn primary" id="checkinBtn" onclick="openCheckin()">🔓 Check-in</button>
+                <button class="action-btn primary" id="checkoutBtn" onclick="openCheckout()" style="background: #F97316; opacity: 0.5; cursor: not-allowed;" disabled>🔒 Check-out</button>
+            </div>
             <div class="action-btns" style="display: flex; gap: 12px;">
-                <button class="action-btn primary" id="regenBtn" onclick="regenerateCode()">Regenerate</button>
-                <button class="action-btn" style="background: var(--surface); border: 1px solid var(--border); color: var(--text);" onclick="copyCode()">Copy Code</button>
+                <button class="action-btn" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); flex: 1;" onclick="copyCode()">Copy Code</button>
+                <button class="action-btn" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); flex: 1;" onclick="endSession()">End Session</button>
+            </div>
+            <div style="margin-top: 12px;">
+                <button class="action-btn" style="width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);" onclick="openHelp()">Help / User Guide</button>
             </div>
         </div>
 
@@ -415,120 +457,201 @@
     </div>
 
     <script src="../../js/api.js"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
-        // Init mobile nav if needed (though no nav here, but for completeness)
-        // Main logic
+        window.AI_ASSISTANT_CONTEXT = { page: 'lecturer-qr-code', helpTopics: ['check-in', 'check-out', 'attendance session'] };
 
-        let timeLeft = 300;
         const urlParams = new URLSearchParams(window.location.search);
-        const classCode = urlParams.get('class') || 'CS101';
-        
-        const classData = {
-            CS101: { name: 'Introduction to Programming', room: 'Lab 3A' },
-            CS204: { name: 'Database Systems', room: 'Room 204' },
-            CS305: { name: 'Web Development', room: 'Lab 2B' }
-        };
+        const classId = urlParams.get('class') || 'CS101';
+        const classCode = urlParams.get('code') || String(classId).split('-')[0] || classId;
+        const className = urlParams.get('name') || classCode;
+        const classRoom = urlParams.get('room') || 'In progress';
+        let timeLeft = 0;
+        let sessionState = 'idle'; // idle, checkin_open, checkout_open, closed
+        let currentAction = 'checkin';
+        let currentSessionId = null;
 
-        async function fetchNewCode(forceNew = false) {
-            try {
-                // Get Class ID from URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const classCode = urlParams.get('class');
-                const className = urlParams.get('name');
-                
-                // Update UI
-                if (classCode) {
-                     document.getElementById('className').textContent = className || classCode;
-                     document.getElementById('classDetails').textContent = `${classCode} • In progress`;
-                }
+        function setCodeMode(mode) {
+            const banner = document.getElementById('codeModeBanner');
+            const codeLabel = document.getElementById('codeLabel');
+            const maximizeLabel = document.getElementById('maximizeLabel');
 
-                // Call API to generate REAL session code
-                if (window.API && API.generateSessionCode) {
-                    const res = await API.generateSessionCode(classCode, forceNew);
-                    if (res && res.code) {
-                        updateDisplay(res.code);
-                        // Update timer based on response if available, else default 5 min
-                        timeLeft = res.timeLeft ? Math.floor(res.timeLeft / 1000) : 300; 
-                    } else {
-                        // Show specific API error
-                        console.error("API Error:", res);
-                        updateDisplay(res.message || "API Error");
-                        document.querySelector('.timer').innerHTML = `<span style="color:red">Try going back to Dashboard and clicking 'Generate QR' again.</span>`;
-                    }
-                } else {
-                     console.error("API not available");
-                     updateDisplay("OFFLINE");
-                }
-            } catch (e) {
-                console.error("Error generating code", e);
-                updateDisplay("ERROR");
-                document.querySelector('.timer').textContent = e.message || "Connection Failed";
+            banner.classList.remove('mode-idle', 'mode-checkout');
+
+            if (mode === 'checkin') {
+                banner.textContent = 'Active: Check-in Code';
+                codeLabel.textContent = 'Students must use this CHECK-IN code:';
+                maximizeLabel.textContent = 'CHECK-IN CODE';
+                return;
             }
+
+            if (mode === 'checkout') {
+                banner.classList.add('mode-checkout');
+                banner.textContent = 'Active: Check-out Code';
+                codeLabel.textContent = 'Students must use this CHECK-OUT code:';
+                maximizeLabel.textContent = 'CHECK-OUT CODE';
+                return;
+            }
+
+            banner.classList.add('mode-idle');
+            banner.textContent = 'Session not started';
+            codeLabel.textContent = 'Attendance code will appear here:';
+            maximizeLabel.textContent = 'Attendance code';
         }
-        
+
+        function updateHeader() {
+            document.getElementById('className').textContent = className;
+            document.getElementById('classDetails').textContent = `${classCode} • ${classRoom}`;
+        }
+
+        function renderIdleState() {
+            document.getElementById('codeDisplay').textContent = '------';
+            document.getElementById('maximizeCode').textContent = '------';
+            setCodeMode('idle');
+            document.getElementById('sessionState').textContent = 'Not Started';
+            document.getElementById('checkinBtn').disabled = false;
+            document.getElementById('checkoutBtn').disabled = true;
+            document.getElementById('checkoutBtn').style.opacity = '0.5';
+            document.getElementById('checkoutBtn').style.cursor = 'not-allowed';
+            document.getElementById('qrImage').src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="100%" height="100%" fill="#f8fafc"/><text x="50%" y="48%" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="18" fill="#64748b">Open check-in to generate a QR code</text></svg>');
+            document.getElementById('maximizeQR').src = document.getElementById('qrImage').src;
+            document.getElementById('countdown').textContent = '0:00';
+            document.getElementById('maximizeTimer').textContent = 'Session idle';
+        }
+
         function updateDisplay(code) {
             document.getElementById('codeDisplay').textContent = code;
             document.getElementById('maximizeCode').textContent = code;
-            
-            // Encode the 6-digit code primarily, or a JSON if we prefer
-            // For simple scanning, let's encode the JSON with the code
+
             const qrData = JSON.stringify({
-                app: "upath",
-                action: "attendance",
-                classId: classCode, 
-                code: code
+                app: 'upath',
+                action: currentAction,
+                classId,
+                code
             });
-            
+
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
             document.getElementById('qrImage').src = qrUrl;
             document.getElementById('maximizeQR').src = qrUrl;
         }
-        
-        function regenerateCode() {
-            fetchNewCode(true); // pass true to invalidate old session
+
+        async function openCheckin() {
+            try {
+                const data = await API.openCheckInSession(classId);
+                if (!data || !data.code) throw new Error(data && data.message ? data.message : 'Check-in failed');
+
+                currentAction = 'checkin';
+                currentSessionId = data.sessionId || null;
+                sessionState = 'checkin_open';
+                setCodeMode('checkin');
+                document.getElementById('sessionState').textContent = 'Check-in Open ✓';
+                document.getElementById('checkinBtn').disabled = true;
+                document.getElementById('checkoutBtn').disabled = false;
+                document.getElementById('checkoutBtn').style.opacity = '1';
+                document.getElementById('checkoutBtn').style.cursor = 'pointer';
+                updateDisplay(data.code);
+                timeLeft = Math.max(1, Math.floor((data.timeLeft || 30000) / 1000));
+            } catch (err) {
+                console.error('Check-in error:', err);
+                showNotificationModal('error', 'Check-in Failed', err.message || 'Unable to open check-in.');
+            }
         }
-        
+
+        async function openCheckout() {
+            try {
+                const proceed = window.confirm('Open CHECK-OUT code now? Students will no longer be able to use the check-in code.');
+                if (!proceed) {
+                    return;
+                }
+
+                const data = await API.openCheckOutSession(classId);
+                if (!data || !data.code) throw new Error(data && data.message ? data.message : 'Check-out failed');
+
+                currentAction = 'checkout';
+                currentSessionId = data.sessionId || currentSessionId;
+                sessionState = 'checkout_open';
+                setCodeMode('checkout');
+                document.getElementById('sessionState').textContent = 'Check-out Open ✓';
+                document.getElementById('checkoutBtn').disabled = true;
+                updateDisplay(data.code);
+                timeLeft = Math.max(1, Math.floor((data.timeLeft || 30000) / 1000));
+            } catch (err) {
+                console.error('Check-out error:', err);
+                showNotificationModal('error', 'Check-out Failed', err.message || 'Unable to open check-out.');
+            }
+        }
+
+        async function endSession() {
+            try {
+                const result = await API.closeAttendanceSession(classId);
+                if (result && result.message && /session closed/i.test(result.message)) {
+                    sessionState = 'closed';
+                    currentAction = 'closed';
+                    currentSessionId = null;
+                    setCodeMode('idle');
+                    document.getElementById('sessionState').textContent = 'Session Closed';
+                    document.getElementById('checkinBtn').disabled = true;
+                    document.getElementById('checkoutBtn').disabled = true;
+                    document.getElementById('codeDisplay').textContent = 'CLOSED';
+                    document.getElementById('maximizeCode').textContent = 'CLOSED';
+                    showNotificationModal('success', 'Session Ended', 'The attendance session has been closed.');
+                    return;
+                }
+
+                throw new Error((result && result.message) || 'Unable to close session');
+            } catch (err) {
+                console.error('End session error:', err);
+                showNotificationModal('error', 'End Session Failed', err.message || 'Unable to close this session right now.');
+            }
+        }
+
         function copyCode() {
             const code = document.getElementById('codeDisplay').textContent;
             navigator.clipboard.writeText(code);
             alert('Code copied: ' + code);
         }
 
+        function openHelp() {
+            alert('1. Start check-in when class begins.\n2. Students scan or enter the displayed code.\n3. Open check-out when class ends.\n4. Use the manual attendance page for exceptions.');
+        }
+
         // Notification logic
-        // ─── Notification Modal Handlers ───
+        // ─── Toast Notification Handler ───
         function showNotificationModal(type, title, message) {
-            let overlay = document.getElementById('notificationModalOverlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'notificationModalOverlay';
-                overlay.className = 'notification-modal-overlay';
-                overlay.innerHTML = `
-                    <div class="notification-modal">
-                        <div class="notification-modal-icon" id="notifModalIcon"></div>
-                        <h3 class="notification-modal-title" id="notifModalTitle"></h3>
-                        <p class="notification-modal-msg" id="notifModalMsg"></p>
-                        <button class="btn btn-primary notification-modal-btn" onclick="document.getElementById('notificationModalOverlay').classList.remove('active')">Got it</button>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
+            // Create toast container if it doesn't exist
+            let toastContainer = document.getElementById('qr-toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'qr-toast-container';
+                toastContainer.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:12px;';
+                document.body.appendChild(toastContainer);
             }
 
-            const icon = document.getElementById('notifModalIcon');
-            if (type === 'error') {
-                icon.className = 'notification-modal-icon error';
-                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>`;
-            } else {
-                icon.className = 'notification-modal-icon';
-                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>`;
-            }
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = type === 'error' ? 'qr-toast error' : 'qr-toast success';
+            toast.style.cssText = `
+                background:${type === 'error' ? '#FEF2F2' : '#ECFDF5'};
+                border:1px solid ${type === 'error' ? '#FECACA' : '#A7F3D0'};
+                border-left:4px solid ${type === 'error' ? '#DC2626' : '#10B981'};
+                color:${type === 'error' ? '#991B1B' : '#065F46'};
+                border-radius:8px;
+                padding:14px 16px;
+                font-size:0.9rem;
+                line-height:1.4;
+                max-width:320px;
+                box-shadow:0 4px 12px rgba(0,0,0,0.15);
+                animation:slideIn 0.3s ease;
+            `;
+            toast.innerHTML = `<strong>${title}</strong><div style="margin-top:4px;font-size:0.85rem;">${message}</div>`;
+            toastContainer.appendChild(toast);
 
-            document.getElementById('notifModalTitle').textContent = title;
-            document.getElementById('notifModalMsg').textContent = message;
-            
-            // Trigger animation
-            requestAnimationFrame(() => {
-                overlay.classList.add('active');
-            });
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
         }
 
         async function sendNotif(type, btn) {
@@ -621,9 +744,20 @@
             }
         }
         
+        function refreshCurrentSession() {
+            if (sessionState === 'checkin_open') {
+                return openCheckin();
+            }
+            if (sessionState === 'checkout_open') {
+                return openCheckout();
+            }
+            return Promise.resolve();
+        }
+
         setInterval(() => {
-            if (timeLeft <= 0) fetchNewCode();
-            else {
+            if (timeLeft <= 0 && (sessionState === 'checkin_open' || sessionState === 'checkout_open')) {
+                refreshCurrentSession();
+            } else if (sessionState === 'checkin_open' || sessionState === 'checkout_open') {
                 timeLeft--;
                 const mins = Math.floor(timeLeft / 60);
                 const secs = timeLeft % 60;
@@ -657,12 +791,8 @@
             }
         });
         
-        const info = classData[classCode] || { name: classCode, room: 'TBD' };
-        document.getElementById('className').textContent = info.name;
-        document.getElementById('classDetails').textContent = `${classCode} • ${info.room} • In progress`;
-        
-        // Initial load
-        fetchNewCode();
+        updateHeader();
+        renderIdleState();
     </script>
 </body>
 </html>

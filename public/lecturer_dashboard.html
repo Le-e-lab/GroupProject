@@ -306,7 +306,7 @@
         }
     </style>
 </head>
-<body>
+<body data-ai-context="lecturer-dashboard">
     <nav class="navbar">
         <a href="/lecturer_dashboard.html" class="navbar-brand">
             <div class="navbar-logo">U</div>
@@ -314,10 +314,10 @@
             <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
         </a>
         <div class="navbar-nav">
-            <a href="/lecturer_dashboard.html" class="navbar-link active">Overview</a>
-            <a href="/pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
-            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
-            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
+            <a href="/lecturer_dashboard.html" class="navbar-link active" data-i18n="nav.overview">Overview</a>
+            <a href="/pages/lecturer/my_classes.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
+            <a href="/pages/lecturer/lecturer_schedule.html" class="navbar-link" data-i18n="nav.schedule">Schedule</a>
+            <a href="/pages/lecturer/lecturer_reports.html" class="navbar-link" data-i18n="nav.analytics">Analytics</a>
         </div>
         <div class="navbar-actions" style="display: flex; align-items: center; gap: 16px;">
             <!-- Notification Bell Icon (matches student dashboard) -->
@@ -378,45 +378,78 @@
             </div>
 
             <!-- Quick Actions -->
-            <div class="section-title">Quick Actions</div>
+            <div class="section-title" data-i18n="dashboard.quickActions">Quick Actions</div>
             <div class="quick-actions">
                 <a href="/pages/lecturer/qr_code.html" class="quick-action">
                     <div class="quick-action-icon">QR</div>
-                    <div class="quick-action-text">Generate QR</div>
+                    <div class="quick-action-text" data-i18n="lecturer.generateQR">Generate QR</div>
                 </a>
                 <a href="/pages/lecturer/manual_attendance.html" class="quick-action">
                     <div class="quick-action-icon">MA</div>
-                    <div class="quick-action-text">Manual Entry</div>
+                    <div class="quick-action-text" data-i18n="lecturer.manualEntry">Manual Entry</div>
                 </a>
                 <a href="/pages/lecturer/lecturer_schedule.html" class="quick-action">
                     <div class="quick-action-icon">SC</div>
-                    <div class="quick-action-text">Schedule</div>
+                    <div class="quick-action-text" data-i18n="nav.schedule">Schedule</div>
                 </a>
                 <a href="/pages/lecturer/manage_students.html" class="quick-action">
                     <div class="quick-action-icon">👥</div>
-                    <div class="quick-action-text">Manage Students / Reps</div>
+                    <div class="quick-action-text" data-i18n="lecturer.manageStudents">Manage Students / Reps</div>
                 </a>
                 <a href="/pages/lecturer/lecturer_reports.html" class="quick-action">
                     <div class="quick-action-icon">AN</div>
-                    <div class="quick-action-text">Analytics</div>
+                    <div class="quick-action-text" data-i18n="nav.analytics">Analytics</div>
                 </a>
             </div>
         </div>
     </main>
 
     <script src="js/api.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/ai-assistant.js?v=3"></script>
     <script>
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         let lecturerId = '210101';
+        window.AI_ASSISTANT_CONTEXT = { page: 'lecturer-dashboard' };
+
+        function updateLecturerAssistantContext(patch) {
+            window.AI_ASSISTANT_CONTEXT = {
+                ...(window.AI_ASSISTANT_CONTEXT || { page: 'lecturer-dashboard' }),
+                page: 'lecturer-dashboard',
+                ...(patch || {})
+            };
+        }
+
+        function t(key, fallback) {
+            return (window.I18N && typeof I18N.t === 'function') ? I18N.t(key) : fallback;
+        }
+
+        function currentLocale() {
+            const lang = (window.I18N && typeof I18N.currentLanguage === 'function') ? I18N.currentLanguage() : 'en';
+            if (lang === 'fr') return 'fr-FR';
+            if (lang === 'pt') return 'pt-PT';
+            return 'en-US';
+        }
 
         function loadUserData() {
             const userStr = sessionStorage.getItem('upath_user');
             if (userStr) {
                 const user = JSON.parse(userStr);
                 const displayName = user.fullName || 'Lecturer';
-                document.getElementById('welcomeTitle').textContent = `Welcome back, ${displayName}`;
+                document.getElementById('welcomeTitle').textContent = `${t('dashboard.welcome', 'Welcome back')}, ${displayName}`;
                 
                 if (user.id) lecturerId = user.id;
+                window.AI_ASSISTANT_CONTEXT = {
+                    page: 'lecturer-dashboard',
+                    lecturerId: lecturerId,
+                    lecturerName: user.fullName || ''
+                };
+
+                updateLecturerAssistantContext({
+                    lecturerId,
+                    lecturerName: user.fullName || '',
+                    preferredLanguage: user.language || (window.I18N ? I18N.currentLanguage() : 'en')
+                });
                 
                 if (user.fullName) {
                     const initials = user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -428,7 +461,7 @@
         function updateDate() {
             const now = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', options);
+            document.getElementById('dateDisplay').textContent = now.toLocaleDateString(currentLocale(), options);
         }
 
         async function loadClasses() {
@@ -468,6 +501,47 @@
                 if (validCourses > 0) {
                     totalAvg = Math.round(weightedSum / validCourses);
                 }
+
+                const statsByCode = {};
+                uniqueCodes.forEach((code, idx) => {
+                    const stat = results[idx] || {};
+                    statsByCode[code] = {
+                        avgAttendance: stat.avgAttendance || 0,
+                        totalSessions: stat.totalSessions || 0,
+                        presentCount: stat.presentCount || 0,
+                        absentCount: stat.absentCount || 0
+                    };
+                });
+
+                const timeslots = {
+                    morning: { classes: 0, weightedAttendance: 0, weight: 0 },
+                    afternoon: { classes: 0, weightedAttendance: 0, weight: 0 },
+                    evening: { classes: 0, weightedAttendance: 0, weight: 0 }
+                };
+
+                myClasses.forEach((c) => {
+                    const startHour = parseInt(String(c.time || '').split(':')[0], 10);
+                    let slot = 'afternoon';
+                    if (!Number.isNaN(startHour)) {
+                        if (startHour < 12) slot = 'morning';
+                        else if (startHour >= 17) slot = 'evening';
+                    }
+
+                    const stat = statsByCode[c.code] || {};
+                    const avg = stat.avgAttendance || 0;
+                    const weight = stat.totalSessions || 1;
+
+                    timeslots[slot].classes += 1;
+                    timeslots[slot].weightedAttendance += avg * weight;
+                    timeslots[slot].weight += weight;
+                });
+
+                const timeslotSummary = Object.fromEntries(
+                    Object.entries(timeslots).map(([slot, value]) => {
+                        const avgAttendance = value.weight > 0 ? Math.round(value.weightedAttendance / value.weight) : 0;
+                        return [slot, { classes: value.classes, avgAttendance }];
+                    })
+                );
                 
                 // Get total students taught by this lecturer
                 const studentsRes = await API.get(`/api/users?lecturerId=${lecturerId}`);
@@ -477,6 +551,21 @@
                 
                 document.getElementById('totalStudentsVal').textContent = uniqueIds.size || 0;
                 document.getElementById('avgAttendanceVal').textContent = totalAvg + '%';
+
+                updateLecturerAssistantContext({
+                    totalStudents: uniqueIds.size || 0,
+                    avgAttendance: totalAvg,
+                    totalSessions,
+                    classCodes: uniqueCodes,
+                    timeslotSummary,
+                    courseStats: results.map((stat, idx) => ({
+                        code: uniqueCodes[idx],
+                        avgAttendance: stat.avgAttendance || 0,
+                        totalSessions: stat.totalSessions || 0,
+                        presentCount: stat.presentCount || 0,
+                        absentCount: stat.absentCount || 0
+                    }))
+                });
                 
             } catch (err) {
                 console.error("Dashboard stats sync failed:", err);
@@ -498,19 +587,46 @@
                 const startHour = parseInt(c.time.split(':')[0]);
                 return startHour > currentHour;
             });
+
+            updateLecturerAssistantContext({
+                today,
+                currentHour,
+                classesTodayCount: todayClasses.length,
+                classesToday: todayClasses.map((c) => ({
+                    code: c.code,
+                    name: c.name,
+                    time: c.time,
+                    room: c.room,
+                    year: c.year
+                })),
+                currentClass: currentClass ? {
+                    code: currentClass.code,
+                    name: currentClass.name,
+                    time: currentClass.time,
+                    room: currentClass.room,
+                    year: currentClass.year
+                } : null,
+                nextClass: nextClass ? {
+                    code: nextClass.code,
+                    name: nextClass.name,
+                    time: nextClass.time,
+                    room: nextClass.room,
+                    year: nextClass.year
+                } : null
+            });
             
             if (currentClass) {
                 container.innerHTML = `
                     <div class="current-class-card">
                         <div class="current-class-info">
-                            <h3>Currently Teaching: ${currentClass.name}</h3>
+                            <h3>${t('lecturer.currentlyTeaching', 'Currently Teaching')}: ${currentClass.name}</h3>
                             <p>${currentClass.code} • ${currentClass.room}</p>
                             <div class="class-details">
                                 <span>${currentClass.time}</span>
-                                <span>Year ${currentClass.year} Students</span>
+                                <span>${t('lecturer.yearLabel', 'Year')} ${currentClass.year} ${t('lecturer.studentsLabel', 'Students')}</span>
                             </div>
                         </div>
-                        <a href="/pages/lecturer/qr_code.html?class=${currentClass.code}" class="start-btn">Generate QR Code</a>
+                        <a href="/pages/lecturer/qr_code.html?class=${encodeURIComponent(currentClass.id || currentClass.code)}&code=${encodeURIComponent(currentClass.code)}&name=${encodeURIComponent(currentClass.name || '')}&room=${encodeURIComponent(currentClass.room || '')}" class="start-btn">Generate QR Code</a>
                     </div>
                 `;
             } else if (nextClass) {
@@ -519,14 +635,14 @@
                 container.innerHTML = `
                     <div class="current-class-card" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
                         <div class="current-class-info">
-                            <h3>Next Class: ${nextClass.name}</h3>
-                            <p>${nextClass.code} • ${nextClass.room} • Starting in ~${minsUntil} min</p>
+                            <h3>${t('lecturer.nextClass', 'Next Class')}: ${nextClass.name}</h3>
+                            <p>${nextClass.code} • ${nextClass.room} • ${t('lecturer.startingIn', 'Starting in ~')}${minsUntil} ${t('dashboard.minutes', 'min')}</p>
                             <div class="class-details">
                                 <span>${nextClass.time}</span>
-                                <span>Year ${nextClass.year} Students</span>
+                                <span>${t('lecturer.yearLabel', 'Year')} ${nextClass.year} ${t('lecturer.studentsLabel', 'Students')}</span>
                             </div>
                         </div>
-                        <a href="/pages/lecturer/qr_code.html?class=${nextClass.code}" class="start-btn">Prepare QR Code</a>
+                        <a href="/pages/lecturer/qr_code.html?class=${encodeURIComponent(nextClass.id || nextClass.code)}&code=${encodeURIComponent(nextClass.code)}&name=${encodeURIComponent(nextClass.name || '')}&room=${encodeURIComponent(nextClass.room || '')}" class="start-btn">Prepare QR Code</a>
                     </div>
                 `;
             } else {
@@ -545,21 +661,21 @@
                     container.innerHTML = `
                         <div class="current-class-card" style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
                             <div class="current-class-info">
-                                <h3>Upcoming: ${upcomingClass.name} (${nextDayName})</h3>
+                                <h3>${t('dashboard.upcomingClasses', 'Upcoming Classes')}: ${upcomingClass.name} (${nextDayName})</h3>
                                 <p>${upcomingClass.code} • ${upcomingClass.room}</p>
                                 <div class="class-details">
                                     <span>${upcomingClass.time}</span>
-                                    <span>Year ${upcomingClass.year} Students</span>
+                                    <span>${t('lecturer.yearLabel', 'Year')} ${upcomingClass.year} ${t('lecturer.studentsLabel', 'Students')}</span>
                                 </div>
                             </div>
-                            <a href="/pages/lecturer/qr_code.html?class=${upcomingClass.code}" class="start-btn">Prepare</a>
+                            <a href="/pages/lecturer/qr_code.html?class=${encodeURIComponent(upcomingClass.id || upcomingClass.code)}&code=${encodeURIComponent(upcomingClass.code)}&name=${encodeURIComponent(upcomingClass.name || '')}&room=${encodeURIComponent(upcomingClass.room || '')}" class="start-btn">Prepare</a>
                         </div>
                     `;
                 } else {
                     container.innerHTML = `
                         <div class="no-class-card">
-                            <h3>No More Classes Today</h3>
-                            <p>Enjoy your free time. Your next class is on ${nextDayName}.</p>
+                            <h3>${t('lecturer.noMoreClassesToday', 'No More Classes Today')}</h3>
+                            <p>${t('lecturer.nextClassOn', 'Your next class is on')} ${nextDayName}.</p>
                         </div>
                     `;
                 }
@@ -577,13 +693,13 @@
                     <div class="class-card">
                         <div class="class-header">
                             <span class="class-code">${c.code}</span>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);">Year ${c.year}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">${t('lecturer.yearLabel', 'Year')} ${c.year}</span>
                         </div>
                         <div class="class-name">${c.name}</div>
-                        <div class="class-info">${sessions.length} sessions/week • ${c.room}</div>
+                        <div class="class-info">${sessions.length} ${t('lecturer.sessionsPerWeek', 'sessions/week')} • ${c.room}</div>
                         <div class="class-actions">
-                            <a href="/pages/lecturer/qr_code.html?class=${c.code}" class="btn btn-primary">QR Code</a>
-                            <a href="/pages/lecturer/manual_attendance.html?class=${c.code}" class="btn btn-secondary">Manual</a>
+                            <a href="/pages/lecturer/qr_code.html?class=${encodeURIComponent(c.id || c.code)}&code=${encodeURIComponent(c.code)}&name=${encodeURIComponent(c.name || '')}&room=${encodeURIComponent(c.room || '')}" class="btn btn-primary">QR Code</a>
+                            <a href="/pages/lecturer/manual_attendance.html?class=${encodeURIComponent(c.id || c.code)}&code=${encodeURIComponent(c.code)}" class="btn btn-secondary">Manual</a>
                         </div>
                     </div>
                 `;
@@ -715,7 +831,7 @@
          */
         function updateClock() {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-US', { 
+            const timeStr = now.toLocaleTimeString(currentLocale(), { 
                 hour: '2-digit', 
                 minute: '2-digit',
                 second: '2-digit',

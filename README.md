@@ -8,8 +8,8 @@ A modern, full-stack university attendance portal for Africa University, allowin
 
 - Dashboard: overview of today's schedule and quick attendance stats.
 - Weekly Schedule: full color-coded timetable from live university data.
-- Mark Attendance: enter the 6-digit TOTP code shown by the lecturer.
-- QR Scanner: scan the lecturer QR code to mark attendance.
+- Mark Attendance: enter the 6-digit code for check-in and check-out windows.
+- QR Scanner: scan lecturer QR for check-in/check-out attendance flow.
 - Reports: personal attendance records with charts and at-risk alerts.
 - Campus Map: interactive map for navigating university buildings.
 - Notifications: view announcements from lecturers.
@@ -23,21 +23,26 @@ A modern, full-stack university attendance portal for Africa University, allowin
 
 ### Lecturer Portal
 
-- QR Code Generator: generates a live rotating QR and 6-digit code for active class.
-- Online Class notice: notify students with a join link.
-- Manual Attendance: mark students present individually for edge cases.
-- My Classes: view all assigned classes and schedules.
-- Manage Students: view students by course and promote to Student Rep.
-- Announcements: post updates (delays, venue changes, cancellations).
-- Analytics: visual charts for attendance trends and at-risk students.
+- **QR Code Session Control**: Opens check-in and check-out windows with explicit mode indicators ("Active: Check-in Code" / "Active: Check-out Code") to prevent accidental clicks. Confirmation dialog guards against checkout mistakes.
+- **Manual Code Entry**: Students can enter codes displayed on the QR page during attendance windows.
+- **Online Class Notice**: Notify students with a join link via Emerald-green notification banner.
+- **Manual Attendance**: Mark students present individually for edge cases (override mode).
+- **My Classes**: View all assigned classes with session management.
+- **Manage Students**: View students by course and promote to Student Rep.
+- **Announcements**: Post updates (delays, venue changes, cancellations, live updates).
+- **Analytics**: Visual charts for attendance trends and at-risk student identification.
 
 ### Admin Dashboard
 
-- System Stats: user counts, class counts, attendance summary.
-- User Management: list, search, change roles, delete users.
-- Timetable Viewer: browse all classes with filters.
-- Timetable Upload: preview diff, replace semester timetable, rollback backups.
-- Create User: add new students/lecturers/admins.
+- **System Stats**: Real-time user counts, class counts, attendance summary, QR sessions, announcements.
+- **User Management**: List, search, filter by role, change roles, delete users.
+- **Timetable Viewer**: Browse classes with multi-filter (college, program, year, day).
+- **Timetable Upload**: Preview file before import, replace semester timetable, restore from backups, rollback on error.
+- **Map & Routes**: Admin-mode campus map for route creation, recording, and path copying (students see static routes only).
+- **Data Quality**: Detect and resolve duplicate lecturer accounts safely without terminal access.
+- **AI Management**: View and manage AI assistant scopes and content policies.
+- **Security**: Audit user accounts, device trust status, verification logs.
+- **Create User**: Bulk user creation, role assignment automation.
 
 ## Setup and Installation
 
@@ -66,12 +71,16 @@ DB_STORAGE=./timetable.sqlite
 SESSION_SECRET=super_secret_upath_key_2026
 JWT_SECRET=upath_dev_secret_key_2026_minimum_length_32_ok
 ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+IDENTITY_PROVIDER_URL=
+IDENTITY_PROVIDER_API_KEY=
+IDENTITY_PROVIDER_TIMEOUT_MS=20000
 ```
 
 Notes:
 
 - `JWT_SECRET` must be at least 32 characters.
 - `SEED_DEFAULT_ADMIN` and `DEFAULT_ADMIN_PASSWORD` are optional and should be used carefully.
+- If `IDENTITY_PROVIDER_URL` is set, selfie + ID verification calls that provider during device verification.
 
 ## Mobile Testing (Ngrok)
 
@@ -82,6 +91,27 @@ ngrok http 3000
 ```
 
 Use the generated HTTPS URL in your phone browser.
+
+## Features Highlights (v2.1 Stability Update)
+
+### QR & Code Entry Safety
+
+- **Mode Indicators**: Both card and enlarged QR views show "CHECK-IN CODE" or "CHECK-OUT CODE"
+- **Checkout Guard**: Confirmation dialog prevents accidental check-out transitions
+- **Toast Notifications**: Smooth corner notifications auto-dismiss (no modal blocking)
+- **Smart Class Resolution**: Composite class IDs prevent ambiguous course-code-only matches
+
+### Admin & UI Polish
+
+- **Admin Map Panel**: Uses full available height for map; description stays compact
+- **AI Widget Overflow Fix**: Panel width optimized to 480px, AI output constrained with proper text wrapping
+- **Analytics Compatibility**: Legacy attendance records remain visible; new lifecycle logic is enforced
+
+### Database & Migrations
+
+- **Sequelize CLI Setup**: Baseline migration scaffold for future schema changes
+- **Non-Destructive Sync**: SQLite schema changes avoid foreign key issues
+- **Audit Trail**: Attendance lifecycle tracked: `checkedInAt`, `checkedOutAt`, `closedAt`
 
 ## Sample Credentials
 
@@ -111,7 +141,40 @@ Use the generated HTTPS URL in your phone browser.
 | Field | Value |
 | --- | --- |
 | Admin ID | `admin` |
-| Password | set via `DEFAULT_ADMIN_PASSWORD` when `SEED_DEFAULT_ADMIN=true` |
+| Password | `admin123` (default for this environment) |
+
+## Attendance Completion Rule
+
+- Attendance is finalized only when a student successfully completes both check-in and check-out.
+- Manual lecturer attendance remains available for edge cases.
+- Daily attendance exports include check-in and check-out timestamps.
+- Lecturers can only open/close check-in sessions for classes they are assigned to.
+- Student check-in/check-out is rejected for classes outside the student program/year cohort.
+
+## Smoke Tests
+
+Run quick production-readiness checks:
+
+```bash
+npm run smoke:admin
+npm run smoke:attendance
+```
+
+## Database Migrations (Sequelize CLI)
+
+Migration tooling is now scaffolded and ready.
+
+```bash
+npm run db:migrate
+npm run db:migrate:status
+npm run db:migrate:undo
+```
+
+Notes:
+
+- `.sequelizerc` is configured for `server/migrations` and `server/seeders`.
+- `20260402000000-baseline-schema.js` is a non-destructive baseline marker migration.
+- Runtime `sync` still exists today; migrations are prepared for controlled schema evolution.
 
 ## Project Structure
 

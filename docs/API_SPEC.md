@@ -61,6 +61,53 @@ Role checks are enforced on the backend for privileged actions.
 
 ## Attendance
 
+### Open Check-In Session
+
+- **Endpoint**: `POST /attendance/checkin`
+- **Access**: `lecturer`, `admin`
+- **Body**: `{ classId }`
+- **Response**: `{ sessionId, code, timeLeft, status }`
+
+### Open Check-Out Session
+
+- **Endpoint**: `POST /attendance/checkout`
+- **Access**: `lecturer`, `admin`
+- **Body**: `{ classId }`
+- **Response**: `{ sessionId, code, timeLeft, status }`
+
+### Validate Check-In
+
+- **Endpoint**: `POST /attendance/validate-checkin`
+- **Access**: authenticated student/rep for own account
+- **Body**: `{ classId, studentId, code }`
+- **Response**: `{ attendanceId, requiresVerification, nextStep }`
+
+### Validate Check-Out
+
+- **Endpoint**: `POST /attendance/validate-checkout`
+- **Access**: authenticated student/rep for own account
+- **Body**: `{ classId, studentId, code, attendanceId? }`
+- **Response**: `{ attendanceId, checkedInAt, checkedOutAt }`
+
+### Verify Identity (Device Verification)
+
+- **Endpoint**: `POST /attendance/verify-identity`
+- **Access**: authenticated student/rep for own account
+- **Body**: `{ userId, method, selfieImage?, idImage?, photoWidth?, photoHeight?, sessionId? }`
+- **Response**: `{ verified, verificationId, message }`
+
+### Active Devices
+
+- **Endpoint**: `GET /attendance/devices/active`
+- **Access**: authenticated user
+- **Response**: `{ devices, maxDevices, totalDevices }`
+
+### Register Device
+
+- **Endpoint**: `POST /attendance/devices/register`
+- **Access**: authenticated user
+- **Response**: `{ deviceId, message }`
+
 ### Mark Attendance (Single)
 
 - **Endpoint**: `POST /attendance/mark`
@@ -108,3 +155,10 @@ Role checks are enforced on the backend for privileged actions.
   "avgAttendance": 88
 }
 ```
+
+### Export Today's Attendance CSV
+
+- **Endpoint**: `GET /attendance/today-by-class/:courseCode/export`
+- **Access**: `lecturer`, `admin`, `student_rep`
+- **CSV Columns**:
+  `Date,CourseCode,CourseName,StudentId,FullName,Program,Year,Method,CheckInTime,CheckOutTime,Completion`

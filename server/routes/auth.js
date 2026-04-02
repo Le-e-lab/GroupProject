@@ -60,6 +60,31 @@ router.post('/register', async (req, res) => {
 
 const jwt = require('jsonwebtoken');
 
+function getCookieOptions() {
+    const envSecure = String(process.env.COOKIE_SECURE || '').toLowerCase();
+    const secure = envSecure
+        ? (envSecure === 'true' || envSecure === '1')
+        : process.env.NODE_ENV === 'production';
+
+    let sameSite = String(process.env.COOKIE_SAMESITE || (secure ? 'none' : 'lax')).toLowerCase();
+    if (!['lax', 'strict', 'none'].includes(sameSite)) {
+        sameSite = secure ? 'none' : 'lax';
+    }
+
+    // Browsers reject SameSite=None cookies unless Secure=true.
+    if (sameSite === 'none' && !secure) {
+        sameSite = 'lax';
+    }
+
+    return {
+        httpOnly: true,
+        secure,
+        sameSite,
+        maxAge: 8 * 60 * 60 * 1000,
+        path: '/'
+    };
+}
+
 /**
  * ========================================
  * LOGIN ROUTE
@@ -103,12 +128,7 @@ router.post('/login', authLoginLimiter, async (req, res) => {
         const token = jwt.sign(payload, jwtSecret, { expiresIn: '8h' });
 
         // 3. Set HttpOnly Cookie
-        res.cookie('upath_token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 8 * 60 * 60 * 1000 // 8 hours
-        });
+        res.cookie('upath_token', token, getCookieOptions());
 
         // 4. Return User Profile (Excluding sensitive data if any, keeping password for now as simple str)
         res.json({ 
@@ -121,7 +141,8 @@ router.post('/login', authLoginLimiter, async (req, res) => {
                 year: user.year,
                 department: user.department,
                 program: user.program, // <--- The Key Filter Field
-                college: user.college  // <--- Added for Organization
+                college: user.college,  // <--- Added for Organization
+                language: user.language || 'en'
             } 
         });
     } catch (err) {
@@ -137,9 +158,8 @@ router.post('/login', authLoginLimiter, async (req, res) => {
  */
 router.post('/logout', (req, res) => {
     res.clearCookie('upath_token', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        ...getCookieOptions(),
+        maxAge: undefined
     });
     res.json({ message: 'Logged out successfully' });
 });

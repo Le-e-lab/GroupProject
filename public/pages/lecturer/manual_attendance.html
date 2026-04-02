@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../css/theme.css">
 </head>
-<body>
+<body data-ai-context="manual-attendance">
     <nav class="navbar">
         <a href="../../lecturer_dashboard.html" class="navbar-brand">
             <div class="navbar-logo">U</div>
@@ -15,10 +15,10 @@
             <span class="navbar-role" style="background: #FEE2E2; color: #DC2626;">Staff</span>
         </a>
         <div class="navbar-nav">
-            <a href="../../lecturer_dashboard.html" class="navbar-link">Overview</a>
-            <a href="../../pages/lecturer/my_classes.html" class="navbar-link">Classes</a>
-            <a href="../../pages/lecturer/lecturer_schedule.html" class="navbar-link">Schedule</a>
-            <a href="../../pages/lecturer/lecturer_reports.html" class="navbar-link">Analytics</a>
+            <a href="../../lecturer_dashboard.html" class="navbar-link" data-i18n="nav.overview">Overview</a>
+            <a href="../../pages/lecturer/my_classes.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
+            <a href="../../pages/lecturer/lecturer_schedule.html" class="navbar-link" data-i18n="nav.schedule">Schedule</a>
+            <a href="../../pages/lecturer/lecturer_reports.html" class="navbar-link" data-i18n="nav.analytics">Analytics</a>
         </div>
         <div class="navbar-actions">
             <div class="navbar-avatar">LC</div>
@@ -43,6 +43,7 @@
                     <h3 class="card-title">Student List</h3>
                     <div class="flex gap-1" style="flex-wrap: wrap; justify-content: flex-end;">
                         <button class="btn btn-secondary btn-sm" onclick="downloadRegisteredStudents()">⬇️ Download List</button>
+                        <button class="btn btn-secondary btn-sm" onclick="downloadTodayCheckIns()">✅ Today's Check-ins</button>
                         <button class="btn btn-secondary btn-sm" onclick="selectAll()">Select All</button>
                         <button class="btn btn-secondary btn-sm" onclick="clearAll()">Clear All</button>
                         <button class="btn btn-primary btn-sm" onclick="addStudentPrompt()">+ Add Student</button>
@@ -79,9 +80,12 @@
     </main>
 
     <script src="../../js/api.js"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
         let currentClass = null;
         let classList = [];
+        window.AI_ASSISTANT_CONTEXT = { page: 'manual-attendance' };
 
         async function initPage() {
             const user = API.getCurrentUser();
@@ -170,6 +174,14 @@
                         </div>`;
                 }
                 
+                window.AI_ASSISTANT_CONTEXT = {
+                    page: 'manual-attendance',
+                    classCode: currentClass.code,
+                    className: currentClass.name,
+                    checkedInCount: checkedCount,
+                    totalStudents: students.length
+                };
+
                 // Sort: checked-in students first, then by risk status
                 const order = { danger: 0, risk: 1, warning: 2, good: 3 };
                 students.sort((a, b) => {
@@ -300,6 +312,39 @@
             } catch (error) {
                 console.error('Download class list error:', error);
                 showNotificationModal('error', 'Download Failed', error.message || 'Unable to download student list.');
+            }
+        }
+
+        async function downloadTodayCheckIns() {
+            if (!currentClass || !currentClass.code) {
+                showNotificationModal('error', 'Select a Class', 'Please select a class before downloading.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/attendance/today-by-class/${encodeURIComponent(currentClass.code)}/export`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.message || 'Failed to download today\'s check-ins');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${currentClass.code}_today_checkins.csv`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+
+                showNotificationModal('success', 'Download Complete', `Today's check-ins for ${currentClass.code} have been downloaded.`);
+            } catch (error) {
+                console.error('Download today check-ins error:', error);
+                showNotificationModal('error', 'Download Failed', error.message || 'Unable to download today\'s check-ins.');
             }
         }
 

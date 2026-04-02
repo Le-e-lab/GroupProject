@@ -134,7 +134,7 @@
         }
     </style>
 </head>
-<body>
+<body data-ai-context="student-reports">
     <!-- Navigation Bar -->
     <nav class="navbar">
         <a href="../../dashboard.html" class="navbar-brand">
@@ -143,10 +143,10 @@
             <span class="navbar-role">Student</span>
         </a>
         <div class="navbar-nav">
-            <a href="../../dashboard.html" class="navbar-link">Overview</a>
-            <a href="../../pages/student/schedule.html" class="navbar-link">Classes</a>
-            <a href="../../pages/student/reports.html" class="navbar-link active">Attendance</a>
-            <a href="../../pages/student/map.html" class="navbar-link">Map</a>
+            <a href="../../dashboard.html" class="navbar-link" data-i18n="nav.overview">Overview</a>
+            <a href="../../pages/student/schedule.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
+            <a href="../../pages/student/reports.html" class="navbar-link active" data-i18n="nav.attendance">Attendance</a>
+            <a href="../../pages/student/map.html" class="navbar-link" data-i18n="nav.map">Map</a>
         </div>
         <div class="navbar-actions" style="display: flex; align-items: center; gap: 16px;">
             <!-- New Notification Bell Icon -->
@@ -164,7 +164,7 @@
             <!-- Header with Clock -->
             <div class="reports-header">
                 <div>
-                    <h1 class="page-title">Attendance Reports</h1>
+                    <h1 class="page-title" data-i18n="student.reports.title">Attendance Reports</h1>
                     <p class="page-subtitle" id="studentInfo">Loading...</p>
                 </div>
                 <div class="live-clock">
@@ -194,7 +194,7 @@
             </div>
 
             <!-- Course Breakdown -->
-            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;">Course Breakdown</h2>
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;" data-i18n="student.reports.breakdown">Course Breakdown</h2>
             <div class="courses-grid" id="coursesGrid">
                 <!-- Dynamically loaded -->
             </div>
@@ -202,6 +202,8 @@
     </main>
 
     <script src="../../js/api.js"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
         /**
          * ========================================
@@ -248,6 +250,14 @@
                 } else {
                     userYear = 2;
                 }
+
+                window.AI_ASSISTANT_CONTEXT = {
+                    page: 'student-reports',
+                    studentId: user.id,
+                    year: userYear,
+                    program: user.program || null,
+                    preferredLanguage: user.language || (window.I18N ? I18N.currentLanguage() : 'en')
+                };
             }
             loadAttendanceData();
         }
@@ -292,6 +302,21 @@
             
             // Render course cards
             const grid = document.getElementById('coursesGrid');
+
+            if (!courseList.length) {
+                grid.innerHTML = `
+                    <div class="course-card" style="grid-column: 1/-1; text-align: center;">
+                        <div class="course-header" style="justify-content: center;">
+                            <div class="course-info">
+                                <h3>No analytics yet</h3>
+                                <p>Your attendance report will appear after attendance records are available for your classes.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
             let html = '';
             
             courseList.forEach(course => {

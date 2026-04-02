@@ -6,7 +6,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server/server.js",
-    "smoke:admin": "node server/scripts/smoke_admin_dashboard.js"
+    "smoke:admin": "node server/scripts/smoke_admin_dashboard.js",
+    "smoke:attendance": "node server/scripts/smoke_attendance_flow.js",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:migrate:status": "sequelize-cli db:migrate:status",
+    "db:migrate:create": "sequelize-cli migration:generate --name"
   },
   "keywords": [],
   "author": "",
@@ -30,5 +35,8 @@
     "sequelize": "^6.37.8",
     "sqlite3": "^5.1.7",
     "validator": "^13.15.26"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.5"
   }
 }

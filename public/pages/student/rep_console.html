@@ -67,7 +67,18 @@
 
         @media (max-width: 768px) {
             .tt-table th:nth-child(n+5), .tt-table td:nth-child(n+5) { display: none; }
-            .tabs { flex-wrap: wrap; }
+            .tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                gap: 6px;
+            }
+            .tab {
+                flex: 0 0 auto;
+                white-space: nowrap;
+                min-height: 40px;
+            }
         }
     </style>
 </head>
@@ -178,7 +189,10 @@
     </div>
 
     <script src="../../js/api.js?v=2"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
+        window.AI_ASSISTANT_CONTEXT = { page: 'student-rep-console' };
         let currentUser = null;
         let timetableData = [];
 
