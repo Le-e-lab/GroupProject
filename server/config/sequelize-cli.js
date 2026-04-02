@@ -1,6 +1,9 @@
 require('dotenv').config();
+const path = require('path');
 
-const storage = process.env.DB_STORAGE || './timetable.sqlite';
+const storage = process.env.DB_STORAGE
+  ? path.resolve(process.env.DB_STORAGE)
+  : path.resolve(__dirname, '../../timetable.sqlite');
 
 module.exports = {
   development: {

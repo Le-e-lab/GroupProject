@@ -5,7 +5,7 @@
 ### Backend (Node.js + Express + Sequelize)
 
 - Runtime: Node.js with Express.js framework.
-- Database: SQLite (`timetable.sqlite` in project root) via Sequelize ORM.
+- Database: SQLite (`timetable.sqlite` in project root) via Sequelize ORM. The file is generated locally on first boot and is not a shared repo artifact.
 - Authentication: bcrypt password hashing plus session-based auth via `sessionStorage`.
 - API base: all routes served under `/api/`.
 
@@ -98,7 +98,7 @@ GroupProject/
 |  `- scripts/
 |     |- seed_all.js          # Full DB reseed script
 |     `- seed_attendance.js   # Attendance history seeder
-`- timetable.sqlite           # SQLite database in project root
+`- timetable.sqlite           # Local runtime database generated on first boot
 ```
 
 ---

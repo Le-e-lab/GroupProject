@@ -175,6 +175,7 @@ Notes:
 - `.sequelizerc` is configured for `server/migrations` and `server/seeders`.
 - `20260402000000-baseline-schema.js` is a non-destructive baseline marker migration.
 - Runtime `sync` still exists today; migrations are prepared for controlled schema evolution.
+- `timetable.sqlite` is a local runtime file. It is created automatically on first boot and should not be committed.
 
 ## Project Structure
 
@@ -185,7 +186,7 @@ GroupProject/
   docs/
   DOCUMENTATION.md
   package.json
-  timetable.sqlite
+  timetable.sqlite  # generated locally at runtime
 ```
 
 ## Documentation
