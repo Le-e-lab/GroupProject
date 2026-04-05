@@ -23,9 +23,15 @@ Role checks are enforced on the backend for privileged actions.
 
 ### Get All Users
 
-- **Endpoint**: `GET /auth/users`
+- **Endpoint**: `GET /users`
 - **Access**: `lecturer`, `admin`
-- **Response**: `{ students: [...], lecturers: [...] }`
+- **Response**: `{ users: [ { id, fullName, role, program, year, ... } ] }`
+
+### Get User Overview Stats
+
+- **Endpoint**: `GET /users/stats/overview`
+- **Access**: `lecturer`, `admin`
+- **Response**: `{ totalStudents, totalLecturers, totalAdmins, totalReps, totalClasses }`
 
 ---
 

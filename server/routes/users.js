@@ -65,6 +65,10 @@ router.put('/me/language', async (req, res) => {
  */
 router.get('/stats/overview', async (req, res) => {
     try {
+        if (!isAdmin(req) && !isLecturer(req)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
         const totalStudents = await User.count({ where: { role: { [Op.in]: ['student', 'student_rep'] } } });
         const totalLecturers = await User.count({ where: { role: 'lecturer' } });
         const totalAdmins = await User.count({ where: { role: 'admin' } });
@@ -84,6 +88,10 @@ router.get('/stats/overview', async (req, res) => {
  */
 router.get('/', async (req, res) => {
     try {
+        if (!isAdmin(req) && !isLecturer(req)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
         const where = {};
         if (req.query.role) {
             if (req.query.role === 'student') {

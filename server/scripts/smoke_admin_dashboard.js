@@ -16,6 +16,8 @@ const adminId = process.env.ADMIN_TEST_ID || 'admin';
 const adminPassword = process.env.ADMIN_TEST_PASSWORD || 'admin123';
 const lecturerId = process.env.LECTURER_TEST_ID || '210153';
 const lecturerPassword = process.env.LECTURER_TEST_PASSWORD || 'staff123';
+const studentId = process.env.STUDENT_TEST_ID || '240101';
+const studentPassword = process.env.STUDENT_TEST_PASSWORD || 'password123';
 
 function log(msg) {
     process.stdout.write(`${msg}\n`);
@@ -66,6 +68,7 @@ async function run() {
     log(`[SMOKE] Base URL: ${baseUrl}`);
     log(`[SMOKE] Admin identity: ${adminId}`);
     log(`[SMOKE] Lecturer identity: ${lecturerId}`);
+    log(`[SMOKE] Student identity: ${studentId}`);
 
     const admin = await login(adminId, adminPassword);
     log(`[SMOKE] admin login status=${admin.status}`);
@@ -119,6 +122,21 @@ async function run() {
         const forbidden = await getWithCookie('/api/admin/timetable/upload-status', lecturer.cookie);
         log(`[SMOKE] lecturer admin endpoint status=${forbidden.status} (expected 403)`);
         if (forbidden.status !== 403) failed += 1;
+    }
+
+    const student = await login(studentId, studentPassword);
+    log(`[SMOKE] student login status=${student.status}`);
+    if (!student.ok) {
+        failed += 1;
+        log(`[SMOKE] student login failed: ${(student.body && student.body.message) || 'unknown error'}`);
+    } else {
+        const usersForbidden = await getWithCookie('/api/users', student.cookie);
+        log(`[SMOKE] student users endpoint status=${usersForbidden.status} (expected 403)`);
+        if (usersForbidden.status !== 403) failed += 1;
+
+        const overviewForbidden = await getWithCookie('/api/users/stats/overview', student.cookie);
+        log(`[SMOKE] student users overview endpoint status=${overviewForbidden.status} (expected 403)`);
+        if (overviewForbidden.status !== 403) failed += 1;
     }
 
     if (failed > 0) {
