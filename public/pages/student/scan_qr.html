@@ -45,8 +45,12 @@
             font-weight: 600;
             text-decoration: none;
             padding: 10px 20px;
+            min-height: 44px;
+            line-height: 24px;
             border-radius: var(--radius);
             transition: background 0.2s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .manual-entry-link:hover {
             background: var(--primary-light);
@@ -59,10 +63,12 @@
             color: white;
             border: none;
             padding: 10px 20px;
+            min-height: 44px;
             border-radius: var(--radius);
             cursor: pointer;
             font-weight: 600;
             font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
         }
         #reader__dashboard_section_swaplink { display: none !important; }
     </style>
@@ -246,6 +252,16 @@
             
             const successMessage = result && result.message
                 && /(success|marked|check-in recorded|attendance successfully recorded|attendance already completed)/i.test(result.message);
+
+            if (result && result.message && /forbidden/i.test(result.message)) {
+                if (typeof Toast !== 'undefined') {
+                    Toast.error('Session/account mismatch. Sign out, sign in as the student, then scan again.');
+                }
+                setTimeout(() => {
+                    window.location.href = '../auth.html';
+                }, 1800);
+                return;
+            }
 
             if (successMessage) {
                 if (typeof Toast !== 'undefined') Toast.success('Attendance Marked Successfully!');

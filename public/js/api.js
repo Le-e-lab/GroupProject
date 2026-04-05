@@ -106,6 +106,7 @@ const API = {
         try {
             const response = await fetch(`${this.baseUrl}/auth/login`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: idNumber, password })
             });
@@ -509,7 +510,7 @@ const API = {
     },
 
     async validateCheckInCode(classId, code) {
-        const user = this.getCurrentUser();
+        const user = await this.getActiveUser();
         if (!user) return { error: 'Not logged in' };
 
         const response = await fetch(`${this.baseUrl}/attendance/validate-checkin`, {
@@ -522,7 +523,7 @@ const API = {
     },
 
     async validateCheckOutCode(classId, code, attendanceId = null) {
-        const user = this.getCurrentUser();
+        const user = await this.getActiveUser();
         if (!user) return { error: 'Not logged in' };
 
         const response = await fetch(`${this.baseUrl}/attendance/validate-checkout`, {
@@ -584,6 +585,23 @@ const API = {
     getCurrentUser() {
         const str = sessionStorage.getItem('upath_user');
         return str ? JSON.parse(str) : null;
+    },
+
+    async getActiveUser() {
+        // Prefer server-authenticated identity to avoid stale sessionStorage/user mismatch.
+        try {
+            const profile = await this.getCurrentUserProfile();
+            const user = profile && (profile.user || profile);
+            if (user && user.id) {
+                try {
+                    sessionStorage.setItem('upath_user', JSON.stringify(user));
+                } catch (_) {}
+                return user;
+            }
+        } catch (_) {
+            // Fall back to cached session user if profile endpoint fails.
+        }
+        return this.getCurrentUser();
     },
 
 
