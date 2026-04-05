@@ -341,6 +341,12 @@
             });
         }
 
+        async function getEligibleClasses() {
+            if (!currentUser) return [];
+            // Fallback list for ad-hoc/rescheduled sessions (evenings, next day, weekends).
+            return API.getClasses(currentUser.year || 1, currentUser.program || '');
+        }
+
         function renderClasses(classes) {
             const list = document.getElementById('liveClassesList');
             const select = document.getElementById('classSelect');
@@ -366,19 +372,21 @@
                 select.appendChild(option);
 
                 const card = document.createElement('div');
-                card.className = `class-item${selectedClassId === item.code || (!selectedClassId && index === 0) ? ' active' : ''}`;
+                const itemClassId = item.id || item.code;
+                card.dataset.classId = itemClassId;
+                card.className = `class-item${selectedClassId === itemClassId || (!selectedClassId && index === 0) ? ' active' : ''}`;
                 card.innerHTML = `<strong>${item.code} - ${item.name}</strong><span>${item.day} • ${item.time} • ${item.room}</span>`;
                 card.onclick = () => {
-                    selectedClassId = item.id || item.code;
-                    select.value = item.id || item.code;
+                    selectedClassId = itemClassId;
+                    select.value = itemClassId;
                     document.querySelectorAll('.class-item').forEach((node) => node.classList.remove('active'));
                     card.classList.add('active');
                 };
                 list.appendChild(card);
 
-                if ((selectedClassId && selectedClassId === (item.id || item.code)) || (!selectedClassId && index === 0)) {
-                    select.value = item.id || item.code;
-                    selectedClassId = item.id || item.code;
+                if ((selectedClassId && selectedClassId === itemClassId) || (!selectedClassId && index === 0)) {
+                    select.value = itemClassId;
+                    selectedClassId = itemClassId;
                 }
             });
         }
@@ -387,8 +395,21 @@
             try {
                 setStatus(t('attendance.loading', 'Loading live classes...'), 'info');
                 liveClasses = await getTodayLiveClasses();
-                renderClasses(liveClasses);
-                setStatus(liveClasses.length ? t('attendance.liveLoaded', 'Live classes loaded.') : t('attendance.noLive', 'No live classes right now.'), liveClasses.length ? 'success' : 'warning');
+
+                if (liveClasses.length > 0) {
+                    renderClasses(liveClasses);
+                    setStatus(t('attendance.liveLoaded', 'Live classes loaded.'), 'success');
+                    return;
+                }
+
+                const fallbackClasses = await getEligibleClasses();
+                renderClasses(fallbackClasses);
+                setStatus(
+                    fallbackClasses.length
+                        ? 'No live timetable class right now. You can still select your class for a rescheduled/ad-hoc session.'
+                        : t('attendance.noLive', 'No live classes right now.'),
+                    fallbackClasses.length ? 'info' : 'warning'
+                );
             } catch (err) {
                 console.error(err);
                 setStatus(err.message || 'Unable to load live classes.', 'error');
@@ -643,7 +664,7 @@
         document.getElementById('classSelect').addEventListener('change', (evt) => {
             selectedClassId = evt.target.value;
             document.querySelectorAll('.class-item').forEach((node) => node.classList.remove('active'));
-            const selectedCard = Array.from(document.querySelectorAll('.class-item')).find((node) => node.classList.contains('active'));
+            const selectedCard = Array.from(document.querySelectorAll('.class-item')).find((node) => node.dataset.classId === selectedClassId);
             if (selectedCard) selectedCard.classList.add('active');
         });
 
