@@ -343,6 +343,59 @@
         @media (max-width: 768px) {
             .qr-layout { grid-template-columns: 1fr; }
         }
+
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            padding: 16px;
+        }
+        .confirm-overlay.active {
+            display: flex;
+        }
+        .confirm-modal {
+            width: min(420px, 100%);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+        }
+        .confirm-modal h3 {
+            margin: 0 0 8px;
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+        .confirm-modal p {
+            margin: 0;
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+        .confirm-actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .confirm-btn {
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .confirm-btn.primary {
+            border-color: #EA580C;
+            background: #F97316;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -356,6 +409,18 @@
         </div>
         <div class="maximize-timer" id="maximizeTimer">Expires in 5:00</div>
     </div>
+
+    <div class="confirm-overlay" id="checkoutConfirmOverlay" aria-hidden="true">
+        <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="checkoutConfirmTitle">
+            <h3 id="checkoutConfirmTitle">Open check-out code now?</h3>
+            <p>Students will stop using the check-in code once check-out starts.</p>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-btn" id="checkoutConfirmCancel">Cancel</button>
+                <button type="button" class="confirm-btn primary" id="checkoutConfirmProceed">Open Check-out</button>
+            </div>
+        </div>
+    </div>
+
     <div class="qr-layout">
         <!-- QR Code Card -->
         <div class="qr-card">
@@ -363,10 +428,10 @@
             
             <div class="class-info">
                 <div class="class-name" id="className">Introduction to Programming</div>
-                <div class="class-details" id="classDetails">CS101 • Lab 3A • In progress</div>
+                <div class="class-details" id="classDetails">Selected class • In progress</div>
             </div>
 
-            <div class="qr-image" onclick="openMaximize()" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="qr-image" id="qrImageWrap" style="cursor: pointer; transition: transform 0.2s;">
                 <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=UPATH-123456" alt="QR Code">
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">Click QR code to enlarge</div>
@@ -381,15 +446,15 @@
             </div>
 
             <div class="action-btns" style="display: flex; gap: 12px; margin-bottom: 12px;">
-                <button class="action-btn primary" id="checkinBtn" onclick="openCheckin()">🔓 Check-in</button>
-                <button class="action-btn primary" id="checkoutBtn" onclick="openCheckout()" style="background: #F97316; opacity: 0.5; cursor: not-allowed;" disabled>🔒 Check-out</button>
+                <button class="action-btn primary" id="checkinBtn">🔓 Check-in</button>
+                <button class="action-btn primary" id="checkoutBtn" style="background: #F97316; opacity: 0.5; cursor: not-allowed;" disabled>🔒 Check-out</button>
             </div>
             <div class="action-btns" style="display: flex; gap: 12px;">
-                <button class="action-btn" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); flex: 1;" onclick="copyCode()">Copy Code</button>
-                <button class="action-btn" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); flex: 1;" onclick="endSession()">End Session</button>
+                <button class="action-btn" id="copyCodeBtn" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); flex: 1;">Copy Code</button>
+                <button class="action-btn" id="endSessionBtn" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); flex: 1;">End Session</button>
             </div>
             <div style="margin-top: 12px;">
-                <button class="action-btn" style="width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);" onclick="openHelp()">Help / User Guide</button>
+                <button class="action-btn" id="helpBtn" style="width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);">Help / User Guide</button>
             </div>
         </div>
 
@@ -399,7 +464,7 @@
             <p class="notif-subtitle">Notify students about changes</p>
             
             <div class="notif-btns">
-                <button class="notif-btn" onclick="sendNotif('late', this)">
+                <button class="notif-btn" data-notif="late">
                     <span class="notif-btn-icon">
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </span>
@@ -409,7 +474,7 @@
                     </div>
                 </button>
 
-                <button class="notif-btn" onclick="sendNotif('venue', this)">
+                <button class="notif-btn" data-notif="venue">
                     <span class="notif-btn-icon">
                         <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </span>
@@ -419,7 +484,7 @@
                     </div>
                 </button>
 
-                <button class="notif-btn" onclick="sendNotif('cancelled', this)">
+                <button class="notif-btn" data-notif="cancelled">
                     <span class="notif-btn-icon">
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                     </span>
@@ -429,7 +494,7 @@
                     </div>
                 </button>
 
-                <button class="notif-btn" onclick="sendNotif('substitute', this)">
+                <button class="notif-btn" data-notif="substitute">
                     <span class="notif-btn-icon">
                         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </span>
@@ -440,7 +505,7 @@
                 </button>
 
                 <!-- NEW: Online Class Notif Button -->
-                <button class="notif-btn" id="notif-online" onclick="sendNotif('online', this)">
+                <button class="notif-btn" id="notif-online" data-notif="online">
                     <div class="notif-btn-icon" style="background:#D1FAE5; color:#059669;">💻</div>
                     <div class="notif-btn-text">
                         <div class="notif-btn-title">Online Class</div>
@@ -451,7 +516,7 @@
 
             <div class="custom-msg">
                 <textarea id="customMsg" rows="3" placeholder="Or type a custom message..."></textarea>
-                <button class="send-btn" onclick="sendCustom()">Send Custom Message</button>
+                <button class="send-btn" id="sendCustomBtn">Send Custom Message</button>
             </div>
         </div>
     </div>
@@ -463,14 +528,99 @@
         window.AI_ASSISTANT_CONTEXT = { page: 'lecturer-qr-code', helpTopics: ['check-in', 'check-out', 'attendance session'] };
 
         const urlParams = new URLSearchParams(window.location.search);
-        const classId = urlParams.get('class') || 'CS101';
-        const classCode = urlParams.get('code') || String(classId).split('-')[0] || classId;
-        const className = urlParams.get('name') || classCode;
+        const classId = urlParams.get('class') || '';
+        const classCode = urlParams.get('code') || (classId ? String(classId).split('-')[0] || classId : '');
+        const className = urlParams.get('name') || classCode || 'Selected Class';
         const classRoom = urlParams.get('room') || 'In progress';
+        const preferredAction = String(urlParams.get('action') || '').toLowerCase();
         let timeLeft = 0;
         let sessionState = 'idle'; // idle, checkin_open, checkout_open, closed
         let currentAction = 'checkin';
         let currentSessionId = null;
+        let currentUser = null;
+        let autoCloseSent = false;
+
+        function getActiveSessionHintKey() {
+            return 'upath_lecturer_active_session_hint';
+        }
+
+        function saveActiveSessionHint(mode, sessionId) {
+            if (!classId) return;
+            const payload = {
+                classId,
+                code: classCode || '',
+                name: className || '',
+                room: classRoom || '',
+                status: mode === 'checkout' ? 'checkout_open' : 'checkin_open',
+                sessionId: sessionId || null,
+                updatedAt: Date.now()
+            };
+            try {
+                localStorage.setItem(getActiveSessionHintKey(), JSON.stringify(payload));
+            } catch (_) {
+                // ignore storage errors
+            }
+        }
+
+        function clearActiveSessionHint() {
+            try {
+                localStorage.removeItem(getActiveSessionHintKey());
+            } catch (_) {
+                // ignore storage errors
+            }
+        }
+
+        function disableSessionControls() {
+            const checkinBtn = document.getElementById('checkinBtn');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            const endBtn = document.getElementById('endSessionBtn');
+            if (checkinBtn) checkinBtn.disabled = true;
+            if (checkoutBtn) checkoutBtn.style.opacity = '0.5';
+            if (checkoutBtn) checkoutBtn.disabled = true;
+            if (endBtn) endBtn.disabled = true;
+        }
+
+        function updateAvatarFromUser(user) {
+            if (!user || !user.fullName) return;
+            const initials = user.fullName
+                .split(' ')
+                .map((part) => part[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase();
+            const avatar = document.getElementById('userAvatar');
+            if (avatar) avatar.textContent = initials;
+        }
+
+        async function ensureLecturerOrAdminSession() {
+            try {
+                const profile = await API.getCurrentUserProfile();
+                const user = (profile && (profile.user || profile)) || null;
+                const role = String((user && user.role) || '').toLowerCase();
+                if (!['lecturer', 'admin'].includes(role)) {
+                    disableSessionControls();
+                    showNotificationModal('error', 'Session Not Allowed', 'Sign in as lecturer or admin, then open the QR page again.');
+                    setTimeout(() => {
+                        window.location.href = '../auth.html';
+                    }, 1400);
+                    return false;
+                }
+
+                try {
+                    sessionStorage.setItem('upath_user', JSON.stringify(user));
+                } catch (_) {}
+                currentUser = user;
+                updateAvatarFromUser(user);
+                return true;
+            } catch (err) {
+                disableSessionControls();
+                showNotificationModal('error', 'Session Expired', 'Please sign in again to open check-in/check-out.');
+                setTimeout(() => {
+                    window.location.href = '../auth.html';
+                }, 1400);
+                return false;
+            }
+        }
 
         function setCodeMode(mode) {
             const banner = document.getElementById('codeModeBanner');
@@ -536,7 +686,14 @@
             document.getElementById('maximizeQR').src = qrUrl;
         }
 
-        async function openCheckin() {
+        async function openCheckin(options = {}) {
+            if (!classId) {
+                showNotificationModal('error', 'Class Required', 'Select a class from My Classes before opening check-in.');
+                setTimeout(() => {
+                    window.location.href = '/pages/lecturer/my_classes.html';
+                }, 1200);
+                return;
+            }
             try {
                 const data = await API.openCheckInSession(classId);
                 if (!data || !data.code) throw new Error(data && data.message ? data.message : 'Check-in failed');
@@ -545,6 +702,7 @@
                 currentSessionId = data.sessionId || null;
                 sessionState = 'checkin_open';
                 setCodeMode('checkin');
+                saveActiveSessionHint('checkin', currentSessionId);
                 document.getElementById('sessionState').textContent = 'Check-in Open ✓';
                 document.getElementById('checkinBtn').disabled = true;
                 document.getElementById('checkoutBtn').disabled = false;
@@ -554,15 +712,36 @@
                 timeLeft = Math.max(1, Math.floor((data.timeLeft || 30000) / 1000));
             } catch (err) {
                 console.error('Check-in error:', err);
-                showNotificationModal('error', 'Check-in Failed', err.message || 'Unable to open check-in.');
+                const message = String((err && err.message) || 'Unable to open check-in.');
+                if (/forbidden|lecturer|admin/i.test(message)) {
+                    showNotificationModal('error', 'Check-in Forbidden', 'Your session is not lecturer/admin for this request. Sign out and sign in again as lecturer/admin.');
+                    setTimeout(() => {
+                        window.location.href = '../auth.html';
+                    }, 1500);
+                    return;
+                }
+                showNotificationModal('error', 'Check-in Failed', message);
             }
         }
 
-        async function openCheckout() {
+        async function openCheckout(options = {}) {
+            if (!classId) {
+                showNotificationModal('error', 'Class Required', 'Select a class from My Classes before opening check-out.');
+                setTimeout(() => {
+                    window.location.href = '/pages/lecturer/my_classes.html';
+                }, 1200);
+                return;
+            }
+            const silentRefresh = !!options.silentRefresh;
+            const skipConfirm = !!options.skipConfirm;
             try {
-                const proceed = window.confirm('Open CHECK-OUT code now? Students will no longer be able to use the check-in code.');
-                if (!proceed) {
-                    return;
+                const previousState = sessionState;
+                if (!silentRefresh && !skipConfirm) {
+                    const proceed = await openCheckoutConfirmation();
+                    if (!proceed) {
+                        showNotificationModal('info', 'Cancelled', 'Check-out was not opened.');
+                        return;
+                    }
                 }
 
                 const data = await API.openCheckOutSession(classId);
@@ -572,54 +751,159 @@
                 currentSessionId = data.sessionId || currentSessionId;
                 sessionState = 'checkout_open';
                 setCodeMode('checkout');
+                saveActiveSessionHint('checkout', currentSessionId);
                 document.getElementById('sessionState').textContent = 'Check-out Open ✓';
                 document.getElementById('checkoutBtn').disabled = true;
                 updateDisplay(data.code);
                 timeLeft = Math.max(1, Math.floor((data.timeLeft || 30000) / 1000));
+
+                const switchedToCheckout = previousState !== 'checkout_open';
+                if (!silentRefresh && switchedToCheckout) {
+                    showNotificationModal('success', 'Checkout Opened', 'Session switched from check-in to check-out. Students were notified to complete checkout now.');
+                }
             } catch (err) {
                 console.error('Check-out error:', err);
-                showNotificationModal('error', 'Check-out Failed', err.message || 'Unable to open check-out.');
+                if (silentRefresh) {
+                    return;
+                }
+                const message = String((err && err.message) || 'Unable to open check-out.');
+                if (/forbidden|lecturer|admin/i.test(message)) {
+                    showNotificationModal('error', 'Check-out Forbidden', 'Your session is not lecturer/admin for this request. Sign out and sign in again as lecturer/admin.');
+                    setTimeout(() => {
+                        window.location.href = '../auth.html';
+                    }, 1500);
+                    return;
+                }
+                showNotificationModal('error', 'Check-out Failed', message);
+            }
+        }
+
+        function autoCloseOnLeave() {
+            if (autoCloseSent) return;
+            if (!classId) return;
+            // Auto-close is intentionally limited to checkout mode only.
+            // Check-in sessions should stay active when lecturer navigates away.
+            if (sessionState !== 'checkout_open') return;
+
+            autoCloseSent = true;
+            clearActiveSessionHint();
+            try {
+                fetch('/api/attendance/close', {
+                    method: 'POST',
+                    credentials: 'include',
+                    keepalive: true,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ classId })
+                });
+            } catch (_) {
+                // Best-effort close on page exit.
             }
         }
 
         async function endSession() {
-            try {
-                const result = await API.closeAttendanceSession(classId);
-                if (result && result.message && /session closed/i.test(result.message)) {
-                    sessionState = 'closed';
-                    currentAction = 'closed';
-                    currentSessionId = null;
-                    setCodeMode('idle');
-                    document.getElementById('sessionState').textContent = 'Session Closed';
-                    document.getElementById('checkinBtn').disabled = true;
-                    document.getElementById('checkoutBtn').disabled = true;
-                    document.getElementById('codeDisplay').textContent = 'CLOSED';
-                    document.getElementById('maximizeCode').textContent = 'CLOSED';
-                    showNotificationModal('success', 'Session Ended', 'The attendance session has been closed.');
-                    return;
-                }
-
-                throw new Error((result && result.message) || 'Unable to close session');
-            } catch (err) {
-                console.error('End session error:', err);
-                showNotificationModal('error', 'End Session Failed', err.message || 'Unable to close this session right now.');
+            if (!classId) {
+                showNotificationModal('error', 'Class Required', 'Select a class from My Classes before ending a session.');
+                setTimeout(() => {
+                    window.location.href = '/pages/lecturer/my_classes.html';
+                }, 1200);
+                return;
             }
+
+            if (sessionState === 'idle') {
+                showNotificationModal('info', 'No Active Session', 'There is no active check-in or check-out session to close.');
+                return;
+            }
+
+            try {
+                const data = await API.closeAttendanceSession(classId);
+                if (data && data.error) {
+                    throw new Error(data.message || 'Failed to close attendance session.');
+                }
+                sessionState = 'idle';
+                currentAction = 'checkin';
+                currentSessionId = null;
+                timeLeft = 0;
+                clearActiveSessionHint();
+                renderIdleState();
+                if (data && Number(data.uncheckedOutCount || 0) > 0) {
+                    const sample = Array.isArray(data.uncheckedOutStudentIds)
+                        ? data.uncheckedOutStudentIds.slice(0, 5).join(', ')
+                        : '';
+                    const sampleSuffix = sample ? ` Example IDs: ${sample}.` : '';
+                    showNotificationModal('info', 'Session Ended With Warnings', `${data.uncheckedOutCount} student(s) did not checkout before session close.${sampleSuffix}`);
+                } else {
+                    showNotificationModal('success', 'Session Ended', 'Attendance session has been closed.');
+                }
+            } catch (err) {
+                const message = String((err && err.message) || 'Unable to close attendance session.');
+                showNotificationModal('error', 'End Session Failed', message);
+            }
+        }
+
+        async function refreshCurrentSession() {
+            if (sessionState === 'checkin_open') {
+                return openCheckin({ silentRefresh: true });
+            }
+            if (sessionState === 'checkout_open') {
+                return openCheckout({ silentRefresh: true });
+            }
+            return Promise.resolve();
         }
 
         function copyCode() {
             const code = document.getElementById('codeDisplay').textContent;
-            navigator.clipboard.writeText(code);
-            alert('Code copied: ' + code);
+            navigator.clipboard.writeText(code)
+                .then(() => showNotificationModal('success', 'Code Copied', `Copied code ${code} to clipboard.`))
+                .catch(() => showNotificationModal('error', 'Copy Failed', 'Unable to copy code. Please copy it manually.'));
         }
 
         function openHelp() {
-            alert('1. Start check-in when class begins.\n2. Students scan or enter the displayed code.\n3. Open check-out when class ends.\n4. Use the manual attendance page for exceptions.');
+            showNotificationModal('info', 'Quick Guide', '1) Open check-in at class start. 2) Students scan or enter code. 3) Open check-out at class end. 4) Use manual attendance for exceptions.');
         }
 
-        // Notification logic
-        // ─── Toast Notification Handler ───
+        function openCheckoutConfirmation() {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('checkoutConfirmOverlay');
+                const btnCancel = document.getElementById('checkoutConfirmCancel');
+                const btnProceed = document.getElementById('checkoutConfirmProceed');
+
+                const cleanup = () => {
+                    overlay.classList.remove('active');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    overlay.removeEventListener('click', onOverlayClick);
+                    document.removeEventListener('keydown', onEsc);
+                    btnCancel.onclick = null;
+                    btnProceed.onclick = null;
+                };
+
+                const finish = (value) => {
+                    cleanup();
+                    resolve(value);
+                };
+
+                const onOverlayClick = (event) => {
+                    if (event.target === overlay) {
+                        finish(false);
+                    }
+                };
+
+                const onEsc = (event) => {
+                    if (event.key === 'Escape') {
+                        finish(false);
+                    }
+                };
+
+                btnCancel.onclick = () => finish(false);
+                btnProceed.onclick = () => finish(true);
+                overlay.addEventListener('click', onOverlayClick);
+                document.addEventListener('keydown', onEsc);
+                overlay.classList.add('active');
+                overlay.setAttribute('aria-hidden', 'false');
+                btnProceed.focus();
+            });
+        }
+
         function showNotificationModal(type, title, message) {
-            // Create toast container if it doesn't exist
             let toastContainer = document.getElementById('qr-toast-container');
             if (!toastContainer) {
                 toastContainer = document.createElement('div');
@@ -628,14 +912,34 @@
                 document.body.appendChild(toastContainer);
             }
 
-            // Create toast element
             const toast = document.createElement('div');
+            const styleMap = {
+                success: {
+                    background: '#ECFDF5',
+                    border: '#A7F3D0',
+                    accent: '#10B981',
+                    color: '#065F46'
+                },
+                error: {
+                    background: '#FEF2F2',
+                    border: '#FECACA',
+                    accent: '#DC2626',
+                    color: '#991B1B'
+                },
+                info: {
+                    background: '#EFF6FF',
+                    border: '#BFDBFE',
+                    accent: '#2563EB',
+                    color: '#1E3A8A'
+                }
+            };
+            const palette = styleMap[type] || styleMap.success;
             toast.className = type === 'error' ? 'qr-toast error' : 'qr-toast success';
             toast.style.cssText = `
-                background:${type === 'error' ? '#FEF2F2' : '#ECFDF5'};
-                border:1px solid ${type === 'error' ? '#FECACA' : '#A7F3D0'};
-                border-left:4px solid ${type === 'error' ? '#DC2626' : '#10B981'};
-                color:${type === 'error' ? '#991B1B' : '#065F46'};
+                background:${palette.background};
+                border:1px solid ${palette.border};
+                border-left:4px solid ${palette.accent};
+                color:${palette.color};
                 border-radius:8px;
                 padding:14px 16px;
                 font-size:0.9rem;
@@ -647,7 +951,6 @@
             toast.innerHTML = `<strong>${title}</strong><div style="margin-top:4px;font-size:0.85rem;">${message}</div>`;
             toastContainer.appendChild(toast);
 
-            // Auto-remove after 5 seconds
             setTimeout(() => {
                 toast.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => toast.remove(), 300);
@@ -664,7 +967,7 @@
             if (type === 'online') {
                 const protocol = window.location.protocol;
                 const host = window.location.host;
-                attendanceLink = `${protocol}//${host}/dashboard.html?attendance_code=${currentCode}&course_code=${classCode}`;
+                attendanceLink = `${protocol}//${host}/pages/student/enter_code.html?class=${encodeURIComponent(classId)}&action=${encodeURIComponent(currentAction)}&code=${encodeURIComponent(currentCode)}`;
             }
 
             const messages = {
@@ -744,16 +1047,6 @@
             }
         }
         
-        function refreshCurrentSession() {
-            if (sessionState === 'checkin_open') {
-                return openCheckin();
-            }
-            if (sessionState === 'checkout_open') {
-                return openCheckout();
-            }
-            return Promise.resolve();
-        }
-
         setInterval(() => {
             if (timeLeft <= 0 && (sessionState === 'checkin_open' || sessionState === 'checkout_open')) {
                 refreshCurrentSession();
@@ -790,9 +1083,53 @@
                 closeMaximize(null);
             }
         });
+        window.addEventListener('pagehide', autoCloseOnLeave);
+        window.addEventListener('beforeunload', autoCloseOnLeave);
+
+        function bindUIActions() {
+            const qrImageWrap = document.getElementById('qrImageWrap');
+            const checkinBtn = document.getElementById('checkinBtn');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            const copyCodeBtn = document.getElementById('copyCodeBtn');
+            const endSessionBtn = document.getElementById('endSessionBtn');
+            const helpBtn = document.getElementById('helpBtn');
+            const sendCustomBtn = document.getElementById('sendCustomBtn');
+
+            if (qrImageWrap) {
+                qrImageWrap.addEventListener('click', openMaximize);
+                qrImageWrap.addEventListener('mouseenter', () => { qrImageWrap.style.transform = 'scale(1.05)'; });
+                qrImageWrap.addEventListener('mouseleave', () => { qrImageWrap.style.transform = 'scale(1)'; });
+            }
+            if (checkinBtn) checkinBtn.addEventListener('click', () => openCheckin());
+            if (checkoutBtn) checkoutBtn.addEventListener('click', () => openCheckout());
+            if (copyCodeBtn) copyCodeBtn.addEventListener('click', copyCode);
+            if (endSessionBtn) endSessionBtn.addEventListener('click', endSession);
+            if (helpBtn) helpBtn.addEventListener('click', openHelp);
+            if (sendCustomBtn) sendCustomBtn.addEventListener('click', sendCustom);
+
+            document.querySelectorAll('.notif-btn[data-notif]').forEach((btn) => {
+                btn.addEventListener('click', () => sendNotif(btn.dataset.notif, btn));
+            });
+        }
         
-        updateHeader();
-        renderIdleState();
+        (async () => {
+            bindUIActions();
+            updateHeader();
+            renderIdleState();
+            const allowed = await ensureLecturerOrAdminSession();
+            if (!allowed) return;
+            if (!classId) {
+                showNotificationModal('error', 'Class Required', 'No class selected. Redirecting to My Classes...');
+                setTimeout(() => {
+                    window.location.href = '/pages/lecturer/my_classes.html';
+                }, 1200);
+                return;
+            }
+
+            if (preferredAction === 'checkout') {
+                await openCheckout({ skipConfirm: true });
+            }
+        })();
     </script>
 </body>
 </html>

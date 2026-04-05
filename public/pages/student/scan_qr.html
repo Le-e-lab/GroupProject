@@ -127,6 +127,23 @@
     <script>
         window.AI_ASSISTANT_CONTEXT = { page: 'student-scan-qr' };
         let html5QrcodeScanner;
+        const pageParams = new URLSearchParams(window.location.search);
+        const preferredClassId = String(pageParams.get('class') || '').trim();
+        const preferredAction = String(pageParams.get('action') || '').toLowerCase();
+
+        function updateManualEntryLinks(classId = '', action = '') {
+            const targetClassId = String(classId || preferredClassId || '').trim();
+            const targetAction = String(action || preferredAction || 'checkin').trim();
+            const query = new URLSearchParams();
+            if (targetClassId) query.set('class', targetClassId);
+            if (targetAction) query.set('action', targetAction);
+            const suffix = query.toString() ? `?${query.toString()}` : '';
+
+            const manualLink = document.querySelector('.manual-entry-link');
+            if (manualLink) {
+                manualLink.href = `enter_code.html${suffix}`;
+            }
+        }
 
         // User Data Loader
         function loadUserData() {
@@ -171,10 +188,12 @@
                 }
 
                 if (data && data.code && data.classId) {
+                    updateManualEntryLinks(data.classId, data.action || preferredAction || 'checkin');
                     await processAttendance(data.classId, data.code, data.action || 'checkin');
                 } else if (decodedText.startsWith('UPATH-')) {
                     const parts = decodedText.split('-');
                     if (parts.length >= 3) {
+                        updateManualEntryLinks(parts[1], preferredAction || 'checkin');
                         await processAttendance(parts[1], parts[2], 'checkin');
                     } else {
                         Toast.error('Invalid QR Format');
@@ -242,10 +261,16 @@
 
             if (result && result.requiresVerification) {
                 if (typeof Toast !== 'undefined') {
-                    Toast.warning('Identity verification is required. Continue on Enter Code screen.');
+                    Toast.success('Check-in recorded. Complete identity verification on Enter Code to finish setup.');
                 }
+                const params = new URLSearchParams();
+                params.set('class', classId);
+                params.set('action', action || 'checkin');
+                params.set('code', code);
+                params.set('verify', '1');
+                if (result.attendanceId) params.set('attendanceId', String(result.attendanceId));
                 setTimeout(() => {
-                    window.location.href = `enter_code.html?class=${encodeURIComponent(classId)}&action=${encodeURIComponent(action)}`;
+                    window.location.href = `enter_code.html?${params.toString()}`;
                 }, 1200);
                 return;
             }
@@ -253,7 +278,7 @@
             const successMessage = result && result.message
                 && /(success|marked|check-in recorded|attendance successfully recorded|attendance already completed)/i.test(result.message);
 
-            if (result && result.message && /forbidden/i.test(result.message)) {
+            if (result && ((result.error && /forbidden/i.test(String(result.error))) || (result.message && /(forbidden|only students|sign in as a student)/i.test(result.message)))) {
                 if (typeof Toast !== 'undefined') {
                     Toast.error('Session/account mismatch. Sign out, sign in as the student, then scan again.');
                 }
@@ -284,6 +309,7 @@
             loadUserData();
             updateTime();
             setInterval(updateTime, 1000);
+            updateManualEntryLinks();
 
             // Initialize Scanner with AUTO-START and REAR CAMERA
             const html5Qrcode = new Html5Qrcode("reader");
@@ -311,7 +337,12 @@
                     <div style="padding: 40px; color: var(--text-muted); text-align: center;">
                         <p style="font-size: 1.1rem; margin-bottom: 16px;">📷 Camera access needed</p>
                         <p style="font-size: 0.9rem; margin-bottom: 20px;">${err.message || 'Please allow camera access or use manual code entry.'}</p>
-                        <a href="enter_code.html" class="btn" style="background: var(--primary); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Enter Code Manually</a>
+                        <a href="${(() => {
+                            const q = new URLSearchParams();
+                            if (preferredClassId) q.set('class', preferredClassId);
+                            if (preferredAction) q.set('action', preferredAction);
+                            return `enter_code.html${q.toString() ? `?${q.toString()}` : ''}`;
+                        })()}" class="btn" style="background: var(--primary); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Enter Code Manually</a>
                     </div>
                 `;
             }

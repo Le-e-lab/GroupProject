@@ -74,6 +74,7 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+            'script-src-attr': ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://fonts.googleapis.com'],
             imgSrc: ["'self'", 'data:', 'blob:', 'https://*.openstreetmap.org', 'https://unpkg.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],

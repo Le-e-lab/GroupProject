@@ -410,6 +410,21 @@
           </div>
         </div>
 
+        <div id="activeCheckinCard" class="card" style="display:none; margin-bottom: 20px; border-left: 4px solid #2563EB;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+            <div>
+              <div id="activeCheckinStatus" style="display:none; width:fit-content; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:4px 10px; border-radius:999px;"></div>
+              <div id="activeCheckinHeading" style="font-size:0.75rem; font-weight:700; color:#2563EB; text-transform:uppercase; letter-spacing:0.06em;">Active Session</div>
+              <div id="activeCheckinTitle" style="font-size:1rem; font-weight:700; color:var(--text); margin-top:4px;">Class in progress</div>
+              <div id="activeCheckinMeta" style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;"></div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <a id="activeCheckinScanBtn" href="/pages/student/scan_qr.html" class="btn btn-primary" style="text-decoration:none;">Open Scanner</a>
+              <a id="activeCheckinCodeBtn" href="/pages/student/enter_code.html" class="btn btn-secondary" style="text-decoration:none;">Use Code Instead</a>
+            </div>
+          </div>
+        </div>
+
         <!-- Stats -->
         <div class="stats-grid">
           <div class="stat-card">
@@ -478,6 +493,7 @@
         "Saturday",
       ];
       let userYear = 2; // Default to Y2
+      let dashboardRefreshInFlight = false;
       window.AI_ASSISTANT_CONTEXT = { page: 'student-dashboard' };
 
       function updateStudentAssistantContext(patch) {
@@ -508,12 +524,13 @@
        * 1. Checks if 'program' is missing from the local session (common after server updates).
        * 2. If missing, it BLOCKS the UI with a "Repairing..." overlay.
        * 3. It forces a fetch(API.fetchUser) to get the latest DB record.
-       * 4. It updates sessionStorage and reloads the page to apply the fix.
+      * 4. It updates sessionStorage and continues without forcing a reload.
        *
        * This prevents the "Show All Classes" bug by ensuring the filter variable (program) always exists.
        */
       async function loadUserData() {
         let user = API.getCurrentUser();
+        const repairAttemptKey = "upath_profile_repair_attempted";
 
         // BLOCKING REPAIR: If user exists but has no program (and is student), DO NOT PROCEED.
         // This prevents the dashboard from loading with "undefined" filter, which causes empty or wrong data.
@@ -521,6 +538,11 @@
           console.warn(
             "[Dashboard] User data incomplete (Missing Program). Attempting repair...",
           );
+
+          if (sessionStorage.getItem(repairAttemptKey) === "1") {
+            console.warn("[Dashboard] Repair already attempted this session. Continuing without reload.");
+          } else {
+            sessionStorage.setItem(repairAttemptKey, "1");
 
           // Show blocking overlay
           const cleanupOverlay = document.createElement("div");
@@ -534,20 +556,21 @@
                 `;
           document.body.appendChild(cleanupOverlay);
           const status = document.getElementById("repair-status");
+          let repaired = false;
 
           try {
             const freshUser = await API.fetchUser(user.id);
             if (freshUser && freshUser.program) {
-              status.innerText = "Success! Reloading...";
+              status.innerText = "Success!";
               status.style.color = "#059669";
 
               // Merge and Save
               user = { ...user, ...freshUser };
               sessionStorage.setItem("upath_user", JSON.stringify(user));
 
-              // Wait a moment then reload to apply changes cleanly
-              setTimeout(() => window.location.reload(), 1000);
-              return; // Stop execution here
+              cleanupOverlay.remove();
+              sessionStorage.removeItem(repairAttemptKey);
+              repaired = true;
             } else {
               status.innerText = "Error: Server returned incomplete data.";
               status.style.color = "#DC2626";
@@ -557,13 +580,16 @@
             status.innerText = "Connection Failed. Please check server.";
           }
 
-          // If we get here, repair failed.
-          console.error("Repair failed.");
-          return;
+          if (!repaired) {
+            cleanupOverlay.remove();
+            console.error("Repair failed. Continuing with existing session user.");
+          }
+          }
         }
 
         // Normal Flow (Data is good)
         if (user) {
+          sessionStorage.removeItem(repairAttemptKey);
           const firstName = user.fullName
             ? user.fullName.split(" ")[0]
             : "Student";
@@ -648,6 +674,87 @@
           now.toLocaleDateString(currentLocale(), options);
       }
 
+      function renderActiveCheckin(activeCheckIn) {
+        const card = document.getElementById('activeCheckinCard');
+        const statusBadge = document.getElementById('activeCheckinStatus');
+        const heading = document.getElementById('activeCheckinHeading');
+        const title = document.getElementById('activeCheckinTitle');
+        const meta = document.getElementById('activeCheckinMeta');
+        const scanBtn = document.getElementById('activeCheckinScanBtn');
+        const codeBtn = document.getElementById('activeCheckinCodeBtn');
+        if (!card || !statusBadge || !heading || !title || !meta || !scanBtn || !codeBtn) return;
+
+        if (!activeCheckIn) {
+          card.style.display = 'none';
+          return;
+        }
+
+        const sessionStatus = String(activeCheckIn.status || '').toLowerCase();
+        const statusText = sessionStatus === 'checkout_open'
+          ? 'Check-out Open'
+          : sessionStatus === 'checkin_open'
+            ? 'Check-in Open'
+            : (activeCheckIn.phaseLabel || 'Live Session');
+        const statusColor = sessionStatus === 'checkout_open' ? '#F59E0B' : '#2563EB';
+        const statusBg = sessionStatus === 'checkout_open' ? '#FFFBEB' : '#EFF6FF';
+
+        heading.textContent = sessionStatus === 'checkout_open'
+          ? 'Check-out Session'
+          : sessionStatus === 'checkin_open'
+            ? 'Check-in Session'
+            : 'Active Session';
+        statusBadge.textContent = statusText;
+        statusBadge.style.display = 'inline-flex';
+        statusBadge.style.background = statusBg;
+        statusBadge.style.color = statusColor;
+        statusBadge.style.border = `1px solid ${statusColor}33`;
+        card.style.borderLeftColor = statusColor;
+
+        let checkedInTime = '';
+        if (activeCheckIn.checkedInAt) {
+          const checkedInDate = new Date(activeCheckIn.checkedInAt);
+          if (!Number.isNaN(checkedInDate.getTime())) {
+            checkedInTime = new Intl.DateTimeFormat(currentLocale(), {
+              hour: '2-digit',
+              minute: '2-digit'
+            }).format(checkedInDate);
+          }
+        }
+        const code = activeCheckIn.code || '';
+        const name = activeCheckIn.name || 'Active lesson';
+        title.textContent = `${code ? code + ' - ' : ''}${name}`;
+        meta.textContent = [checkedInTime ? `Checked in at ${checkedInTime}` : '', activeCheckIn.time || '', activeCheckIn.room || '']
+          .filter(Boolean)
+          .join(' • ');
+
+        const action = sessionStatus === 'checkout_open' ? 'checkout' : 'checkin';
+        const classId = String(activeCheckIn.classId || '').trim();
+        const scanUrl = classId
+          ? `/pages/student/scan_qr.html?class=${encodeURIComponent(classId)}&action=${encodeURIComponent(action)}`
+          : '/pages/student/scan_qr.html';
+        const codeUrl = classId
+          ? `/pages/student/enter_code.html?class=${encodeURIComponent(classId)}&action=${encodeURIComponent(action)}`
+          : '/pages/student/enter_code.html';
+        scanBtn.href = scanUrl;
+        codeBtn.href = codeUrl;
+
+        card.style.display = 'block';
+      }
+
+      async function refreshDashboardState() {
+        if (dashboardRefreshInFlight) return;
+        dashboardRefreshInFlight = true;
+        try {
+          await Promise.allSettled([
+            loadTodayClasses(),
+            loadNotifications(),
+            loadDashboardStats()
+          ]);
+        } finally {
+          dashboardRefreshInFlight = false;
+        }
+      }
+
       async function loadTodayClasses() {
         const now = new Date();
         const today = dayNames[now.getDay()];
@@ -678,11 +785,13 @@
         // Update stats
         document.getElementById("classesToday").textContent = todayClasses.length;
 
-        // Fetch ACTUAL attendance for today
+        // Fetch ACTUAL attendance state for today
+        let attendanceState = { presentClassIds: [], activeCheckIn: null };
         let markedCount = 0;
         try {
             if (user) {
-                const presentIds = await API.getTodayAttendance(user.id);
+          attendanceState = await API.getTodayAttendanceState(user.id);
+          const presentIds = attendanceState.presentClassIds || [];
                 // Count how many of *today's classes* are in the presentIds list
                 // We check if c.id (composite) or c.code is in the list
                 // backend returns classId which is usually composite ID from frontend logic, 
@@ -697,6 +806,54 @@
         } catch (e) {
             console.error("Error fetching today's attendance:", e);
         }
+
+        // Fallback: if no active check-in row yet, show currently open live session.
+        if ((!attendanceState || !attendanceState.activeCheckIn) && window.API && typeof API.getActiveAttendanceSessions === 'function') {
+          try {
+            const live = await API.getActiveAttendanceSessions();
+            const sessions = (live && Array.isArray(live.sessions)) ? live.sessions : [];
+            const current = sessions[0] || null;
+            if (current) {
+              attendanceState.activeCheckIn = {
+                classId: current.classId,
+                checkedInAt: null,
+                code: current.code,
+                name: current.name || 'Active lesson',
+                time: current.time || '',
+                room: current.room || '',
+                status: current.status || '',
+                phaseLabel: current.status === 'checkout_open' ? 'Checkout open' : 'Check-in open'
+              };
+            }
+          } catch (e) {
+            console.warn('Unable to load active attendance sessions for dashboard card:', e);
+          }
+        }
+
+        if (attendanceState && attendanceState.activeCheckIn && window.API && typeof API.getActiveAttendanceSessions === 'function') {
+          try {
+            const live = await API.getActiveAttendanceSessions();
+            const sessions = (live && Array.isArray(live.sessions)) ? live.sessions : [];
+            const current = sessions.find((session) => String(session.classId || '') === String(attendanceState.activeCheckIn.classId || ''))
+              || sessions[0]
+              || null;
+            if (current) {
+              attendanceState.activeCheckIn = {
+                ...attendanceState.activeCheckIn,
+                status: current.status || attendanceState.activeCheckIn.status || '',
+                phaseLabel: current.status === 'checkout_open' ? 'Checkout open' : 'Check-in open',
+                code: attendanceState.activeCheckIn.code || current.code,
+                name: attendanceState.activeCheckIn.name || current.name || 'Active lesson',
+                time: attendanceState.activeCheckIn.time || current.time || '',
+                room: attendanceState.activeCheckIn.room || current.room || ''
+              };
+            }
+          } catch (e) {
+            console.warn('Unable to sync active attendance session status:', e);
+          }
+        }
+
+            renderActiveCheckin(attendanceState.activeCheckIn || null);
 
         document.getElementById("markedPresent").textContent = markedCount;
 
@@ -781,7 +938,9 @@
         let presentSet = new Set();
         try {
             if (user) {
-                const presentIds = await API.getTodayAttendance(user.id);
+            const presentIds = (attendanceState && attendanceState.presentClassIds)
+              ? attendanceState.presentClassIds
+              : await API.getTodayAttendance(user.id);
                 presentSet = new Set(presentIds);
             }
         } catch (e) {}
@@ -892,7 +1051,7 @@
           });
         });
 
-        // Render pills with staggered auto-dismiss (10 seconds each, 1s stagger)
+        // Render pills with staggered auto-dismiss (5 seconds each)
         pills.forEach((p, idx) => {
           const pill = document.createElement('div');
           pill.className = 'notif-pill';
@@ -910,8 +1069,8 @@
           `;
           pillsContainer.appendChild(pill);
 
-          // Auto-dismiss after 10 seconds (staggered)
-          setTimeout(() => { dismissPill(p.notifId, true); }, 10000 + (idx * 1500));
+          // Auto-dismiss after 5 seconds (light stagger)
+          setTimeout(() => { dismissPill(p.notifId, true); }, 5000 + (idx * 500));
         });
 
         // Update notification badge on the bell icon
@@ -1014,9 +1173,13 @@
         }
       }
 
-      function logout() {
+      async function logout() {
+        if (window.API && typeof API.logout === 'function') {
+          await API.logout();
+          return;
+        }
         sessionStorage.removeItem("upath_user");
-        window.location.href = "/pages/auth.html";
+        window.location.replace("/pages/auth.html");
       }
 
       /**
@@ -1037,90 +1200,31 @@
       (async () => {
         await loadUserData(); // Wait for user refresh
         updateDate();
-        loadTodayClasses();
-        loadNotifications();
-        loadDashboardStats();
+        await refreshDashboardState();
         updateClock();
         
         // Handle Online Attendance Link
         const urlParams = new URLSearchParams(window.location.search);
         const attendanceCode = urlParams.get('attendance_code');
-        const courseCode = urlParams.get('course_code'); // Optional, to help find the classId
+        const classIdParam = urlParams.get('class_id');
+        const actionParam = urlParams.get('action') || 'checkin';
 
         if (attendanceCode) {
-            console.log("Processing online attendance code:", attendanceCode);
-            setTimeout(() => processOnlineAttendance(attendanceCode, courseCode), 1000);
-            
-            // Clean up URL so it doesn't trigger again on refresh
-            window.history.replaceState({}, document.title, window.location.pathname);
+          if (!classIdParam) {
+            showToast("Attendance Failed", "Class link is incomplete. Ask your lecturer to share the latest class-specific link.", "error");
+          } else {
+            const target = new URL('pages/student/enter_code.html', `${window.location.origin}/`);
+            target.searchParams.set('class', classIdParam);
+            target.searchParams.set('action', actionParam);
+            target.searchParams.set('code', attendanceCode);
+            window.location.href = target.toString();
+            return;
+          }
+
+          // Clean up URL so it doesn't trigger again on refresh
+          window.history.replaceState({}, document.title, window.location.pathname);
         }
       })();
-
-      async function processOnlineAttendance(code, courseIdHint) {
-          const userStr = sessionStorage.getItem("upath_user");
-          if (!userStr) return;
-          const user = JSON.parse(userStr);
-
-          try {
-              // 1. We need the classId. If courseIdHint is provided, find the matching class for today
-              let classId = null;
-              const now = new Date();
-              const today = dayNames[now.getDay()];
-              const yr = user.year || userYear;
-              
-              const allClasses = await API.getTimetable(yr, user.program);
-              const todayClasses = allClasses.filter(c => c.day === today);
-              
-              if (courseIdHint) {
-                  const matchedClass = todayClasses.find(c => c.code.toLowerCase() === courseIdHint.toLowerCase());
-                  if (matchedClass) {
-                      classId = matchedClass.id;
-                  }
-              }
-
-              // If we didn't find the classId but we have an active class happening right now, guess it
-              if (!classId) {
-                  const currentHour = now.getHours();
-                  const currentClasses = todayClasses.filter(c => {
-                      const startHour = parseInt(c.time.split(":")[0]);
-                      return currentHour >= startHour && currentHour < startHour + 2;
-                  });
-                  if (currentClasses.length > 0) {
-                      classId = currentClasses[0].id;
-                  }
-              }
-
-              if (!classId) {
-                  showToast("Attendance Failed", "Could not identify your current class.", "error");
-                  return;
-              }
-
-              // 2. Validate Code
-              const res = await fetch(`${API.BASE_URL}/api/attendance/validate-code`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      classId: classId,
-                      studentId: user.id, // Using standard auth handling in the API
-                      code: code
-                  })
-              });
-              
-              const data = await res.json();
-              if (res.ok) {
-                  showToast("Attendance Marked", "You have been marked present for the online class!", "success");
-                  // Refresh stats
-                  loadTodayClasses();
-                  loadDashboardStats();
-              } else {
-                  showToast("Attendance Failed", data.message || "Invalid or expired code.", "error");
-              }
-
-          } catch (error) {
-              console.error("Online attendance error:", error);
-              showToast("Error", "Could not process attendance. Check connection.", "error");
-          }
-      }
 
       function showToast(title, message, type='success') {
           // Minimal toast implementation if the full toast.js isn't loaded
@@ -1160,6 +1264,20 @@
 
       // Update clock every second
       setInterval(updateClock, 1000);
+
+      setInterval(() => {
+        refreshDashboardState();
+      }, 20000);
+
+      window.addEventListener('focus', () => {
+        refreshDashboardState();
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          refreshDashboardState();
+        }
+      });
 
       // DEBUG: Check connection - REMOVED per user request
       /*

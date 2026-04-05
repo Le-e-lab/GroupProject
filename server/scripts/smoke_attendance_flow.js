@@ -56,10 +56,35 @@ async function run() {
   }
 
   const lecturer = (users.data.lecturers || [])[0];
-  const student = (users.data.students || [])[0];
-  if (!lecturer || !student) {
+  const students = users.data.students || [];
+  if (!lecturer || !students.length) {
     console.error('[FAIL] seed data missing lecturer/student');
     process.exit(1);
+  }
+
+  const classMatchesStudent = (candidate, cls) => {
+    const studentProgram = String(candidate.program || '').toLowerCase();
+    const classProgram = String(cls.program || '').toLowerCase();
+    const studentYear = Number(candidate.year || 0);
+    const classYear = Number(cls.year || 0);
+    const programMatch = !studentProgram || !classProgram
+      || studentProgram.startsWith(classProgram)
+      || classProgram.startsWith(studentProgram);
+    const yearMatch = !studentYear || !classYear || studentYear === classYear;
+    return programMatch && yearMatch;
+  };
+
+  let student = students[0];
+  let compatibleClass = (allClasses.data || []).find((c) => classMatchesStudent(student, c));
+  if (!compatibleClass) {
+    for (const candidate of students) {
+      const match = (allClasses.data || []).find((c) => classMatchesStudent(candidate, c));
+      if (match) {
+        student = candidate;
+        compatibleClass = match;
+        break;
+      }
+    }
   }
 
   const lecturerLogin = await post('/api/auth/login', { email: lecturer.id, password: 'staff123' });
@@ -99,6 +124,8 @@ async function run() {
     return !(studentProgram.startsWith(classProgram) || classProgram.startsWith(studentProgram));
   });
 
+  const studentProgram = String(student.program || '').toLowerCase();
+
   if (mismatch) {
     const openMismatch = await post('/api/attendance/checkin', { classId: mismatch.id }, adminCookie);
     if (!openMismatch.ok || !openMismatch.data.code) {
@@ -122,6 +149,94 @@ async function run() {
         }
       }
     }
+  }
+
+  if (compatibleClass) {
+    const openCheckin = await post('/api/attendance/checkin', { classId: compatibleClass.id }, adminCookie);
+    if (!openCheckin.ok || !openCheckin.data.code) {
+      console.error('[FAIL] open checkin for compatible class', openCheckin.status, openCheckin.data);
+      failed += 1;
+    } else {
+      const studentLogin = await post('/api/auth/login', { email: student.id, password: 'password123' });
+      if (!studentLogin.ok) {
+        console.error('[FAIL] student login for checkin/checkout', studentLogin.status, studentLogin.data);
+        failed += 1;
+      } else {
+        const studentCookie = cookieFrom(studentLogin.headers);
+
+        const activeSessions = await get('/api/attendance/active-sessions', studentCookie);
+        const activeList = (activeSessions.data && activeSessions.data.sessions) || [];
+        const hasOpenedCheckin = activeSessions.ok && activeList.some((s) => {
+          return String(s.classId) === String(compatibleClass.id) && String(s.status) === 'checkin_open';
+        });
+
+        if (!hasOpenedCheckin) {
+          console.error('[FAIL] active session missing for student after opening checkin', activeSessions.status, activeSessions.data);
+          failed += 1;
+        }
+
+        const checkinAttempt = await post('/api/attendance/validate-checkin', {
+          classId: compatibleClass.id,
+          studentId: student.id,
+          code: openCheckin.data.code
+        }, studentCookie);
+
+        const checkinAccepted = checkinAttempt.ok && (
+          !!checkinAttempt.data.attendanceId
+          || !!checkinAttempt.data.checkedInAt
+          || checkinAttempt.data.requiresVerification === true
+        );
+
+        if (!checkinAccepted) {
+          console.error('[FAIL] student checkin not accepted', checkinAttempt.status, checkinAttempt.data);
+          failed += 1;
+        }
+
+        if (checkinAttempt.data.requiresVerification) {
+          const verifyIdentity = await post('/api/attendance/verify-identity', {
+            userId: student.id,
+            method: 'fingerprint',
+            sessionId: checkinAttempt.data.attendanceId || null
+          }, studentCookie);
+
+          if (!verifyIdentity.ok) {
+            console.error('[FAIL] identity verification after checkin failed', verifyIdentity.status, verifyIdentity.data);
+            failed += 1;
+          }
+        }
+
+        const openCheckout = await post('/api/attendance/checkout', { classId: compatibleClass.id }, adminCookie);
+        if (!openCheckout.ok || !openCheckout.data.code) {
+          console.error('[FAIL] open checkout for compatible class', openCheckout.status, openCheckout.data);
+          failed += 1;
+        } else {
+          const checkoutAttempt = await post('/api/attendance/validate-checkout', {
+            classId: compatibleClass.id,
+            studentId: student.id,
+            code: openCheckout.data.code,
+            attendanceId: checkinAttempt.data.attendanceId || null
+          }, studentCookie);
+
+          const checkoutAccepted = checkoutAttempt.ok && !!checkoutAttempt.data.checkedOutAt;
+
+          if (!checkoutAccepted) {
+            console.error('[FAIL] student checkout not accepted', checkoutAttempt.status, checkoutAttempt.data);
+            failed += 1;
+          } else {
+            const todayState = await get(`/api/attendance/today/${student.id}`, studentCookie);
+            const presentIds = todayState.data.presentClassIds || [];
+            if (!presentIds.includes(compatibleClass.id)) {
+              console.error('[FAIL] checkout did not persist in today attendance', todayState.status, todayState.data);
+              failed += 1;
+            }
+          }
+        }
+      }
+
+      await post('/api/attendance/close', { classId: compatibleClass.id }, adminCookie);
+    }
+  } else {
+    console.warn('[WARN] no compatible class found for checkin/checkout smoke path');
   }
 
   const closeOwn = await post('/api/attendance/close', { classId: ownClass.id }, lecturerCookie);

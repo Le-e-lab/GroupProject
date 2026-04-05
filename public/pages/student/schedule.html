@@ -526,9 +526,16 @@
             btn.disabled = true;
 
             try {
-                const result = await API.validateSessionCode(currentClassId, code);
+                let result = await API.validateCheckInCode(currentClassId, code);
+
+                if (result && result.message && /check-in is not currently open/i.test(result.message)) {
+                    result = await API.validateCheckOutCode(currentClassId, code, result.attendanceId || null);
+                } else if (result && result.message && /check-out is not currently open/i.test(result.message)) {
+                    result = await API.validateCheckInCode(currentClassId, code);
+                }
                 
-                if (result.message && (result.message.includes('success') || result.message.includes('Marked'))) {
+                 const ok = result && result.message && /(success|marked|check-in recorded|check-out recorded|attendance already completed)/i.test(result.message);
+                 if (ok) {
                      document.getElementById('attModal').style.display = 'none';
                      Toast.success('Attendance Marked Successfully!');
                      loadSchedule(); // Refresh to update stats/status if needed
@@ -545,12 +552,13 @@
             }
         }
 
-        function logout() {
-            if (window.API) API.logout();
-            else {
-                sessionStorage.removeItem('upath_user');
-                window.location.href = '../../pages/auth.html';
+        async function logout() {
+            if (window.API && typeof API.logout === 'function') {
+                await API.logout();
+                return;
             }
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '../../pages/auth.html';
         }
         
         loadUserData();

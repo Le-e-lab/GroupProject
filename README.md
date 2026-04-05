@@ -150,6 +150,11 @@ Use the generated HTTPS URL in your phone browser.
 - Daily attendance exports include check-in and check-out timestamps.
 - Lecturers can only open/close check-in sessions for classes they are assigned to.
 - Student check-in/check-out is rejected for classes outside the student program/year cohort.
+- Checkout finalization closes same-day duplicate open attendance rows for the same course to keep active-state views consistent.
+- Lecturer manual attendance views should use class-scoped filters (`classId`, `sources=automated`, `state=active`) for accurate current check-ins.
+- Manual attendance now requires a specific class variant ID (composite `classId`), so cross-cohort students are not mixed by course code alone.
+- Lecturer manual attendance can also load course-wide cohorts (across the lecturer's owned variants) while still saving each student against the correct cohort variant.
+- Admin dashboard actions now use in-app UI notifications instead of browser alerts.
 
 ## Smoke Tests
 
@@ -159,6 +164,17 @@ Run quick production-readiness checks:
 npm run smoke:admin
 npm run smoke:attendance
 ```
+
+Notes:
+
+- `smoke:admin` now always runs authenticated checks by default using `admin/admin123` and lecturer `210153/staff123` unless overridden by environment variables.
+- Override credentials when needed:
+
+```bash
+ADMIN_TEST_ID=admin ADMIN_TEST_PASSWORD=admin123 npm run smoke:admin
+```
+
+- If lecturer QR check-in returns `403 Forbidden`, it usually means the active cookie session is not lecturer/admin (stale account switch). Sign out, sign in as lecturer/admin, then open the QR page again.
 
 ## Database Migrations (Sequelize CLI)
 

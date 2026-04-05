@@ -36,16 +36,16 @@
 ### A. Lecturer - Generating an Attendance Code
 
 1. Lecturer logs in and opens the QR Code page.
-2. Lecturer selects the active class from the dropdown.
-3. Lecturer clicks Generate Code, which calls `POST /api/attendance/generate-code`.
-4. Server creates a TOTP session with a two-hour expiry and returns a six-digit code.
-5. Code refreshes automatically every 30 seconds.
+2. Lecturer opens **Check-in** which calls `POST /api/attendance/checkin`.
+3. Server opens/updates a class session and returns a six-digit check-in code.
+4. Lecturer later opens **Check-out** via `POST /api/attendance/checkout`.
+5. QR and manual code entry now follow check-in/check-out lifecycle mode.
 
 ### B. Student - Marking Attendance
 
-- Via six-digit code (`enter_code.html`): student enters the code and calls `POST /api/attendance/validate-code`.
+- Via six-digit code (`enter_code.html`): student enters the code and uses `POST /api/attendance/validate-checkin` or `POST /api/attendance/validate-checkout`.
 - Via QR scan (`scan_qr.html`): student scans QR using rear camera (HTTPS or Ngrok needed on mobile).
-- Both flows create an `Attendances` row with `classId`, `userId`, `date`, and `method`.
+- Attendance is only complete after both check-in and check-out are valid.
 
 ### C. Analytics
 
@@ -135,6 +135,7 @@ node server/scripts/seed_attendance.js
 - Network error on login: ensure server is running with `npm start` on port 3000.
 - Invalid lecturer credentials: use ID `210153` and password `staff123`.
 - Invalid student credentials: use ID `240101` and password `password123`.
+- QR page `403 Forbidden` on check-in/check-out: active cookie session is not lecturer/admin (often stale account switch). Sign out, sign in as lecturer/admin, and retry.
 - AI request returns `404 /api/ai/assistant`: restart server and confirm `server/routes/ai.js` loads.
 - AI request returns `401`: user is logged out or cookie expired; log in again.
 - AI says out-of-scope: ask about attendance, timetable, dashboard, map, profile, or admin tasks.

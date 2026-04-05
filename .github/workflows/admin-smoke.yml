@@ -33,7 +33,6 @@ jobs:
         env:
           SMOKE_BASE_URL: http://localhost:3000
           ADMIN_TEST_ID: admin
-          ADMIN_TEST_PASSWORD: ${{ secrets.ADMIN_TEST_PASSWORD }}
           LECTURER_TEST_ID: 210153
           LECTURER_TEST_PASSWORD: staff123
         run: npm run smoke:admin

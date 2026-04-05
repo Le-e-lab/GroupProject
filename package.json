@@ -6,8 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server/server.js",
+    "dev": "node server/scripts/start_interactive.js",
     "smoke:admin": "node server/scripts/smoke_admin_dashboard.js",
     "smoke:attendance": "node server/scripts/smoke_attendance_flow.js",
+    "smoke:logout": "node server/scripts/smoke_logout.js",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:migrate:status": "sequelize-cli db:migrate:status",

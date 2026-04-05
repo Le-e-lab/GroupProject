@@ -380,11 +380,11 @@
             <!-- Quick Actions -->
             <div class="section-title" data-i18n="dashboard.quickActions">Quick Actions</div>
             <div class="quick-actions">
-                <a href="/pages/lecturer/qr_code.html" class="quick-action">
+                <a href="/pages/lecturer/my_classes.html" class="quick-action" id="quickGenerateQrLink">
                     <div class="quick-action-icon">QR</div>
                     <div class="quick-action-text" data-i18n="lecturer.generateQR">Generate QR</div>
                 </a>
-                <a href="/pages/lecturer/manual_attendance.html" class="quick-action">
+                <a href="/pages/lecturer/my_classes.html" class="quick-action" id="quickManualEntryLink">
                     <div class="quick-action-icon">MA</div>
                     <div class="quick-action-text" data-i18n="lecturer.manualEntry">Manual Entry</div>
                 </a>
@@ -588,6 +588,56 @@
                 return startHour > currentHour;
             });
 
+            let activeSessions = [];
+            try {
+                if (window.API && typeof API.getLecturerActiveSessions === 'function') {
+                    const activeData = await API.getLecturerActiveSessions();
+                    activeSessions = Array.isArray(activeData.sessions) ? activeData.sessions : [];
+                }
+            } catch (err) {
+                console.warn('Unable to load lecturer active sessions:', err);
+            }
+
+            // Fallback for stale backend processes without lecturer-active-sessions endpoint.
+            if (!activeSessions.length) {
+                try {
+                    const raw = localStorage.getItem('upath_lecturer_active_session_hint');
+                    const hint = raw ? JSON.parse(raw) : null;
+                    const maxAgeMs = 2 * 60 * 60 * 1000;
+                    if (hint && hint.classId && hint.updatedAt && (Date.now() - Number(hint.updatedAt) <= maxAgeMs)) {
+                        activeSessions = [{
+                            sessionId: hint.sessionId || null,
+                            status: hint.status || 'checkin_open',
+                            classId: hint.classId,
+                            code: hint.code || '',
+                            name: hint.name || 'Active Session',
+                            room: hint.room || '',
+                            time: ''
+                        }];
+                    }
+                } catch (_) {
+                    // ignore storage parse errors
+                }
+            }
+
+            const activeSession = activeSessions[0] || null;
+
+            const quickActionClass = activeSession || currentClass || nextClass || todayClasses[0] || myClasses[0] || null;
+            const quickGenerateQrLink = document.getElementById('quickGenerateQrLink');
+            const quickManualEntryLink = document.getElementById('quickManualEntryLink');
+            if (quickActionClass && (quickActionClass.id || quickActionClass.code)) {
+                const quickClassId = quickActionClass.classId || quickActionClass.id || quickActionClass.code;
+                if (quickGenerateQrLink) {
+                    quickGenerateQrLink.href = `/pages/lecturer/qr_code.html?class=${encodeURIComponent(quickClassId)}&code=${encodeURIComponent(quickActionClass.code || '')}&name=${encodeURIComponent(quickActionClass.name || '')}&room=${encodeURIComponent(quickActionClass.room || '')}`;
+                }
+                if (quickManualEntryLink) {
+                    quickManualEntryLink.href = `/pages/lecturer/manual_attendance.html?class=${encodeURIComponent(quickClassId)}&code=${encodeURIComponent(quickActionClass.code || '')}`;
+                }
+            } else {
+                if (quickGenerateQrLink) quickGenerateQrLink.href = '/pages/lecturer/my_classes.html';
+                if (quickManualEntryLink) quickManualEntryLink.href = '/pages/lecturer/my_classes.html';
+            }
+
             updateLecturerAssistantContext({
                 today,
                 currentHour,
@@ -615,7 +665,24 @@
                 } : null
             });
             
-            if (currentClass) {
+            if (activeSession) {
+                const modeLabel = String(activeSession.status || '').toLowerCase() === 'checkout_open'
+                    ? 'Check-out session is active'
+                    : 'Check-in session is active';
+                container.innerHTML = `
+                    <div class="current-class-card" style="background: linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%);">
+                        <div class="current-class-info">
+                            <h3>Active Session: ${activeSession.name || activeSession.code || 'Class'}</h3>
+                            <p>${activeSession.code || ''} • ${activeSession.room || ''}</p>
+                            <div class="class-details">
+                                <span>${activeSession.time || ''}</span>
+                                <span>${modeLabel}</span>
+                            </div>
+                        </div>
+                        <a href="/pages/lecturer/qr_code.html?class=${encodeURIComponent(activeSession.classId || activeSession.code || '')}&code=${encodeURIComponent(activeSession.code || '')}&name=${encodeURIComponent(activeSession.name || '')}&room=${encodeURIComponent(activeSession.room || '')}&action=checkout" class="start-btn">Open Checkout</a>
+                    </div>
+                `;
+            } else if (currentClass) {
                 container.innerHTML = `
                     <div class="current-class-card">
                         <div class="current-class-info">
@@ -789,7 +856,7 @@
                     `;
                     pillsContainer.appendChild(pill);
 
-                    setTimeout(() => { dismissPill(notifId, true); }, 10000 + (idx * 1500));
+                    setTimeout(() => { dismissPill(notifId, true); }, 5000 + (idx * 500));
                     idx++;
                 });
 
@@ -821,10 +888,14 @@
             } catch (e) {}
         }
 
-        function logout() {
-            sessionStorage.removeItem('upath_user');
-            window.location.href = '/pages/auth.html';
-        }
+            async function logout() {
+                if (window.API && typeof API.logout === 'function') {
+                    await API.logout();
+                    return;
+                }
+                sessionStorage.removeItem('upath_user');
+                window.location.replace('/pages/auth.html');
+            }
 
         /**
          * Update the live clock display every second
@@ -848,6 +919,14 @@
         
         // Update clock every second
         setInterval(updateClock, 1000);
+
+        // Keep overview session state fresh so active check-in/checkout appears quickly.
+        setInterval(loadClasses, 15000);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                loadClasses();
+            }
+        });
     </script>
 </body>
 </html>

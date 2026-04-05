@@ -9,11 +9,11 @@
     <link rel="stylesheet" href="../../css/toast.css">
     <style>
         body { background: var(--bg); }
-        .page-shell { min-height: 100vh; display: flex; flex-direction: column; }
+        .page-shell { min-height: 100vh; display: flex; flex-direction: column; padding-top: 64px; }
         .code-container {
             max-width: 720px;
             margin: 0 auto;
-            padding: 28px 20px 48px;
+            padding: 24px 20px 48px;
             display: grid;
             gap: 20px;
         }
@@ -150,6 +150,27 @@
         .camera-wrap { display: grid; gap: 12px; }
         video { width: 100%; border-radius: 16px; background: #000; }
         @media (max-width: 768px) {
+            .page-shell { padding-top: 96px; }
+            .navbar {
+                height: auto;
+                min-height: 64px;
+                padding: 10px 14px;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .navbar-brand { margin-right: 0; }
+            .navbar-nav {
+                order: 3;
+                width: 100%;
+                justify-content: flex-start;
+                overflow-x: auto;
+                gap: 6px;
+                padding-bottom: 2px;
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .navbar-nav::-webkit-scrollbar { display: none; }
+            .navbar-role { margin-left: 4px; }
             .panel-header { flex-direction: column; }
             .field input.code-input { font-size: 2rem; letter-spacing: 6px; }
             .btn-main, .btn-secondary { min-width: 100%; }
@@ -167,10 +188,11 @@
             <div class="navbar-nav">
                 <a href="../../dashboard.html" class="navbar-link" data-i18n="nav.overview">Overview</a>
                 <a href="schedule.html" class="navbar-link" data-i18n="nav.classes">Classes</a>
-                <a href="reports.html" class="navbar-link" data-i18n="nav.attendance">Attendance</a>
+                <a href="reports.html" class="navbar-link active" data-i18n="nav.attendance">Attendance</a>
             </div>
             <div class="navbar-actions">
                 <a href="profile.html" class="navbar-avatar" id="userAvatar">ST</a>
+                <button class="navbar-logout" onclick="logout()">Sign Out</button>
             </div>
         </nav>
 
@@ -181,7 +203,7 @@
                         <h1 class="panel-title" data-i18n="attendance.markTitle">Mark Attendance</h1>
                         <p class="panel-subtitle" data-i18n="attendance.markSubtitle">Choose a live class, then scan or enter the lecturer code.</p>
                     </div>
-                    <button class="help-btn" type="button" onclick="openHelp()" data-i18n="help.button">Help</button>
+                    <button class="help-btn" id="helpBtn" type="button" data-i18n="help.button">Help</button>
                 </div>
 
                 <div class="field-grid">
@@ -196,8 +218,8 @@
                 </div>
 
                 <div class="actions" style="margin-top: 18px;">
-                    <button class="btn-main" id="submitBtn" onclick="submitCode()" data-i18n="attendance.verify">Verify Code</button>
-                    <button class="btn-secondary" type="button" onclick="refreshLiveClasses()" data-i18n="attendance.refresh">Refresh Live Classes</button>
+                    <button class="btn-main" id="submitBtn" data-i18n="attendance.verify">Verify Code</button>
+                    <button class="btn-secondary" id="refreshBtn" type="button" data-i18n="attendance.refresh">Refresh Live Classes</button>
                 </div>
 
                 <div id="statusMessage" class="status"></div>
@@ -220,9 +242,9 @@
             <h2 data-i18n="attendance.verifyIdentity">Verify your identity</h2>
             <p id="verificationCopy" data-i18n="attendance.verifyIdentityCopy">This device is not recognized. Use device biometrics first; if unavailable, use a live selfie and student ID check.</p>
             <div class="verification-options">
-                <button type="button" onclick="promptBiometric()">👆 <span data-i18n="attendance.useBiometrics">Use biometrics on this phone</span></button>
-                <button type="button" onclick="promptSelfieVerification()">📸 <span data-i18n="attendance.useSelfie">Live selfie verification</span></button>
-                <button type="button" onclick="showManualFallback()">👨‍🏫 <span data-i18n="attendance.manualFallback">See lecturer for manual add</span></button>
+                <button type="button" id="verifyBiometricBtn">👆 <span data-i18n="attendance.useBiometrics">Use biometrics on this phone</span></button>
+                <button type="button" id="verifySelfieBtn">📸 <span data-i18n="attendance.useSelfie">Live selfie verification</span></button>
+                <button type="button" id="verifyManualBtn">👨‍🏫 <span data-i18n="attendance.manualFallback">See lecturer for manual add</span></button>
             </div>
         </div>
     </div>
@@ -233,7 +255,7 @@
             <p id="cameraSubtitle">A live picture is used only for this verification step and is not stored.</p>
             <div class="field" style="margin-bottom: 10px;">
                 <label for="cameraFacingSelect">Camera</label>
-                <select id="cameraFacingSelect" onchange="switchCameraFacing()">
+                <select id="cameraFacingSelect">
                     <option value="user">Front Camera</option>
                     <option value="environment">Back Camera</option>
                 </select>
@@ -241,8 +263,8 @@
             <div class="camera-wrap">
                 <video id="cameraStream" autoplay playsinline></video>
                 <div class="actions">
-                    <button class="btn-main" type="button" onclick="capturePhoto()">Capture</button>
-                    <button class="btn-secondary" type="button" onclick="closeCamera()">Cancel</button>
+                    <button class="btn-main" id="capturePhotoBtn" type="button">Capture</button>
+                    <button class="btn-secondary" id="cancelCameraBtn" type="button">Cancel</button>
                 </div>
             </div>
         </div>
@@ -256,7 +278,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         const preferredClassId = urlParams.get('class') || '';
         const preferredAction = urlParams.get('action') || '';
+        const preferredCode = (urlParams.get('code') || '').replace(/\D/g, '').slice(0, 6);
+        const autoVerifyFromScan = urlParams.get('verify') === '1';
         const biometricKeyPrefix = 'upath_passkey_';
+        const prefersCheckout = /check-?out/i.test(preferredAction);
 
         window.AI_ASSISTANT_CONTEXT = {
             page: 'student-enter-code',
@@ -287,14 +312,70 @@
             return (window.I18N ? I18N.t(key) : null) || fallback || key;
         }
 
-        function loadUser() {
+        function shouldTryAlternateFlow(result) {
+            const message = String((result && result.message) || '').toLowerCase();
+            return /check-(in|out) is not currently open/.test(message)
+                || /invalid or expired check-(in|out) code/.test(message);
+        }
+
+        function isCheckInSuccess(result) {
+            if (!result) return false;
+            return result.success === true
+                || Boolean(result.checkedInAt)
+                || (result.attendanceId && ['await_checkout', 'done'].includes(result.nextStep))
+                || /attendance already completed/i.test(String(result.message || ''));
+        }
+
+        function isCheckOutSuccess(result) {
+            if (!result) return false;
+            return Boolean(result.checkedOutAt)
+                || /attendance already completed/i.test(String(result.message || ''));
+        }
+
+        async function validateByMode(mode, classId, code, attendanceId) {
+            if (mode === 'checkout') {
+                return API.validateCheckOutCode(classId, code, attendanceId || null);
+            }
+            return API.validateCheckInCode(classId, code);
+        }
+
+        async function loadUser() {
+            let user = null;
             const userStr = sessionStorage.getItem('upath_user');
-            if (!userStr) {
-                window.location.href = '../auth.html';
+            if (userStr) {
+                try {
+                    user = JSON.parse(userStr);
+                } catch (_) {
+                    user = null;
+                }
+            }
+
+            if (!user && API && typeof API.getActiveUser === 'function') {
+                try {
+                    user = await API.getActiveUser();
+                } catch (_) {
+                    user = null;
+                }
+            }
+
+            if (!user) {
+                const qp = window.location.search || '';
+                window.location.href = `../auth.html${qp}`;
                 return null;
             }
 
-            currentUser = JSON.parse(userStr);
+            if ((user.role === 'student' || user.role === 'student_rep') && (!user.program || !user.year) && API && typeof API.getActiveUser === 'function') {
+                try {
+                    const fresh = await API.getActiveUser();
+                    if (fresh && fresh.id === user.id) {
+                        user = { ...user, ...fresh };
+                    }
+                } catch (_) {
+                    // Continue with locally available session data.
+                }
+            }
+
+            currentUser = user;
             if (currentUser.fullName) {
                 const initials = currentUser.fullName.split(' ').map((part) => part[0]).join('').substring(0, 2).toUpperCase();
                 document.getElementById('userAvatar').textContent = initials;
@@ -309,11 +390,67 @@
         }
 
         function parseTimeToMinutes(value) {
-            const match = String(value || '').match(/(\d{1,2}):(\d{2})/);
+            const match = String(value || '').trim().match(/(\d{1,2}):(\d{2})(?:\s*([AaPp][Mm]))?/);
             if (!match) return null;
-            const hours = parseInt(match[1], 10);
+            let hours = parseInt(match[1], 10);
             const minutes = parseInt(match[2], 10);
+            const meridiem = (match[3] || '').toLowerCase();
+            if (meridiem === 'pm' && hours < 12) hours += 12;
+            if (meridiem === 'am' && hours === 12) hours = 0;
             return hours * 60 + minutes;
+        }
+
+        function normalizeDayLabel(day) {
+            const raw = String(day || '').trim().toLowerCase();
+            const map = {
+                sun: 'sunday',
+                mon: 'monday',
+                tue: 'tuesday',
+                tues: 'tuesday',
+                wed: 'wednesday',
+                thu: 'thursday',
+                thur: 'thursday',
+                thurs: 'thursday',
+                fri: 'friday',
+                sat: 'saturday'
+            };
+            return map[raw] || raw;
+        }
+
+        function sameDayLabel(classDay, today) {
+            return normalizeDayLabel(classDay) === normalizeDayLabel(today);
+        }
+
+        function splitTimeRange(value) {
+            const safe = String(value || '').trim();
+            if (!safe) return ['', ''];
+            const parts = safe.split(/\s*(?:-|–|to)\s*/i);
+            return [parts[0] || '', parts[1] || ''];
+        }
+
+        function extractCourseCode(classId) {
+            const safe = String(classId || '').trim();
+            if (!safe) return '';
+            if (safe.includes('--')) return safe.split('--')[0].trim();
+            return safe.split('-')[0].trim();
+        }
+
+        function normalizeRangeEnd(startText, endText) {
+            const startMinutes = parseTimeToMinutes(startText);
+            let endMinutes = parseTimeToMinutes(endText);
+            if (startMinutes === null) return { startMinutes: null, endMinutes: null };
+            if (endMinutes === null) {
+                return { startMinutes, endMinutes: startMinutes + 120 };
+            }
+
+            if (endMinutes <= startMinutes) {
+                endMinutes += 12 * 60;
+                if (endMinutes <= startMinutes) {
+                    endMinutes += 12 * 60;
+                }
+            }
+
+            return { startMinutes, endMinutes };
         }
 
         function decodeBase64Url(value) {
@@ -325,26 +462,58 @@
 
         async function getTodayLiveClasses() {
             if (!currentUser) return [];
-            const classes = await API.getClasses(currentUser.year || 1, currentUser.program || '');
+            const hasProgram = !!String(currentUser.program || '').trim();
+            const hasYear = Number.isFinite(Number(currentUser.year));
+            let classes = await API.getClasses(hasYear ? currentUser.year : null, hasProgram ? currentUser.program : null);
+
+            if ((!Array.isArray(classes) || classes.length === 0) && hasYear) {
+                classes = await API.getClasses(currentUser.year, null);
+            }
+
+            if ((!Array.isArray(classes) || classes.length === 0) && hasProgram) {
+                classes = await API.getClasses(null, currentUser.program);
+            }
+
+            if ((!Array.isArray(classes) || classes.length === 0)) {
+                classes = await API.getClasses(null, null);
+            }
+
+            if (!Array.isArray(classes)) return [];
+
             const now = new Date();
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const today = days[now.getDay()];
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
             return classes.filter((item) => {
-                if (item.day !== today) return false;
-                const [start, end] = String(item.time || '').split(' - ');
-                const startMinutes = parseTimeToMinutes(start);
-                const endMinutes = parseTimeToMinutes(end) || (startMinutes !== null ? startMinutes + 120 : null);
-                if (startMinutes === null) return false;
-                return currentMinutes >= (startMinutes - 60) && currentMinutes <= (endMinutes + 30);
+                if (!sameDayLabel(item.day, today)) return false;
+                const [start, end] = splitTimeRange(item.time);
+                const range = normalizeRangeEnd(start, end);
+                if (range.startMinutes === null || range.endMinutes === null) return false;
+                return currentMinutes >= (range.startMinutes - 120) && currentMinutes <= (range.endMinutes + 90);
             });
         }
 
-        async function getEligibleClasses() {
-            if (!currentUser) return [];
-            // Fallback list for ad-hoc/rescheduled sessions (evenings, next day, weekends).
-            return API.getClasses(currentUser.year || 1, currentUser.program || '');
+        async function getClassById(classId) {
+            if (!currentUser || !classId) return null;
+            const candidates = [];
+            candidates.push(await API.getClasses(currentUser.year || null, currentUser.program || null));
+            candidates.push(await API.getClasses(currentUser.year || null, null));
+            candidates.push(await API.getClasses(null, currentUser.program || null));
+            candidates.push(await API.getClasses(null, null));
+
+            const seen = new Set();
+            for (const classes of candidates) {
+                if (!Array.isArray(classes)) continue;
+                for (const item of classes) {
+                    const itemClassId = item.id || item.code;
+                    if (!itemClassId || seen.has(itemClassId)) continue;
+                    seen.add(itemClassId);
+                    if (itemClassId === classId) return item;
+                }
+            }
+
+            return null;
         }
 
         function renderClasses(classes) {
@@ -356,12 +525,13 @@
             if (!classes.length) {
                 const empty = document.createElement('div');
                 empty.className = 'class-item';
-                empty.innerHTML = `<strong>${t('attendance.noLive', 'No live classes right now')}</strong><span>${t('attendance.noLiveHint', 'Try again when class starts or select a class from your schedule.')}</span>`;
+                empty.innerHTML = `<strong>${t('attendance.noLive', 'No live classes right now')}</strong><span>${t('attendance.noLiveHint', 'Try again when class starts.')}</span>`;
                 list.appendChild(empty);
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = t('attendance.noClassesOption', 'No live classes available');
                 select.appendChild(option);
+                selectedClassId = '';
                 return;
             }
 
@@ -374,7 +544,7 @@
                 const card = document.createElement('div');
                 const itemClassId = item.id || item.code;
                 card.dataset.classId = itemClassId;
-                card.className = `class-item${selectedClassId === itemClassId || (!selectedClassId && index === 0) ? ' active' : ''}`;
+                card.className = `class-item${selectedClassId === itemClassId ? ' active' : ''}`;
                 card.innerHTML = `<strong>${item.code} - ${item.name}</strong><span>${item.day} • ${item.time} • ${item.room}</span>`;
                 card.onclick = () => {
                     selectedClassId = itemClassId;
@@ -384,36 +554,100 @@
                 };
                 list.appendChild(card);
 
-                if ((selectedClassId && selectedClassId === itemClassId) || (!selectedClassId && index === 0)) {
+                if (selectedClassId && selectedClassId === itemClassId) {
                     select.value = itemClassId;
-                    selectedClassId = itemClassId;
                 }
             });
+
+            if (!selectedClassId) {
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = t('attendance.selectClassFirst', 'Select your class first');
+                select.insertBefore(defaultOption, select.firstChild);
+                select.value = '';
+            }
         }
 
         async function refreshLiveClasses() {
             try {
                 setStatus(t('attendance.loading', 'Loading live classes...'), 'info');
-                liveClasses = await getTodayLiveClasses();
+                const liveClassesFromTimetable = await getTodayLiveClasses();
+                let activeSessionsResponse = { sessions: [] };
+                if (window.API && typeof API.getActiveAttendanceSessions === 'function') {
+                    try {
+                        activeSessionsResponse = await API.getActiveAttendanceSessions();
+                    } catch (err) {
+                        const message = String((err && err.message) || '');
+                        if (/endpoint not found/i.test(message)) {
+                            setStatus('Local server is running older code. Restart server and refresh this page.', 'warning');
+                        }
+                    }
+                }
+                const activeSessions = Array.isArray(activeSessionsResponse.sessions) ? activeSessionsResponse.sessions : [];
 
-                if (liveClasses.length > 0) {
-                    renderClasses(liveClasses);
-                    setStatus(t('attendance.liveLoaded', 'Live classes loaded.'), 'success');
+                if (!activeSessions.length && activeSessionsResponse && activeSessionsResponse.message && /student account|forbidden|sign in/i.test(String(activeSessionsResponse.message))) {
+                    setStatus('Session mismatch detected. Open your profile, sign out, then sign in again as student 240101 and refresh.', 'error');
+                }
+
+                const merged = [...liveClassesFromTimetable];
+                const seen = new Set(merged.map((item) => item.id || item.code));
+
+                activeSessions.forEach((session) => {
+                    const classId = session.classId || session.id || session.code;
+                    if (!classId || seen.has(classId)) return;
+                    seen.add(classId);
+                    merged.push({
+                        id: classId,
+                        code: session.code || classId,
+                        name: session.name || session.code || 'Active lesson',
+                        day: session.day || 'Today',
+                        time: session.time || '',
+                        room: session.room || '',
+                        lecturerName: session.lecturer || '',
+                        program: session.program || currentUser.program || '',
+                        year: session.year || currentUser.year || ''
+                    });
+                });
+
+                liveClasses = merged;
+
+                if (!liveClasses.length && preferredClassId) {
+                    const requestedClass = await getClassById(preferredClassId);
+                    if (requestedClass) {
+                        liveClasses = [requestedClass];
+                    }
+                }
+
+                if (liveClasses.length === 1) {
+                    selectedClassId = liveClasses[0].id || liveClasses[0].code || '';
+                }
+
+                renderClasses(liveClasses);
+
+                if (!liveClasses.length) {
+                    setStatus(t('attendance.noLive', 'No live classes right now.'), 'warning');
                     return;
                 }
 
-                const fallbackClasses = await getEligibleClasses();
-                renderClasses(fallbackClasses);
-                setStatus(
-                    fallbackClasses.length
-                        ? 'No live timetable class right now. You can still select your class for a rescheduled/ad-hoc session.'
-                        : t('attendance.noLive', 'No live classes right now.'),
-                    fallbackClasses.length ? 'info' : 'warning'
-                );
+                if (selectedClassId && !liveClasses.some((item) => (item.id || item.code) === selectedClassId)) {
+                    selectedClassId = '';
+                    document.getElementById('classSelect').value = '';
+                }
+
+                setStatus(t('attendance.liveLoaded', 'Live classes loaded.'), 'success');
             } catch (err) {
                 console.error(err);
                 setStatus(err.message || 'Unable to load live classes.', 'error');
             }
+        }
+
+        async function logout() {
+            if (window.API && typeof API.logout === 'function') {
+                await API.logout();
+                return;
+            }
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '../auth.html';
         }
 
         async function submitCode() {
@@ -435,31 +669,86 @@
             btn.textContent = t('attendance.verifying', 'Verifying...');
 
             try {
-                let result = await API.validateCheckInCode(classId, code);
+                let flowMode = prefersCheckout ? 'checkout' : 'checkin';
+                let result = await validateByMode(flowMode, classId, code, null);
 
-                if (result && result.message && /check-in is not currently open/i.test(result.message)) {
-                    result = await API.validateCheckOutCode(classId, code, result.attendanceId || null);
-                } else if (result && result.message && /check-out is not currently open/i.test(result.message)) {
-                    result = await API.validateCheckInCode(classId, code);
+                if (shouldTryAlternateFlow(result)) {
+                    flowMode = flowMode === 'checkout' ? 'checkin' : 'checkout';
+                    result = await validateByMode(flowMode, classId, code, result && result.attendanceId ? result.attendanceId : null);
                 }
 
                 if (result && result.requiresVerification) {
                     pendingVerification = {
                         classId,
                         code,
+                        mode: flowMode,
                         nextStep: result.nextStep || 'verify_identity',
                         attendanceId: result.attendanceId || null,
                         deviceId: result.deviceId || null
                     };
                     openVerificationModal();
-                    setStatus(t('attendance.verifyRequired', 'This device needs identity verification before continuing.'), 'warning');
+                    const verificationToast = flowMode === 'checkout'
+                        ? 'Check-out code accepted. Complete identity verification to finish attendance.'
+                        : 'Check-in recorded. Complete verification to continue.';
+                    if (typeof Toast !== 'undefined') {
+                        Toast.success(verificationToast);
+                    }
+                    setStatus(verificationToast, 'success');
                     return;
                 }
 
-                const successMessage = result && result.message
-                    && /(check-in recorded|attendance successfully recorded|attendance already completed)/i.test(result.message);
+                const classCandidates = (liveClasses || [])
+                    .map((item) => item.id || item.code)
+                    .filter(Boolean)
+                    .filter((candidateId) => candidateId !== classId)
+                    .filter((candidateId) => extractCourseCode(candidateId) === extractCourseCode(classId));
 
-                if (result && result.message && /forbidden/i.test(result.message)) {
+                if (result && result.message && /check-(in|out) is not currently open/i.test(result.message) && classCandidates.length) {
+                    for (const candidateId of classCandidates) {
+                        let candidateFlowMode = flowMode;
+                        let candidateResult = await validateByMode(candidateFlowMode, candidateId, code, null);
+                        if (shouldTryAlternateFlow(candidateResult)) {
+                            candidateFlowMode = candidateFlowMode === 'checkout' ? 'checkin' : 'checkout';
+                            candidateResult = await validateByMode(candidateFlowMode, candidateId, code, candidateResult && candidateResult.attendanceId ? candidateResult.attendanceId : null);
+                        }
+
+                        if (candidateResult && candidateResult.requiresVerification) {
+                            pendingVerification = {
+                                classId: candidateId,
+                                code,
+                                mode: candidateFlowMode,
+                                nextStep: candidateResult.nextStep || 'verify_identity',
+                                attendanceId: candidateResult.attendanceId || null,
+                                deviceId: candidateResult.deviceId || null
+                            };
+                            openVerificationModal();
+                            const verificationToast = candidateFlowMode === 'checkout'
+                                ? 'Check-out code accepted. Complete identity verification to finish attendance.'
+                                : 'Check-in recorded. Complete verification to continue.';
+                            if (typeof Toast !== 'undefined') {
+                                Toast.success(verificationToast);
+                            }
+                            setStatus(verificationToast, 'success');
+                            return;
+                        }
+
+                        const candidateAccepted = candidateFlowMode === 'checkout'
+                            ? isCheckOutSuccess(candidateResult)
+                            : isCheckInSuccess(candidateResult);
+
+                        if (candidateAccepted) {
+                            flowMode = candidateFlowMode;
+                            result = candidateResult;
+                            break;
+                        }
+                    }
+                }
+
+                const successMessage = flowMode === 'checkout'
+                    ? isCheckOutSuccess(result)
+                    : isCheckInSuccess(result);
+
+                if (result && ((result.error && /forbidden/i.test(String(result.error))) || (result.message && /(forbidden|only students|sign in as a student)/i.test(result.message)))) {
                     setStatus('Session/account mismatch. Sign out and sign in as the student account, then try again.', 'error');
                     setTimeout(() => {
                         window.location.href = '../auth.html';
@@ -467,10 +756,21 @@
                     return;
                 }
 
-                if (result && (result.success || successMessage)) {
-                    setStatus(result.message || t('attendance.success', 'Attendance recorded successfully.'), 'success');
+                if (result && successMessage) {
+                    const completionMessage = flowMode === 'checkout'
+                        ? (result.message || 'Check-out recorded successfully. Attendance is now complete.')
+                        : (result.message || t('attendance.success', 'Attendance recorded successfully.'));
+                    if (typeof Toast !== 'undefined') {
+                        Toast.success(completionMessage);
+                    }
+                    setStatus(completionMessage, 'success');
                     document.getElementById('codeInput').value = '';
                     setTimeout(() => window.location.href = '../../dashboard.html', 1500);
+                    return;
+                }
+
+                if (result && result.message && /check-(in|out) is not currently open/i.test(result.message)) {
+                    setStatus(t('attendance.sessionNotOpen', 'Class is visible, but attendance for this session is not open yet. Refresh live classes and use the latest lecturer code.'), 'warning');
                     return;
                 }
 
@@ -636,19 +936,45 @@
             }
 
             try {
+                const verificationContext = { ...pendingVerification };
                 const result = await API.verifyIdentity({
                     userId: currentUser.id,
-                    sessionId: pendingVerification.attendanceId || null,
+                    sessionId: verificationContext.attendanceId || null,
                     method,
                     photoWidth,
                     photoHeight,
                     selfieImage,
                     idImage,
-                    deviceId: pendingVerification.deviceId || null
+                    deviceId: verificationContext.deviceId || null
                 });
                 if (!result || result.verified === false) {
                     throw new Error((result && result.message) || 'Identity verification failed');
                 }
+
+                if (verificationContext.mode === 'checkout' && verificationContext.classId && verificationContext.code) {
+                    const checkoutResult = await API.validateCheckOutCode(
+                        verificationContext.classId,
+                        verificationContext.code,
+                        verificationContext.attendanceId || null
+                    );
+
+                    const checkoutDone = checkoutResult && (checkoutResult.checkedOutAt || /attendance already completed/i.test(String(checkoutResult.message || '')));
+                    if (!checkoutDone) {
+                        throw new Error((checkoutResult && checkoutResult.message) || 'Checkout verification completed, but checkout code must be re-entered.');
+                    }
+
+                    closeVerificationModal();
+                    pendingVerification = null;
+                    capturedSelfieImage = null;
+                    const completionMessage = checkoutResult.message || 'Checkout recorded successfully. Attendance is now complete.';
+                    setStatus(completionMessage, 'success');
+                    if (typeof Toast !== 'undefined') {
+                        Toast.success(completionMessage);
+                    }
+                    setTimeout(() => window.location.href = '../../dashboard.html', 1500);
+                    return;
+                }
+
                 closeVerificationModal();
                 setStatus(t('attendance.verified', 'Identity verified. You can continue with the code.'), 'success');
                 pendingVerification = null;
@@ -681,16 +1007,45 @@
         });
 
         document.addEventListener('DOMContentLoaded', async () => {
-            if (!loadUser()) return;
+            const helpBtn = document.getElementById('helpBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const verifyBiometricBtn = document.getElementById('verifyBiometricBtn');
+            const verifySelfieBtn = document.getElementById('verifySelfieBtn');
+            const verifyManualBtn = document.getElementById('verifyManualBtn');
+            const cameraFacingSelect = document.getElementById('cameraFacingSelect');
+            const capturePhotoBtn = document.getElementById('capturePhotoBtn');
+            const cancelCameraBtn = document.getElementById('cancelCameraBtn');
+
+            if (helpBtn) helpBtn.addEventListener('click', openHelp);
+            if (submitBtn) submitBtn.addEventListener('click', submitCode);
+            if (refreshBtn) refreshBtn.addEventListener('click', refreshLiveClasses);
+            if (verifyBiometricBtn) verifyBiometricBtn.addEventListener('click', promptBiometric);
+            if (verifySelfieBtn) verifySelfieBtn.addEventListener('click', promptSelfieVerification);
+            if (verifyManualBtn) verifyManualBtn.addEventListener('click', showManualFallback);
+            if (cameraFacingSelect) cameraFacingSelect.addEventListener('change', switchCameraFacing);
+            if (capturePhotoBtn) capturePhotoBtn.addEventListener('click', capturePhoto);
+            if (cancelCameraBtn) cancelCameraBtn.addEventListener('click', closeCamera);
+
+            if (!await loadUser()) return;
             if (window.I18N) I18N.apply(document);
+            if (preferredClassId) {
+                selectedClassId = preferredClassId;
+            }
             await refreshLiveClasses();
             if (preferredAction) {
                 setStatus(`${t('attendance.sessionMode', 'Session mode')}: ${preferredAction}`, 'info');
             }
-            if (preferredClassId) {
-                selectedClassId = preferredClassId;
+            if (preferredCode) {
+                document.getElementById('codeInput').value = preferredCode;
+            }
+
+            if (autoVerifyFromScan && preferredCode && selectedClassId) {
+                setTimeout(() => {
+                    submitCode();
+                }, 200);
             }
         });
     </script>
 </body>
-+</html>
+</html>

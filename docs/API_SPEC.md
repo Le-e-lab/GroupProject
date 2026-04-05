@@ -89,6 +89,41 @@ Role checks are enforced on the backend for privileged actions.
 - **Body**: `{ classId, studentId, code, attendanceId? }`
 - **Response**: `{ attendanceId, checkedInAt, checkedOutAt }`
 
+### Get Today's Attendance By Course
+
+- **Endpoint**: `GET /attendance/today-by-class/:courseCode`
+- **Access**: `lecturer`, `admin`, `student_rep`
+- **Query**:
+  - `classId` (optional): restrict results to one class variant/cohort
+  - If `lecturer` omits `classId`, backend returns course-wide results across that lecturer's owned course variants only.
+  - `sources` (optional): use `automated` to include only `totp`, `qr`, `checkin_checkout`
+  - `state` (optional): use `active` to return only currently checked-in rows (`checkedOutAt = null`)
+- **Response**: `{ checkedInStudents: [ { userId, method, status, checkedInAt, checkedOutAt } ] }`
+
+### Get Course Roster For Attendance
+
+- **Endpoint**: `GET /attendance/students/:courseCode`
+- **Access**: `lecturer`, `admin`, `student_rep`
+- **Query**:
+  - `classId` (optional): restrict roster to one class variant/cohort
+  - If `lecturer` omits `classId`, backend returns a course-wide roster across that lecturer's owned course variants only.
+- **Response**: `{ students: [ ... , recommendedClassId? ], totalSessions }`
+
+### Manual Bulk Mark (Lecturer/Admin)
+
+- **Endpoint**: `POST /attendance/bulk-mark`
+- **Access**: `lecturer`, `admin`
+- **Body**: `{ classId, students: string[], date? }`
+- **Behavior**:
+  - `classId` must be a specific composite class variant ID.
+  - Backend validates lecturer ownership and each student's cohort eligibility before insert.
+
+### Legacy Validate Code (Deprecated)
+
+- **Endpoint**: `POST /attendance/validate-code`
+- **Status**: removed from current backend (clients should treat as unavailable)
+- **Migration**: clients must use `POST /attendance/validate-checkin` and `POST /attendance/validate-checkout`
+
 ### Verify Identity (Device Verification)
 
 - **Endpoint**: `POST /attendance/verify-identity`

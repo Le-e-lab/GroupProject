@@ -1,4 +1,4 @@
-const CACHE_NAME = 'upath-cache-v5';
+const CACHE_NAME = 'upath-cache-v6';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -45,6 +45,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Only cache GET requests, ignore APIs (which are marked with /api/) and chrome-extension://
   if (event.request.method !== 'GET' || event.request.url.includes('/api/') || !event.request.url.startsWith('http')) {
+    return;
+  }
+
+  const isNavigationRequest = event.request.mode === 'navigate';
+  if (isNavigationRequest) {
+    // Always prefer fresh HTML to avoid stale inline handlers/pages across browser profiles.
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/index.html'))
+    );
     return;
   }
 

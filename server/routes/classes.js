@@ -17,6 +17,14 @@ function normalizeKey(value) {
         .replace(/^_+|_+$/g, '');
 }
 
+function programValuesCompatible(left, right) {
+    const a = normalizeKey(left);
+    const b = normalizeKey(right);
+    if (!a || !b) return true;
+    if (a === b) return true;
+    return a.startsWith(b) || b.startsWith(a) || a.includes(b) || b.includes(a);
+}
+
 function buildClassId(row) {
     const course = String(row.Course_Code || '').trim();
     const day = String(row.Day || '').trim();
@@ -91,11 +99,7 @@ router.get('/', async (req, res) => {
         const whereClause = {};
 
         
-        // If a program is provided, apply STRICT filtering (exact match)
-        if (program) {
-             // STRICT: Exact program match only (no fuzzy like)
-             whereClause.Program = program;
-        }
+           const requestedProgram = String(program || '').trim();
         
         if (year) {
             // DB has "Year_Semester" e.g. "Y1 S2" or "All Years"
@@ -132,10 +136,15 @@ router.get('/', async (req, res) => {
         // CRITICAL FIX: Filter to only valid weekdays (DB has corrupted Day values)
         const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         const validClasses = classes.filter(c => validDays.includes(c.Day));
+
+        // Program matching is compatibility-based to support naming variants across roster imports.
+        const cohortClasses = requestedProgram
+            ? validClasses.filter((c) => programValuesCompatible(c.Program, requestedProgram))
+            : validClasses;
         
         // Deduplicate: Ensure we only send one instance of a class per schedule block
         const seen = new Set();
-        const uniqueClasses = validClasses.filter(c => {
+        const uniqueClasses = cohortClasses.filter(c => {
             const key = `${c.Course_Code}-${c.Day}-${c.From_Time}-${normalizeKey(c.Program)}-${normalizeKey(c.Year_Semester)}`;
             if (seen.has(key)) return false;
             seen.add(key);

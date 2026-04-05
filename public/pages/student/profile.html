@@ -43,7 +43,6 @@
         </div>
         <div class="navbar-actions">
             <a href="../../pages/student/profile.html" class="navbar-avatar" id="userAvatar" style="background: var(--primary-hover);">CB</a>
-            <button class="navbar-logout" onclick="logout()">Sign Out</button>
         </div>
     </nav>
 
@@ -95,6 +94,10 @@
                     </div>
                     <button type="submit" class="btn btn-primary mt-2" id="saveBtn">Save Changes</button>
                 </form>
+
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="logout()">Sign Out</button>
+                </div>
             </div>
         </div>
     </main>
@@ -204,7 +207,11 @@
             }
         }
 
-        function logout() {
+        async function logout() {
+            if (window.API && typeof API.logout === 'function') {
+                await API.logout();
+                return;
+            }
             sessionStorage.removeItem('upath_user');
             window.location.href = '../../pages/auth.html';
         }

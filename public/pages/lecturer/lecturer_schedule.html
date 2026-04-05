@@ -373,7 +373,14 @@
             window.location.href = 'active_session.html';
         }
 
-        function logout() { sessionStorage.removeItem('upath_user'); window.location.href = '../../pages/auth.html'; }
+        async function logout() {
+            if (window.API && typeof API.logout === 'function') {
+                await API.logout();
+                return;
+            }
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '../../pages/auth.html';
+        }
 
         document.addEventListener('DOMContentLoaded', initSchedule);
     </script>

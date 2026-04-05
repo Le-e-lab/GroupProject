@@ -6,7 +6,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { User, Class } = require('../models');
+const { User, Class, Attendance, Session, DeviceSession, BiometricVerification, Announcement, TimetableUploadLog, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const validator = require('validator');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -297,12 +297,35 @@ router.delete('/:id', async (req, res) => {
         const user = await User.findByPk(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        await user.destroy();
+        await sequelize.transaction(async (transaction) => {
+            const userId = String(user.id);
+
+            await Attendance.destroy({ where: { userId }, transaction });
+            await Session.destroy({ where: { userId }, transaction });
+            await DeviceSession.destroy({ where: { userId }, transaction });
+            await BiometricVerification.destroy({ where: { userId }, transaction });
+
+            if (user.role === 'lecturer') {
+                await Announcement.destroy({ where: { lecturerId: userId }, transaction });
+                await Class.update(
+                    { LecturerId: null },
+                    { where: { LecturerId: userId }, transaction }
+                );
+            }
+
+            await TimetableUploadLog.update(
+                { uploadedBy: `${userId} (deleted)` },
+                { where: { uploadedBy: userId }, transaction }
+            );
+
+            await user.destroy({ transaction });
+        });
+
         console.log(`[USER DELETED] ${user.id} (${user.fullName})`);
         res.json({ success: true, message: 'User deleted' });
     } catch (err) {
         console.error('Error deleting user:', err);
-        res.status(500).json({ message: 'Error deleting user' });
+        res.status(500).json({ message: err.message || 'Error deleting user' });
     }
 });
 

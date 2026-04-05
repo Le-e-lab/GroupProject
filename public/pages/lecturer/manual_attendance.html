@@ -28,14 +28,16 @@
 
     <main class="page">
         <div class="page-container" style="max-width: 800px;">
-            <div class="page-header flex justify-between items-center">
+            <div class="page-header" style="display: grid; gap: 14px; margin-bottom: 4px;">
                 <div>
                     <h1 class="page-title">Manual Attendance</h1>
                     <p class="page-subtitle">Mark attendance for your class</p>
                 </div>
-                <select class="select" style="width: auto;" onchange="loadStudents(this.value)">
-                    <option value="" disabled selected>Loading classes...</option>
-                </select>
+                <div style="width: 100%;">
+                    <select class="select" style="width: 100%; max-width: 100%;" onchange="loadStudents(this.value)">
+                        <option value="" disabled selected>Loading classes...</option>
+                    </select>
+                </div>
             </div>
 
             <div class="card">
@@ -86,8 +88,30 @@
         let currentClass = null;
         let classList = [];
         let checkedInStudentIds = new Set();
+        let checkedInStudentRecords = {};
         let studentLookup = {};
+        const pageParams = new URLSearchParams(window.location.search);
         window.AI_ASSISTANT_CONTEXT = { page: 'manual-attendance' };
+
+        function extractCourseCode(value) {
+            const safe = String(value || '').trim();
+            if (!safe) return '';
+            if (safe.includes('--')) return safe.split('--')[0].trim();
+            return safe.split('-')[0].trim();
+        }
+
+        function formatCsvDateTime(value) {
+            if (!value) return '';
+            const dt = new Date(value);
+            if (Number.isNaN(dt.getTime())) return '';
+            const y = dt.getFullYear();
+            const m = String(dt.getMonth() + 1).padStart(2, '0');
+            const d = String(dt.getDate()).padStart(2, '0');
+            const hh = String(dt.getHours()).padStart(2, '0');
+            const mm = String(dt.getMinutes()).padStart(2, '0');
+            const ss = String(dt.getSeconds()).padStart(2, '0');
+            return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+        }
 
         async function initPage() {
             const user = API.getCurrentUser();
@@ -96,78 +120,178 @@
                 return;
             }
 
-            // Load Lecturer's Classes using API
+            // Load lecturer classes and drop duplicate timetable rows.
             const classes = await API.getClassesByLecturer(user.id);
-            classList = classes;
-            
-            // DEDUP: Group classes by course code (show each course only once)
-            const uniqueCourses = [];
-            const seenCodes = new Set();
-            classes.forEach(c => {
-                if (!seenCodes.has(c.code)) {
-                    seenCodes.add(c.code);
-                    uniqueCourses.push(c);
-                }
+            const seenClassKeys = new Set();
+            const dedupedClasses = (classes || []).filter((c) => {
+                const normalize = (value) => String(value || '').trim().toLowerCase();
+                const classKey = [
+                    normalize(c.code),
+                    normalize(c.name),
+                    normalize(c.day),
+                    normalize(c.time),
+                    normalize(c.program),
+                    normalize(c.year),
+                    normalize(c.room)
+                ].join('|');
+                if (seenClassKeys.has(classKey)) return false;
+                seenClassKeys.add(classKey);
+                return true;
             });
+
+            const requestedClassId = String(pageParams.get('class') || '').trim();
+            const requestedCode = String(pageParams.get('code') || extractCourseCode(requestedClassId) || '').trim().toUpperCase();
+
+            const groupedByCourse = new Map();
+            dedupedClasses.forEach((c) => {
+                const code = String(c.code || '').trim().toUpperCase();
+                const id = String(c.id || c.code || '').trim();
+                if (!code || !id) return;
+
+                if (!groupedByCourse.has(code)) {
+                    groupedByCourse.set(code, {
+                        code,
+                        name: c.name || code,
+                        variants: []
+                    });
+                }
+
+                groupedByCourse.get(code).variants.push({
+                    ...c,
+                    id,
+                    code
+                });
+            });
+
+            classList = Array.from(groupedByCourse.values())
+                .map((courseGroup) => {
+                    const requestedVariant = requestedClassId
+                        ? courseGroup.variants.find((v) => String(v.id) === requestedClassId)
+                        : null;
+                    return {
+                        ...courseGroup,
+                        activeVariant: requestedVariant || courseGroup.variants[0]
+                    };
+                })
+                .sort((a, b) => String(a.code).localeCompare(String(b.code)));
             
             const select = document.querySelector('.select');
-            if (uniqueCourses.length > 0) {
-                select.innerHTML = uniqueCourses.map(c => 
-                    `<option value="${c.code}">${c.code} - ${c.name}</option>`
-                ).join('');
-                
-                // Auto-load first class
-                loadStudents(uniqueCourses[0].code);
+            if (classList.length > 0) {
+                select.innerHTML = classList.map(c => {
+                    const variantCount = Array.isArray(c.variants) ? c.variants.length : 1;
+                    const variantSuffix = variantCount > 1 ? ` (${variantCount} class variants)` : '';
+                    const active = c.activeVariant || c.variants[0] || null;
+                    const activeMeta = active
+                        ? ` • Active: ${active.day || 'Day?'} ${active.time || ''} ${active.program || ''} Y${active.year || '?'}`
+                        : '';
+                    const label = `${c.code} - ${c.name}${variantSuffix}${activeMeta}`;
+                    return `<option value="${c.code}">${label}</option>`;
+                }).join('');
+
+                let initialClass = null;
+                if (requestedClassId) {
+                    initialClass = classList.find(c => Array.isArray(c.variants) && c.variants.some((v) => String(v.id) === requestedClassId)) || null;
+                }
+                if (!initialClass && requestedCode) {
+                    initialClass = classList.find(c => String(c.code || '').trim().toUpperCase() === requestedCode) || null;
+                }
+                if (!initialClass) initialClass = classList[0];
+
+                select.value = initialClass.code;
+                loadStudents(initialClass.code);
             } else {
                 select.innerHTML = `<option disabled selected>No classes assigned</option>`;
             }
         }
 
-        async function loadStudents(classCode) {
-            currentClass = classList.find(c => c.code === classCode);
+        async function loadStudents(classValue) {
+            currentClass = classList.find(c => String(c.code || '').trim().toUpperCase() === String(classValue || '').trim().toUpperCase());
             if (!currentClass) return;
+
+            const classCode = currentClass.code;
+            const classId = currentClass.activeVariant && currentClass.activeVariant.id
+                ? currentClass.activeVariant.id
+                : '';
+
+            if (!classId) {
+                const container = document.getElementById('studentList');
+                container.innerHTML = `<div style="color:red; text-align:center;">Class variant missing. Open Manual Attendance from My Classes for this course.</div>`;
+                return;
+            }
 
             const container = document.getElementById('studentList');
             container.innerHTML = `<div style="padding:20px; text-align:center;">Loading students with attendance data...</div>`;
 
             try {
+                // Manual Attendance should default to course-wide roster mode.
+                // Even when opened from a class deep-link, lecturers expect to see all programs
+                // that do the selected course (for this lecturer's owned variants).
+                const useCourseWideScope = true;
+                const studentQuery = useCourseWideScope ? {} : { classId };
+                const checkinQuery = useCourseWideScope ? {} : { classId };
+
                 // Fetch students AND today's check-ins in parallel
                 const [studentsData, checkedInData] = await Promise.all([
-                    API.getAttendanceStudents(classCode),
-                    API.getTodayCheckInsByClass(classCode).catch(() => ({ checkedInStudents: [] }))
+                    API.getAttendanceStudents(classCode, studentQuery),
+                    API.getTodayCheckInsByClass(classCode, checkinQuery).catch(() => ({ checkedInStudents: [] }))
                 ]);
 
                 const students = (studentsData && studentsData.students) || [];
+
+                // Defensive UI filter: keep only cohorts represented by selected course variants.
+                // This protects the page if an older backend process returns broader rosters.
+                const variantPrograms = new Set((currentClass.variants || [])
+                    .map((v) => String(v.program || '').trim().toLowerCase())
+                    .filter(Boolean));
+                const variantYears = new Set((currentClass.variants || [])
+                    .map((v) => Number(v.year || 0))
+                    .filter((y) => Number.isFinite(y) && y > 0));
+
+                const filteredStudents = students.filter((s) => {
+                    const studentProgram = String(s.program || '').trim().toLowerCase();
+                    const studentYear = Number(s.year || 0);
+                    const programOk = !variantPrograms.size || variantPrograms.has(studentProgram);
+                    const yearOk = !variantYears.size || (Number.isFinite(studentYear) && variantYears.has(studentYear));
+                    return programOk && yearOk;
+                });
                 
                 // Build set of student IDs who already checked in today
                 let checkedInSet = new Set();
+                let checkedOutSet = new Set();
                 let checkedInMethods = {};
+                checkedInStudentRecords = {};
                 (checkedInData.checkedInStudents || []).forEach(c => {
                     checkedInSet.add(c.userId);
                     checkedInMethods[c.userId] = c.method || 'unknown';
+                    checkedInStudentRecords[c.userId] = c;
+                    if (c.checkedOutAt) {
+                        checkedOutSet.add(c.userId);
+                    }
                 });
                 checkedInStudentIds = checkedInSet;
                 studentLookup = {};
                 
-                if (students.length === 0) {
+                if (filteredStudents.length === 0) {
                     container.innerHTML = `
                         <div style="padding: 20px; text-align: center; color: var(--text-muted);">
                             No registered students found for this class.<br>
-                            <small>Course: ${classCode}</small>
+                            <small>Class Variant: ${classCode} (${classId})</small>
                         </div>`;
                     return;
                 }
 
                 // Show summary of who's checked in
-                const checkedCount = students.filter(s => checkedInSet.has(s.id)).length;
+                const checkedCount = filteredStudents.filter(s => checkedInSet.has(s.id)).length;
                 let summaryHtml = '';
                 if (checkedCount > 0) {
+                    const completedCount = filteredStudents.filter(s => checkedOutSet.has(s.id)).length;
+                    const activeCount = Math.max(checkedCount - completedCount, 0);
                     summaryHtml = `
                         <div style="padding: 12px 16px; background: linear-gradient(135deg, #D1FAE5, #A7F3D0); border-radius: var(--radius); margin: 0 16px 12px 16px; display: flex; align-items: center; gap: 10px;">
                             <span style="font-size: 1.4rem;">✅</span>
                             <div>
-                                <div style="font-weight: 700; color: #065F46; font-size: 0.95rem;">${checkedCount} of ${students.length} students already checked in today</div>
-                                <div style="font-size: 0.8rem; color: #047857;">via QR code or TOTP — these are pre-selected below</div>
+                                <div style="font-weight: 700; color: #065F46; font-size: 0.95rem;">${checkedCount} of ${filteredStudents.length} students already checked in today</div>
+                                <div style="font-size: 0.8rem; color: #047857;">${activeCount} active check-ins waiting for checkout, ${completedCount} completed checkouts.</div>
                             </div>
                         </div>`;
                 }
@@ -177,12 +301,13 @@
                     classCode: currentClass.code,
                     className: currentClass.name,
                     checkedInCount: checkedCount,
-                    totalStudents: students.length
+                    totalStudents: filteredStudents.length,
+                    scopeMode: useCourseWideScope ? 'course' : 'class-variant'
                 };
 
                 // Sort: checked-in students first, then by risk status
                 const order = { danger: 0, risk: 1, warning: 2, good: 3 };
-                students.sort((a, b) => {
+                filteredStudents.sort((a, b) => {
                     const aChecked = checkedInSet.has(a.id) ? 0 : 1;
                     const bChecked = checkedInSet.has(b.id) ? 0 : 1;
                     if (aChecked !== bChecked) return aChecked - bChecked;
@@ -190,16 +315,20 @@
                 });
 
                 // Render List with check-in status and risk badges
-                const listHtml = students.map(s => {
+                const listHtml = filteredStudents.map(s => {
                     studentLookup[s.id] = s;
                     const isCheckedIn = checkedInSet.has(s.id);
+                    const isCheckedOut = checkedOutSet.has(s.id);
+                    const isActiveOnly = isCheckedIn && !isCheckedOut;
                     const method = checkedInMethods[s.id];
-                    const methodLabel = method === 'totp' ? 'TOTP Code' : method === 'qr' ? 'QR Scan' : method === 'manual' ? 'Manual' : 'Auto';
+                    const methodLabel = method === 'totp' ? 'TOTP Code' : method === 'qr' ? 'QR Scan' : method === 'manual' ? 'Manual' : 'Check-in/Check-out';
                     
                     // Check-in badge
                     let checkinBadge = '';
-                    if (isCheckedIn) {
-                        checkinBadge = `<span style="font-size:0.65rem; background:#059669; color:white; padding:3px 8px; border-radius:10px; margin-left:8px; font-weight:600;">✓ Checked In (${methodLabel})</span>`;
+                    if (isCheckedOut) {
+                        checkinBadge = `<span style="font-size:0.65rem; background:#059669; color:white; padding:3px 8px; border-radius:10px; margin-left:8px; font-weight:600;">✓ Completed (${methodLabel})</span>`;
+                    } else if (isActiveOnly) {
+                        checkinBadge = `<span style="font-size:0.65rem; background:#F59E0B; color:white; padding:3px 8px; border-radius:10px; margin-left:8px; font-weight:600;">⚠ Checked In • Awaiting Checkout</span>`;
                     }
                     
                     // Risk badge
@@ -215,13 +344,13 @@
                     }
                     
                     return `
-                    <div class="list-item" style="cursor: pointer; display:flex; align-items:center; ${isCheckedIn ? 'background: #F0FDF4; border-left: 3px solid #059669;' : ''}">
-                        <input type="checkbox" value="${s.id}" ${isCheckedIn ? 'checked data-locked="true"' : ''} style="width: 20px; height: 20px; accent-color: var(--primary);">
+                    <div class="list-item" style="cursor: pointer; display:flex; align-items:center; ${isCheckedOut ? 'background: #F0FDF4; border-left: 3px solid #059669;' : (isActiveOnly ? 'background: #FFFBEB; border-left: 3px solid #F59E0B;' : '')}">
+                        <input type="checkbox" value="${s.id}" ${isCheckedOut ? 'checked data-locked="true"' : (isActiveOnly ? 'data-locked="true" disabled' : '')} style="width: 20px; height: 20px; accent-color: var(--primary);">
                         <div class="list-item-content" style="flex:1; margin-left:12px;">
                             <div class="list-item-title">${s.fullName} ${checkinBadge} ${badge}</div>
                             <div class="list-item-subtitle">${s.id} • ${s.attended}/${s.total} sessions</div>
                         </div>
-                        <button class="btn btn-sm btn-secondary" onclick="showStudentDetails('${s.id}', '${methodLabel}', ${isCheckedIn})" style="font-size:0.7rem; padding:4px 8px;">Details</button>
+                        <button class="btn btn-sm btn-secondary" onclick="showStudentDetails('${s.id}', '${methodLabel}', ${isCheckedOut}, ${isActiveOnly})" style="font-size:0.7rem; padding:4px 8px;">Details</button>
                     </div>
                 `}).join('');
 
@@ -271,8 +400,27 @@
             btn.disabled = true;
 
             try {
-                // Use Bulk Mark Endpoint
-                await API.saveBulkAttendance(currentClass.code, studentIds);
+                // Save by each student's recommended class variant to keep cohort integrity.
+                const groupedByClassId = new Map();
+                for (const studentId of studentIds) {
+                    const student = studentLookup[studentId] || {};
+                    const suggested = String(student.recommendedClassId || '').trim();
+                    const fallback = currentClass.activeVariant && currentClass.activeVariant.id
+                        ? String(currentClass.activeVariant.id).trim()
+                        : '';
+                    const targetClassId = suggested || fallback;
+                    if (!targetClassId) {
+                        throw new Error('Missing class variant mapping for one or more selected students.');
+                    }
+                    if (!groupedByClassId.has(targetClassId)) {
+                        groupedByClassId.set(targetClassId, []);
+                    }
+                    groupedByClassId.get(targetClassId).push(studentId);
+                }
+
+                for (const [targetClassId, ids] of groupedByClassId.entries()) {
+                    await API.saveBulkAttendance(targetClassId, ids);
+                }
                 
                 // Visual Feedback
                 showNotificationModal('success', 'Attendance Saved', `Attendance has been saved for ${studentIds.length} student(s)!`);
@@ -286,10 +434,15 @@
             }
         }
 
-        function showStudentDetails(studentId, methodLabel, isCheckedIn) {
+        function showStudentDetails(studentId, methodLabel, isCheckedOut, isActiveOnly = false) {
             const s = studentLookup[studentId];
             if (!s) return;
-            const todayStatus = isCheckedIn ? `Today: Checked in via ${methodLabel}` : 'Today: Not checked in';
+            let todayStatus = 'Today: Not checked in';
+            if (isCheckedOut) {
+                todayStatus = `Today: Checkout complete via ${methodLabel}`;
+            } else if (isActiveOnly) {
+                todayStatus = `Today: Checked in via ${methodLabel} (checkout pending)`;
+            }
             const details = `ID: ${s.id}\nProgram: ${s.program || 'N/A'}\nYear: ${s.year || 'N/A'}\nAttendance: ${s.attended}/${s.total} (${s.percentage}%)\n${todayStatus}`;
             showNotificationModal('success', s.fullName, details);
         }
@@ -301,7 +454,14 @@
             }
 
             try {
-                const blob = await API.exportRegisteredStudents(currentClass.code);
+                const exportClassId = currentClass.activeVariant && currentClass.activeVariant.id
+                    ? currentClass.activeVariant.id
+                    : '';
+                if (!exportClassId) {
+                    throw new Error('Missing class variant for export. Open this page from My Classes.');
+                }
+                const exportOptions = { classId: exportClassId };
+                const blob = await API.exportRegisteredStudents(currentClass.code, exportOptions);
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -324,22 +484,48 @@
                 return;
             }
 
-            try {
-                const blob = await API.exportTodayCheckIns(currentClass.code);
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `${currentClass.code}_today_checkins.csv`;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                window.URL.revokeObjectURL(url);
+            const rows = [
+                ['Date', 'CourseCode', 'CourseName', 'StudentId', 'FullName', 'Program', 'Year', 'Method', 'CheckInTime', 'CheckOutTime', 'Completion']
+            ];
+            const records = Object.values(checkedInStudentRecords || {});
 
-                showNotificationModal('success', 'Download Complete', `Today's check-ins for ${currentClass.code} have been downloaded.`);
-            } catch (error) {
-                console.error('Download today check-ins error:', error);
-                showNotificationModal('error', 'Download Failed', error.message || 'Unable to download today\'s check-ins.');
+            records.forEach((record) => {
+                const student = studentLookup[record.userId] || {};
+                const checkInSource = record.checkedInAt || new Date();
+                const dateValue = formatCsvDateTime(checkInSource).split(' ')[0] || formatCsvDateTime(new Date()).split(' ')[0];
+                const checkedInAt = formatCsvDateTime(record.checkedInAt);
+                const checkedOutAt = formatCsvDateTime(record.checkedOutAt);
+
+                rows.push([
+                    dateValue,
+                    currentClass.code,
+                    `"${String(currentClass.name || '').replace(/"/g, '""')}"`,
+                    record.userId,
+                    `"${String(student.fullName || '').replace(/"/g, '""')}"`,
+                    `"${String(student.program || '').replace(/"/g, '""')}"`,
+                    student.year || '',
+                    `"${String(record.method || 'unknown').replace(/"/g, '""')}"`,
+                    checkedInAt,
+                    checkedOutAt,
+                    record.checkedOutAt ? 'Complete' : 'Active'
+                ].join(','));
+            });
+
+            if (rows.length === 1) {
+                showNotificationModal('error', 'Download Failed', 'No check-ins are loaded for this class yet. Refresh the class and try again.');
+                return;
             }
+
+            const blob = new Blob([rows.map((row) => Array.isArray(row) ? row.join(',') : row).join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${currentClass.code}_today_checkins.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            showNotificationModal('success', 'Download Complete', `Today's check-ins for ${currentClass.code} have been downloaded.`);
         }
 
         async function sendCustom() {
@@ -414,7 +600,14 @@
             });
         }
 
-        function logout() { sessionStorage.removeItem('upath_user'); window.location.href = '../../pages/auth.html'; }
+        async function logout() {
+            if (window.API && typeof API.logout === 'function') {
+                await API.logout();
+                return;
+            }
+            sessionStorage.removeItem('upath_user');
+            window.location.href = '../../pages/auth.html';
+        }
 
         document.addEventListener('DOMContentLoaded', initPage);
     </script>

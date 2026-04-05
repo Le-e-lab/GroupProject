@@ -10,7 +10,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { Attendance, Session, Class, User, DeviceSession, BiometricVerification, sequelize } = require('../models');
+const { Attendance, Session, Class, User, DeviceSession, BiometricVerification, Announcement, sequelize } = require('../models');
 const { TOTP, NobleCryptoPlugin, ScureBase32Plugin } = require('otplib');
 const { Op } = require('sequelize');
 const validator = require('validator');
@@ -20,15 +20,19 @@ const { verifyWithProvider, getProviderConfig } = require('../utils/identityVeri
 
 const canManageAttendanceRoles = new Set(['lecturer', 'admin']);
 const canViewClassAttendanceRoles = new Set(['lecturer', 'admin', 'student_rep']);
+const codeValidationRoles = new Set(['student', 'student_rep']);
 
 function hasRole(req, rolesSet) {
     return req.user && rolesSet.has(req.user.role);
 }
 
-function requireRoles(rolesSet) {
+function requireRoles(rolesSet, message = null) {
     return (req, res, next) => {
         if (!hasRole(req, rolesSet)) {
-            return res.status(403).json({ message: 'Forbidden' });
+            if (message) {
+                return res.status(403).json({ message });
+            }
+            return res.status(403).json({ message: `Forbidden: requires role ${Array.from(rolesSet).join(' or ')}` });
         }
         return next();
     };
@@ -130,6 +134,39 @@ function normalizeKey(value) {
         .replace(/^_+|_+$/g, '');
 }
 
+function extractYearNumber(value) {
+    const safe = String(value || '').toLowerCase();
+    if (!safe) return null;
+    const explicit = safe.match(/y\s*(\d+)/i);
+    if (explicit && explicit[1]) return parseInt(explicit[1], 10);
+    const firstNumber = safe.match(/(\d+)/);
+    if (firstNumber && firstNumber[1]) return parseInt(firstNumber[1], 10);
+    return null;
+}
+
+function programKeysCompatible(left, right) {
+    const a = normalizeKey(left);
+    const b = normalizeKey(right);
+    if (!a || !b) return true;
+    if (a === b) return true;
+    return a.startsWith(b) || b.startsWith(a) || a.includes(b) || b.includes(a);
+}
+
+function yearKeysCompatible(left, right) {
+    const a = normalizeKey(left);
+    const b = normalizeKey(right);
+    if (!a || !b) return true;
+    if (a === b) return true;
+
+    const yearA = extractYearNumber(a);
+    const yearB = extractYearNumber(b);
+    if (Number.isInteger(yearA) && Number.isInteger(yearB)) {
+        return yearA === yearB;
+    }
+
+    return a.startsWith(b) || b.startsWith(a);
+}
+
 function parseClassIdentity(classId) {
     const safe = String(classId || '').trim();
     if (!safe) {
@@ -156,6 +193,95 @@ function parseClassIdentity(classId) {
     }
 
     return { courseCode: parseCourseCode(safe), day: '', fromTime: '', programKey: '', yearKey: '' };
+}
+
+function getLocalDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function formatCsvDateTime(value) {
+    if (!value) return '';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return '';
+    const year = dt.getFullYear();
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    const hours = String(dt.getHours()).padStart(2, '0');
+    const minutes = String(dt.getMinutes()).padStart(2, '0');
+    const seconds = String(dt.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+function startOfLocalDay(date = new Date()) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    return start;
+}
+
+function classIdentityCompatible(requestedClassId, sessionClassId) {
+    const requested = parseClassIdentity(requestedClassId);
+    const sessionIdentity = parseClassIdentity(sessionClassId);
+
+    if (!requested.courseCode || !sessionIdentity.courseCode) return false;
+    if (requested.courseCode !== sessionIdentity.courseCode) return false;
+
+    if (requested.day && sessionIdentity.day && requested.day !== sessionIdentity.day) return false;
+    if (requested.fromTime && sessionIdentity.fromTime && requested.fromTime !== sessionIdentity.fromTime) return false;
+    if (requested.programKey && sessionIdentity.programKey && requested.programKey !== sessionIdentity.programKey) return false;
+    if (requested.yearKey && sessionIdentity.yearKey && requested.yearKey !== sessionIdentity.yearKey) return false;
+
+    return true;
+}
+
+function classRowMatchesIdentity(row, identity) {
+    if (!row || !identity || !identity.courseCode) return false;
+    if (String(row.Course_Code || '').trim() !== String(identity.courseCode || '').trim()) return false;
+    if (identity.day && String(row.Day || '').trim() !== String(identity.day || '').trim()) return false;
+    if (identity.fromTime && String(row.From_Time || '').trim() !== String(identity.fromTime || '').trim()) return false;
+    if (identity.programKey && !programKeysCompatible(row.Program, identity.programKey)) return false;
+    if (identity.yearKey && !yearKeysCompatible(row.Year_Semester, identity.yearKey)) return false;
+    return true;
+}
+
+function attendanceClassMatchesIdentity(classId, identity) {
+    if (!identity || !identity.courseCode) return true;
+    return classIdentityCompatible(classId, `${identity.courseCode}--${identity.day || ''}--${identity.fromTime || ''}--${identity.programKey || ''}--${identity.yearKey || ''}`);
+}
+
+async function findActiveSessionForClass(classId, status) {
+    const where = {
+        classId,
+        expiresAt: { [Op.gt]: new Date() }
+    };
+
+    if (status) {
+        where.status = status;
+    }
+
+    const exact = await Session.findOne({ where });
+    if (exact) return exact;
+
+    const identity = parseClassIdentity(classId);
+    if (!identity.courseCode) return null;
+
+    const fallbackWhere = {
+        expiresAt: { [Op.gt]: new Date() },
+        classId: { [Op.like]: `${identity.courseCode}%` }
+    };
+
+    if (status) {
+        fallbackWhere.status = status;
+    }
+
+    const candidates = await Session.findAll({
+        where: fallbackWhere,
+        order: [['updatedAt', 'DESC']]
+    });
+
+    return candidates.find((candidate) => classIdentityCompatible(classId, candidate.classId)) || null;
 }
 
 function lecturerNameTerms(user) {
@@ -226,18 +352,47 @@ async function findClassForSession(classId, user = null) {
     });
 }
 
+async function findLecturerOwnedClassRowsForCourse(courseCode, user) {
+    if (!user || user.role !== 'lecturer') return [];
+
+    const termSet = new Set(lecturerNameTerms(user));
+    const terms = Array.from(termSet);
+    const ownerFilters = [{ LecturerId: String(user.id) }];
+    for (const term of terms) {
+        ownerFilters.push({ Lecturer: { [Op.like]: `%${term}%` } });
+    }
+
+    const rows = await Class.findAll({
+        where: {
+            Course_Code: courseCode,
+            [Op.or]: ownerFilters
+        }
+    });
+
+    return rows.filter((row) => belongsToLecturer(row, user));
+}
+
+function buildCompositeClassIdFromRow(row) {
+    const course = String(row && row.Course_Code || '').trim();
+    const day = String(row && row.Day || '').trim();
+    const from = String(row && row.From_Time || '').trim();
+    const programKey = normalizeKey(row && row.Program || 'unknown_program') || 'unknown_program';
+    const yearKey = normalizeKey(row && row.Year_Semester || 'unknown_year') || 'unknown_year';
+    return `${course}--${day}--${from}--${programKey}--${yearKey}`;
+}
+
 function studentEligibleForClass(student, classRow) {
     if (!student || !classRow) {
         return { ok: false, reason: 'Class or student record missing' };
     }
 
-    const studentProgram = String(student.program || '').trim().toLowerCase();
-    const classProgram = String(classRow.Program || '').trim().toLowerCase();
+    const studentProgram = String(student.program || '').trim();
+    const classProgram = String(classRow.Program || '').trim();
     if (!studentProgram || !classProgram) {
         return { ok: false, reason: 'Student or class program is not configured' };
     }
 
-    const programMatch = studentProgram.startsWith(classProgram) || classProgram.startsWith(studentProgram);
+    const programMatch = programKeysCompatible(studentProgram, classProgram);
     if (!programMatch) {
         return { ok: false, reason: 'Student does not belong to this course program' };
     }
@@ -251,6 +406,48 @@ function studentEligibleForClass(student, classRow) {
     }
 
     return { ok: true };
+}
+
+async function resolveEligibleClassForStudent(sessionClassId, student) {
+    const classRow = await findClassForSession(sessionClassId);
+    if (classRow) {
+        const eligibility = studentEligibleForClass(student, classRow);
+        if (eligibility.ok) {
+            return { classRow, source: 'primary' };
+        }
+    }
+
+    const identity = parseClassIdentity(sessionClassId);
+    if (!identity.courseCode) {
+        return null;
+    }
+
+    const fallbackCandidates = await Class.findAll({
+        where: {
+            Course_Code: identity.courseCode
+        }
+    });
+
+    // Prefer exact day/time cohort first, then relax to same course code cohort variants.
+    const strictCandidates = fallbackCandidates.filter((candidate) => {
+        if (identity.day && candidate.Day && candidate.Day !== identity.day) return false;
+        if (identity.fromTime && candidate.From_Time && candidate.From_Time !== identity.fromTime) return false;
+        return true;
+    });
+
+    for (const candidate of strictCandidates) {
+        const fallbackEligibility = studentEligibleForClass(student, candidate);
+        if (!fallbackEligibility.ok) continue;
+        return { classRow: candidate, source: 'fallback_strict' };
+    }
+
+    for (const candidate of fallbackCandidates) {
+        const fallbackEligibility = studentEligibleForClass(student, candidate);
+        if (!fallbackEligibility.ok) continue;
+        return { classRow: candidate, source: 'fallback_course' };
+    }
+
+    return null;
 }
 
 /**
@@ -292,158 +489,15 @@ router.post('/generate-code', requireRoles(canManageAttendanceRoles), async (req
 
         const token = generateTOTP(secret);
         const timeLeft = 30 - Math.floor((Date.now() / 1000) % 30);
-        
-        res.json({ code: token, timeLeft: timeLeft * 1000 });
 
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error generating code' });
-    }
-});
-
-/**
- * POST /api/attendance/validate-code
- * Student submits code to mark attendance
- */
-router.post('/validate-code', attendanceAttemptLimiter, async (req, res) => {
-    try {
-        let { classId, studentId, code, userLat, userLon } = req.body;
-        
-        // Sanitize the inputs
-        if (classId) classId = validator.escape(validator.trim(classId));
-        if (studentId) studentId = validator.escape(validator.trim(studentId));
-        if (code) code = validator.escape(validator.trim(String(code)));
-
-        if (!studentId) {
-            return res.status(400).json({ message: 'Student ID required' });
-        }
-
-        const isPrivileged = hasRole(req, canManageAttendanceRoles);
-        if (!isPrivileged && String(req.user.id) !== String(studentId)) {
-            return res.status(403).json({ message: 'Forbidden' });
-        }
-        
-        // Find active session
-        const session = await Session.findOne({
-            where: {
-                classId,
-                expiresAt: { [Op.gt]: new Date() }
-            }
-        });
-
-        if (!session) {
-            return res.status(400).json({ message: 'No active attendance session for this class' });
-        }
-
-        // Verify OTP
-        const isValid = verifyTOTP(code, session.secret);
-        if (!isValid) {
-            return res.status(400).json({ message: 'Invalid or expired code' });
-        }
-
-        // --- SECURITY LOGIC (Geo/IP) can be re-enabled here if needed ---
-        
-        // Mark Attendance
-        const existing = await Attendance.findOne({
-            where: {
-                classId,
-                userId: studentId,  // FIX: Column is userId, not studentId
-                date: {
-                    [Op.gte]: new Date(new Date().setHours(0,0,0,0)) // Today
-                }
-            }
-        });
-
-        if (existing) {
-            return res.json({ message: 'Attendance already marked' });
-        }
-
-        await Attendance.create({
-            id: Date.now().toString(),
+        res.json({
             classId,
-            userId: studentId,  // FIX: Column is userId, not studentId
-            status: 'present',
-            date: new Date().toISOString().split('T')[0]
+            code: token,
+            timeLeft: timeLeft * 1000
         });
-
-        res.json({ message: 'Attendance marked successfully' });
-
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error validating code' });
-    }
-});
-
-/**
- * GET /api/attendance/student/:id
- * Stats for a student
- */
-router.get('/student/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        if (!canAccessStudentData(req, id)) {
-            return res.status(403).json({ message: 'Forbidden' });
-        }
-        
-        // 1. Fetch Student
-        const student = await User.findByPk(id);
-        if (!student) return res.status(404).json({ message: 'Student not found' });
-
-        // 2. Fetch User's Classes - STRICT exact program match
-        const whereClause = {};
-        if (student.program) {
-             // STRICT: Exact program match only (no fuzzy like)
-             whereClause.Program = student.program;
-        }
-        
-        const year = student.year || (student.id.startsWith('25') ? 1 : 2);
-        whereClause.Year_Semester = { 
-             [Op.or]: [
-                 { [Op.like]: `Y${year}%` },
-                 { [Op.like]: '%All%' }
-             ]
-        };
-
-        const allClasses = await Class.findAll({ where: whereClause });
-        const attendance = await Attendance.findAll({ where: { userId: id } });
-
-        const stats = [];
-        const seenCourses = new Set(); // Track unique courses
-        
-        for (const classObj of allClasses) {
-            const courseCode = classObj.Course_Code;
-            
-            // DEDUP: Skip if we've already processed this course
-            if (seenCourses.has(courseCode)) continue;
-            seenCourses.add(courseCode);
-            
-            // Match logic: Did they attend this course? (by course code prefix)
-            const myRecords = attendance.filter((a) => a.classId && a.classId.startsWith(courseCode) && isFinalizedAttendance(a));
-            const attendedCount = myRecords.length;
-            
-            // Total Sessions (Estimate from unique dates in Attendance DB or Default)
-            const allClassRecords = await Attendance.findAll({
-                attributes: ['date'],
-                where: { classId: { [Op.like]: `${courseCode}%` } }
-            });
-            const uniqueDates = new Set(allClassRecords.map(r => new Date(r.date).toDateString()));
-            let totalSessions = uniqueDates.size;
-            if (totalSessions < 12) totalSessions = 12; // Baseline for demo
-
-            stats.push({
-                courseCode: classObj.Course_Code,
-                name: classObj.Course_Name,
-                attended: attendedCount,
-                total: totalSessions
-            });
-        }
-
-        res.json({ stats });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error fetching stats' });
+        console.error('Generate code error:', err);
+        res.status(500).json({ message: 'Error generating code' });
     }
 });
 
@@ -456,19 +510,43 @@ router.get('/today/:id', async (req, res) => {
         if (!canAccessStudentData(req, id)) {
             return res.status(403).json({ message: 'Forbidden' });
         }
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        const startOfDay = startOfLocalDay();
+        const todayLocal = getLocalDateString();
         
         const attendance = await Attendance.findAll({
             where: {
-                userId: id, // FIX: Changed from studentId to userId
-                date: { [Op.gte]: startOfDay },
-                status: 'present'
+                userId: id,
+                [Op.or]: [
+                    { date: todayLocal },
+                    { checkedInAt: { [Op.gte]: startOfDay } },
+                    { checkedOutAt: { [Op.gte]: startOfDay } }
+                ]
             },
-            attributes: ['classId']
+            attributes: ['classId', 'status', 'checkedInAt', 'checkedOutAt']
         });
 
-        res.json({ presentClassIds: attendance.map(a => a.classId) });
+        const presentClassIds = [];
+        let activeCheckIn = null;
+
+        for (const row of attendance) {
+            if (isFinalizedAttendance(row)) {
+                presentClassIds.push(row.classId);
+            }
+
+            if (!activeCheckIn && row.checkedInAt && !row.checkedOutAt) {
+                const classRow = await findClassForSession(row.classId);
+                activeCheckIn = {
+                    classId: row.classId,
+                    checkedInAt: row.checkedInAt,
+                    code: classRow ? classRow.Course_Code : parseCourseCode(row.classId),
+                    name: classRow ? classRow.Course_Name : 'Active lesson',
+                    time: classRow ? `${classRow.From_Time} - ${classRow.To_Time}` : '',
+                    room: classRow ? classRow.Venue : ''
+                };
+            }
+        }
+
+        res.json({ presentClassIds, activeCheckIn });
 
     } catch (err) {
         console.error(err);
@@ -480,6 +558,118 @@ router.get('/today/:id', async (req, res) => {
  * GET /api/attendance/stats/course/:courseId
  * Stats for a course
  */
+
+/**
+ * GET /api/attendance/student/:id
+ * Student-level attendance stats for dashboard overview.
+ */
+router.get('/student/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!canAccessStudentData(req, id)) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const student = await User.findByPk(id);
+        if (!student || !['student', 'student_rep'].includes(String(student.role || ''))) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        const classWhere = {};
+        if (student.program) {
+            classWhere.Program = { [Op.like]: `${student.program}%` };
+        }
+        if (student.year) {
+            classWhere.Year_Semester = { [Op.like]: `Y${student.year}%` };
+        }
+
+        const cohortClasses = await Class.findAll({
+            where: classWhere,
+            attributes: ['Course_Code', 'Course_Name']
+        });
+
+        const classNameByCode = new Map();
+        for (const row of cohortClasses) {
+            const code = String(row.Course_Code || '').trim();
+            if (!code || classNameByCode.has(code)) continue;
+            classNameByCode.set(code, String(row.Course_Name || code));
+        }
+
+        const records = await Attendance.findAll({
+            where: { userId: id },
+            attributes: ['classId', 'status', 'checkedInAt', 'checkedOutAt']
+        });
+
+        const cohortCodes = Array.from(classNameByCode.keys());
+        const sessionRecords = cohortCodes.length
+            ? await Attendance.findAll({
+                where: {
+                    [Op.or]: cohortCodes.map((code) => ({ classId: { [Op.like]: `${code}%` } }))
+                },
+                attributes: ['classId', 'date']
+            })
+            : [];
+
+        const sessionDatesByCode = new Map();
+        for (const row of sessionRecords) {
+            const code = parseCourseCode(row.classId);
+            if (!code) continue;
+            if (!sessionDatesByCode.has(code)) sessionDatesByCode.set(code, new Set());
+            sessionDatesByCode.get(code).add(String(row.date || ''));
+        }
+
+        const statsByCode = new Map();
+        for (const row of records) {
+            const code = parseCourseCode(row.classId);
+            if (!code) continue;
+
+            if (!statsByCode.has(code)) {
+                statsByCode.set(code, {
+                    courseCode: code,
+                    name: classNameByCode.get(code) || code,
+                    total: 0,
+                    attended: 0
+                });
+            }
+
+            const stat = statsByCode.get(code);
+            stat.total += 1;
+            if (isFinalizedAttendance(row)) {
+                stat.attended += 1;
+            }
+        }
+
+        for (const [code, name] of classNameByCode.entries()) {
+            if (!statsByCode.has(code)) {
+                statsByCode.set(code, {
+                    courseCode: code,
+                    name,
+                    total: 0,
+                    attended: 0
+                });
+            }
+        }
+
+        const stats = Array.from(statsByCode.values())
+            .map((item) => {
+                const sessionCount = sessionDatesByCode.has(item.courseCode)
+                    ? sessionDatesByCode.get(item.courseCode).size
+                    : 0;
+                const total = Math.max(sessionCount, item.attended, 0);
+                return {
+                    ...item,
+                    total,
+                    percentage: total > 0 ? Math.floor((item.attended / total) * 100) : 0
+                };
+            })
+            .sort((a, b) => String(a.courseCode).localeCompare(String(b.courseCode)));
+
+        return res.json({ stats });
+    } catch (err) {
+        console.error('Student stats error:', err);
+        return res.status(500).json({ message: 'Error fetching student stats' });
+    }
+});
 
 
 /**
@@ -565,18 +755,65 @@ router.get('/stats/course/:courseId', async (req, res) => {
  */
 router.post('/bulk-mark', requireRoles(canManageAttendanceRoles), async (req, res) => {
     try {
-        const { classId, students, date } = req.body;
-        
-        if (!students || !Array.isArray(students)) return res.status(400).json({ message: 'Invalid students' });
+        const classId = validator.escape(validator.trim(String(req.body.classId || '')));
+        const students = Array.isArray(req.body.students)
+            ? req.body.students.map((id) => validator.escape(validator.trim(String(id || '')))).filter(Boolean)
+            : [];
+        const safeDate = req.body.date
+            ? validator.escape(validator.trim(String(req.body.date)))
+            : getLocalDateString();
 
-        // Filter out already marked for today to prevent dupes? 
-        // For now, simple insert.
+        if (!classId) return res.status(400).json({ message: 'Class ID is required' });
+        if (!students.length) return res.status(400).json({ message: 'Invalid students' });
+
+        const classIdentity = parseClassIdentity(classId);
+        if (!classIdentity.courseCode || !classId.includes('--')) {
+            return res.status(400).json({ message: 'Please use a specific class variant ID from My Classes/Manual Attendance.' });
+        }
+
+        const classRow = await findClassForSession(classId, req.user);
+        if (!classRow) {
+            return res.status(404).json({ message: 'Class not found' });
+        }
+
+        if (req.user.role === 'lecturer' && !belongsToLecturer(classRow, req.user)) {
+            return res.status(403).json({ message: 'Forbidden: you can only mark attendance for your assigned classes' });
+        }
+
+        const studentRows = await User.findAll({
+            where: {
+                id: { [Op.in]: students },
+                role: { [Op.in]: ['student', 'student_rep'] }
+            }
+        });
+
+        const studentMap = new Map(studentRows.map((row) => [String(row.id), row]));
+        const invalidStudents = [];
+        for (const studentId of students) {
+            const student = studentMap.get(String(studentId));
+            if (!student) {
+                invalidStudents.push({ id: studentId, reason: 'Student not found' });
+                continue;
+            }
+            const eligibility = studentEligibleForClass(student, classRow);
+            if (!eligibility.ok) {
+                invalidStudents.push({ id: studentId, reason: eligibility.reason });
+            }
+        }
+
+        if (invalidStudents.length) {
+            return res.status(400).json({
+                message: 'Some students are outside this class cohort',
+                invalidStudents: invalidStudents.slice(0, 10)
+            });
+        }
+
         const nowIso = new Date().toISOString();
-        const records = students.map(sId => ({
+        const records = students.map((sId) => ({
             classId,
-            userId: sId,  // FIX: Changed from studentId to userId
+            userId: sId,
             status: 'present',
-            date: date || new Date().toISOString().split('T')[0],
+            date: safeDate,
             method: 'manual',
             checkedInAt: nowIso,
             checkedOutAt: nowIso
@@ -652,6 +889,15 @@ router.post('/mark', requireRoles(canManageAttendanceRoles), async (req, res) =>
 router.get('/students/:courseCode', requireRoles(canViewClassAttendanceRoles), async (req, res) => {
     try {
         const { courseCode } = req.params;
+        const requestedClassId = validator.escape(validator.trim(String(req.query.classId || '')));
+        const requestedIdentity = requestedClassId ? parseClassIdentity(requestedClassId) : null;
+
+        if (requestedClassId && req.user.role === 'lecturer') {
+            const scopedClass = await findClassForSession(requestedClassId, req.user);
+            if (!scopedClass || !belongsToLecturer(scopedClass, req.user)) {
+                return res.status(403).json({ message: 'Forbidden: class does not belong to lecturer' });
+            }
+        }
         
         // Get the class to find year/program
         const classObj = await Class.findOne({
@@ -670,10 +916,30 @@ router.get('/students/:courseCode', requireRoles(canViewClassAttendanceRoles), a
         // FIX: Get ALL programs that take this course (not just first one)
         const allClassEntries = await Class.findAll({
             where: { Course_Code: courseCode },
-            attributes: ['Program', 'Year_Semester']
+            attributes: ['Course_Code', 'Day', 'From_Time', 'Program', 'Year_Semester']
         });
+
+        const lecturerOwnedEntries = req.user.role === 'lecturer'
+            ? await findLecturerOwnedClassRowsForCourse(courseCode, req.user)
+            : [];
+
+        if (req.user.role === 'lecturer' && !lecturerOwnedEntries.length) {
+            return res.status(403).json({ message: 'Forbidden: no class ownership for this course' });
+        }
+
+        const baseEntries = req.user.role === 'lecturer' ? lecturerOwnedEntries : allClassEntries;
+
+        const scopedClassEntries = requestedIdentity
+            ? baseEntries.filter((entry) => classRowMatchesIdentity(entry, requestedIdentity))
+            : baseEntries;
+
+        if (requestedClassId && scopedClassEntries.length === 0) {
+            return res.json({ students: [], totalSessions: 0 });
+        }
+
+        const cohortSource = scopedClassEntries.length ? scopedClassEntries : baseEntries;
         
-        const cohorts = allClassEntries.map(c => {
+        const cohorts = cohortSource.map(c => {
             const ym = c.Year_Semester && c.Year_Semester.match(/Y(\d)/i);
             return {
                 program: { [Op.like]: `${c.Program || ''}%` },
@@ -690,24 +956,30 @@ router.get('/students/:courseCode', requireRoles(canViewClassAttendanceRoles), a
         });
         
         // Get total sessions for this course (unique dates)
-        const allRecords = await Attendance.findAll({
+        let allRecords = await Attendance.findAll({
             where: { classId: { [Op.like]: `${courseCode}%` } }
         });
+        if (requestedIdentity) {
+            allRecords = allRecords.filter((r) => attendanceClassMatchesIdentity(r.classId, requestedIdentity));
+        } else if (req.user.role === 'lecturer' && cohortSource.length) {
+            const scopeIdentities = cohortSource.map((entry) => ({
+                courseCode: String(entry.Course_Code || '').trim(),
+                day: String(entry.Day || '').trim(),
+                fromTime: String(entry.From_Time || '').trim(),
+                programKey: normalizeKey(entry.Program || ''),
+                yearKey: normalizeKey(entry.Year_Semester || '')
+            }));
+            allRecords = allRecords.filter((record) => scopeIdentities.some((identity) => attendanceClassMatchesIdentity(record.classId, identity)));
+        }
         
         const uniqueDates = new Set(allRecords.map(r => new Date(r.date).toDateString()));
-        const totalSessions = Math.max(uniqueDates.size, 6); // Minimum 6 for mid-semester
+        const totalSessions = uniqueDates.size;
         
         // For each student, get their attendance count
         const result = await Promise.all(students.map(async (s) => {
-            const attended = await Attendance.count({
-                where: {
-                    userId: s.id,
-                    classId: { [Op.like]: `${courseCode}%` },
-                    status: 'present'
-                }
-            });
-            
-            const pct = totalSessions > 0 ? Math.round((attended / totalSessions) * 100) : 0;
+            const attended = allRecords.filter((r) => String(r.userId) === String(s.id) && isFinalizedAttendance(r)).length;
+
+            const pct = totalSessions > 0 ? Math.floor((attended / totalSessions) * 100) : 0;
             
             // Risk categorization
             let status = 'good';
@@ -715,6 +987,15 @@ router.get('/students/:courseCode', requireRoles(canViewClassAttendanceRoles), a
             else if (pct < 50) status = 'risk';
             else if (pct < 75) status = 'warning';
             
+            let recommendedClassId = null;
+            const preferred = cohortSource.find((entry) => {
+                const eligible = studentEligibleForClass(s, entry);
+                return eligible.ok;
+            }) || null;
+            if (preferred) {
+                recommendedClassId = buildCompositeClassIdFromRow(preferred);
+            }
+
             return {
                 id: s.id,
                 fullName: s.fullName,
@@ -723,7 +1004,8 @@ router.get('/students/:courseCode', requireRoles(canViewClassAttendanceRoles), a
                 attended,
                 total: totalSessions,
                 percentage: pct,
-                status
+                status,
+                recommendedClassId
             };
         }));
         
@@ -742,23 +1024,83 @@ router.get('/students/:courseCode', requireRoles(canViewClassAttendanceRoles), a
 router.get('/today-by-class/:courseCode', requireRoles(canViewClassAttendanceRoles), async (req, res) => {
     try {
         const { courseCode } = req.params;
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        const requestedClassId = validator.escape(validator.trim(String(req.query.classId || '')));
+        const sources = validator.escape(validator.trim(String(req.query.sources || ''))).toLowerCase();
+        const state = validator.escape(validator.trim(String(req.query.state || ''))).toLowerCase();
+        const requestedIdentity = requestedClassId ? parseClassIdentity(requestedClassId) : null;
+        const todayLocal = getLocalDateString();
+        const startOfDay = startOfLocalDay();
+
+        if (requestedClassId && req.user.role === 'lecturer') {
+            const scopedClass = await findClassForSession(requestedClassId, req.user);
+            if (!scopedClass || !belongsToLecturer(scopedClass, req.user)) {
+                return res.status(403).json({ message: 'Forbidden: class does not belong to lecturer' });
+            }
+        }
+
+        const lecturerOwnedEntries = req.user.role === 'lecturer'
+            ? await findLecturerOwnedClassRowsForCourse(courseCode, req.user)
+            : [];
+
+        if (req.user.role === 'lecturer' && !lecturerOwnedEntries.length) {
+            return res.status(403).json({ message: 'Forbidden: no class ownership for this course' });
+        }
 
         const records = await Attendance.findAll({
             where: {
                 classId: { [Op.like]: `${courseCode}%` },
-                date: { [Op.gte]: startOfDay },
-                status: 'present'
+                [Op.and]: [
+                    {
+                        [Op.or]: [
+                            { date: todayLocal },
+                            { checkedInAt: { [Op.gte]: startOfDay } },
+                            { checkedOutAt: { [Op.gte]: startOfDay } }
+                        ]
+                    },
+                    { checkedInAt: { [Op.ne]: null } }
+                ]
             },
-            attributes: ['userId', 'method', 'date']
+            attributes: ['classId', 'userId', 'method', 'date', 'checkedInAt', 'checkedOutAt', 'status']
         });
 
-        // Deduplicate by userId
+        let filtered = records;
+        if (requestedIdentity) {
+            filtered = filtered.filter((r) => attendanceClassMatchesIdentity(r.classId, requestedIdentity));
+        } else if (req.user.role === 'lecturer' && lecturerOwnedEntries.length) {
+            const scopeIdentities = lecturerOwnedEntries.map((entry) => ({
+                courseCode: String(entry.Course_Code || '').trim(),
+                day: String(entry.Day || '').trim(),
+                fromTime: String(entry.From_Time || '').trim(),
+                programKey: normalizeKey(entry.Program || ''),
+                yearKey: normalizeKey(entry.Year_Semester || '')
+            }));
+            filtered = filtered.filter((r) => scopeIdentities.some((identity) => attendanceClassMatchesIdentity(r.classId, identity)));
+        }
+        if (sources === 'automated') {
+            const automatedMethods = new Set(['totp', 'qr', 'checkin_checkout']);
+            filtered = filtered.filter((r) => automatedMethods.has(String(r.method || '').toLowerCase()));
+        }
+        if (state === 'active') {
+            filtered = filtered.filter((r) => !r.checkedOutAt);
+        }
+        if (state === 'complete') {
+            filtered = filtered.filter((r) => !!r.checkedOutAt);
+        }
+
+        // Deduplicate by userId, keeping the latest check-in row per student.
         const checkedIn = {};
-        records.forEach(r => {
-            if (!checkedIn[r.userId]) {
-                checkedIn[r.userId] = { userId: r.userId, method: r.method };
+        filtered.forEach(r => {
+            const existing = checkedIn[r.userId];
+            const existingTs = existing?.checkedInAt ? new Date(existing.checkedInAt).getTime() : 0;
+            const candidateTs = r.checkedInAt ? new Date(r.checkedInAt).getTime() : 0;
+            if (!existing || candidateTs >= existingTs) {
+                checkedIn[r.userId] = {
+                    userId: r.userId,
+                    method: r.method,
+                    status: r.status,
+                    checkedInAt: r.checkedInAt,
+                    checkedOutAt: r.checkedOutAt
+                };
             }
         });
 
@@ -843,6 +1185,9 @@ router.get('/students/:courseCode/export', async (req, res) => {
 router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttendanceRoles), async (req, res) => {
     try {
         const courseCode = validator.escape(validator.trim(req.params.courseCode || ''));
+        const requestedClassId = validator.escape(validator.trim(String(req.query.classId || '')));
+        const sources = validator.escape(validator.trim(String(req.query.sources || ''))).toLowerCase();
+        const requestedIdentity = requestedClassId ? parseClassIdentity(requestedClassId) : null;
         if (!courseCode) return res.status(400).json({ message: 'Course code is required' });
 
         const classes = await Class.findAll({ where: { Course_Code: courseCode } });
@@ -857,8 +1202,8 @@ router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttend
             return res.status(403).json({ message: 'Forbidden' });
         }
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const todayLocal = getLocalDateString();
+        const today = startOfLocalDay();
 
         const [course] = classes;
         const courseName = course.Course_Name || courseCode;
@@ -885,27 +1230,62 @@ router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttend
         const records = await Attendance.findAll({
             where: {
                 classId: { [Op.like]: `${courseCode}%` },
-                date: { [Op.gte]: today }
+                [Op.or]: [
+                    { date: todayLocal },
+                    { checkedInAt: { [Op.gte]: today } },
+                    { checkedOutAt: { [Op.gte]: today } }
+                ]
             },
             order: [['date', 'ASC'], ['userId', 'ASC']]
         });
 
+        let filtered = records;
+        if (requestedIdentity) {
+            filtered = filtered.filter((r) => attendanceClassMatchesIdentity(r.classId, requestedIdentity));
+        }
+        if (sources === 'automated') {
+            const automatedMethods = new Set(['totp', 'qr', 'checkin_checkout']);
+            filtered = filtered.filter((r) => automatedMethods.has(String(r.method || '').toLowerCase()));
+        }
+
+        const latestByUser = new Map();
+        for (const record of filtered) {
+            const key = String(record.userId || '');
+            const existing = latestByUser.get(key);
+            const existingTs = existing
+                ? new Date(existing.checkedOutAt || existing.checkedInAt || existing.date || 0).getTime()
+                : 0;
+            const candidateTs = new Date(record.checkedOutAt || record.checkedInAt || record.date || 0).getTime();
+            if (!existing || candidateTs >= existingTs) {
+                latestByUser.set(key, record);
+            }
+        }
+        const exportRecords = Array.from(latestByUser.values())
+            .sort((a, b) => String(a.userId || '').localeCompare(String(b.userId || '')));
+
         const studentMap = new Map(students.map((student) => [String(student.id), student]));
         const rows = ['Date,CourseCode,CourseName,StudentId,FullName,Program,Year,Method,CheckInTime,CheckOutTime,Completion'];
 
-        for (const record of records) {
-            const student = studentMap.get(String(record.userId));
+        for (const record of exportRecords) {
+            let student = studentMap.get(String(record.userId));
+            if (!student) {
+                // Include late roster updates/manual entries so exports do not silently drop check-ins.
+                student = await User.findByPk(record.userId);
+            }
             if (!student) continue;
+
+            const resolvedClass = await findClassForSession(record.classId);
+            const resolvedCourseName = resolvedClass && resolvedClass.Course_Name ? resolvedClass.Course_Name : courseName;
 
             const safeName = `"${String(student.fullName || '').replace(/"/g, '""')}"`;
             const safeProgram = `"${String(student.program || '').replace(/"/g, '""')}"`;
-            const checkInTime = record.checkedInAt ? new Date(record.checkedInAt).toISOString() : '';
-            const checkOutTime = record.checkedOutAt ? new Date(record.checkedOutAt).toISOString() : '';
+            const checkInTime = formatCsvDateTime(record.checkedInAt);
+            const checkOutTime = formatCsvDateTime(record.checkedOutAt);
             const completion = isAttendanceComplete(record) ? 'complete' : 'incomplete';
             rows.push([
                 record.date,
                 courseCode,
-                `"${String(courseName).replace(/"/g, '""')}"`,
+                `"${String(resolvedCourseName).replace(/"/g, '""')}"`,
                 student.id,
                 safeName,
                 safeProgram,
@@ -917,7 +1297,7 @@ router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttend
             ].join(','));
         }
 
-        const todayStamp = new Date().toISOString().slice(0, 10);
+        const todayStamp = todayLocal;
         const filename = `${courseCode}_${todayStamp}_today_checkins.csv`;
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -932,7 +1312,7 @@ router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttend
  * POST /api/attendance/checkin
  * Lecturer opens check-in for a class session
  */
-router.post('/checkin', requireRoles(canManageAttendanceRoles), async (req, res) => {
+router.post('/checkin', requireRoles(canManageAttendanceRoles, 'Sign in as lecturer or admin to open check-in'), async (req, res) => {
     try {
         const { classId } = req.body;
         if (!classId) return res.status(400).json({ message: 'Class ID required' });
@@ -995,7 +1375,7 @@ router.post('/checkin', requireRoles(canManageAttendanceRoles), async (req, res)
  * POST /api/attendance/checkout
  * Lecturer opens check-out for a class session
  */
-router.post('/checkout', requireRoles(canManageAttendanceRoles), async (req, res) => {
+router.post('/checkout', requireRoles(canManageAttendanceRoles, 'Sign in as lecturer or admin to open check-out'), async (req, res) => {
     try {
         const { classId } = req.body;
         if (!classId) return res.status(400).json({ message: 'Class ID required' });
@@ -1017,12 +1397,32 @@ router.post('/checkout', requireRoles(canManageAttendanceRoles), async (req, res
             return res.status(400).json({ message: 'No active session for this class' });
         }
 
+        const wasCheckoutOpen = session.status === 'checkout_open';
+
         // Generate check-out secret
         const checkOutSecret = generateSecret();
         session.status = 'checkout_open';
         session.checkOutTime = new Date();
         session.checkOutSecret = checkOutSecret;
         await session.save();
+
+        // Notify students once when switching into checkout mode.
+        if (!wasCheckoutOpen) {
+            try {
+                await Announcement.create({
+                    lecturerId: String(req.user.id || classRow.LecturerId || ''),
+                    lecturerName: String(req.user.fullName || classRow.Lecturer || 'Lecturer'),
+                    courseCode: String(classRow.Course_Code || parseCourseCode(classId) || ''),
+                    courseName: String(classRow.Course_Name || classRow.Course_Code || 'Class'),
+                    year: extractYearNumber(classRow.Year_Semester) || null,
+                    program: classRow.Program || null,
+                    type: 'info',
+                    message: `Checkout is now open for ${String(classRow.Course_Code || parseCourseCode(classId))}. Please complete checkout to finalize attendance.`
+                });
+            } catch (announcementError) {
+                console.warn('Checkout-open announcement failed:', announcementError && announcementError.message ? announcementError.message : announcementError);
+            }
+        }
 
         const checkOutCode = generateTOTP(checkOutSecret);
         const timeLeft = 30 - Math.floor((Date.now() / 1000) % 30);
@@ -1044,7 +1444,7 @@ router.post('/checkout', requireRoles(canManageAttendanceRoles), async (req, res
  * POST /api/attendance/close
  * Lecturer/admin closes an active session for a class
  */
-router.post('/close', requireRoles(canManageAttendanceRoles), async (req, res) => {
+router.post('/close', requireRoles(canManageAttendanceRoles, 'Sign in as lecturer or admin to close a session'), async (req, res) => {
     try {
         const { classId } = req.body;
         if (!classId) return res.status(400).json({ message: 'Class ID required' });
@@ -1066,11 +1466,34 @@ router.post('/close', requireRoles(canManageAttendanceRoles), async (req, res) =
             return res.status(404).json({ message: 'No active session for this class' });
         }
 
+        const todayLocal = getLocalDateString();
+        const sessionIdentity = parseClassIdentity(classId);
+        let unresolvedRecords = await Attendance.findAll({
+            where: {
+                classId: { [Op.like]: `${parseCourseCode(classId)}%` },
+                date: todayLocal,
+                checkedInAt: { [Op.ne]: null },
+                checkedOutAt: null
+            },
+            attributes: ['userId', 'classId', 'checkedInAt']
+        });
+
+        unresolvedRecords = unresolvedRecords
+            .filter((row) => attendanceClassMatchesIdentity(row.classId, sessionIdentity));
+
+        const unresolvedUserIds = Array.from(new Set(unresolvedRecords.map((row) => String(row.userId))));
+
         session.status = 'closed';
         session.expiresAt = new Date();
         await session.save();
 
-        return res.json({ message: 'Session closed', classId, sessionId: session.id });
+        return res.json({
+            message: 'Session closed',
+            classId,
+            sessionId: session.id,
+            uncheckedOutCount: unresolvedUserIds.length,
+            uncheckedOutStudentIds: unresolvedUserIds
+        });
     } catch (err) {
         console.error('Close session error:', err);
         return res.status(500).json({ message: 'Error closing session' });
@@ -1091,28 +1514,32 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
 
         if (!studentId) return res.status(400).json({ message: 'Student ID required' });
 
-        const isPrivileged = hasRole(req, canManageAttendanceRoles);
-        if (!isPrivileged && String(req.user.id) !== String(studentId)) {
+        if (!hasRole(req, codeValidationRoles)) {
+            return res.status(403).json({ message: 'Only students can check in using attendance codes' });
+        }
+
+        if (String(req.user.id) !== String(studentId)) {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
         // Find session
-        const session = await Session.findOne({
-            where: { classId, expiresAt: { [Op.gt]: new Date() } }
-        });
+        const session = await findActiveSessionForClass(classId, 'checkin_open');
 
-        if (!session || session.status !== 'checkin_open') {
+        if (!session) {
             return res.status(400).json({ message: 'Check-in is not currently open' });
         }
 
-        const classRow = await findClassForSession(classId);
-        if (!classRow) {
-            return res.status(404).json({ message: 'Class not found' });
-        }
+        const canonicalClassId = session.classId || classId;
 
         const student = await User.findByPk(studentId);
         if (!student || !['student', 'student_rep'].includes(student.role)) {
-            return res.status(404).json({ message: 'Student not found' });
+            return res.status(403).json({ message: 'Please sign in as a student account' });
+        }
+
+        const resolvedClass = await resolveEligibleClassForStudent(canonicalClassId, student);
+        const classRow = resolvedClass && resolvedClass.classRow;
+        if (!classRow) {
+            return res.status(404).json({ message: 'Class not found' });
         }
 
         const eligibility = studentEligibleForClass(student, classRow);
@@ -1171,9 +1598,9 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
         // Create tentative attendance record
         const existing = await Attendance.findOne({
             where: {
-                classId,
                 userId: studentId,
-                date: { [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)) }
+                classId: { [Op.like]: `${parseCourseCode(canonicalClassId)}%` },
+                date: getLocalDateString()
             }
         });
 
@@ -1194,9 +1621,9 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
             attendance = existing;
         } else {
             attendance = await Attendance.create({
-                classId,
+                classId: canonicalClassId,
                 userId: studentId,
-                date: new Date().toISOString().split('T')[0],
+                date: getLocalDateString(),
                 status: 'absent',
                 method: 'checkin_checkout',
                 checkedInAt: new Date()
@@ -1231,28 +1658,33 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
 
         if (!studentId) return res.status(400).json({ message: 'Student ID required' });
 
-        const isPrivileged = hasRole(req, canManageAttendanceRoles);
-        if (!isPrivileged && String(req.user.id) !== String(studentId)) {
+        if (!hasRole(req, codeValidationRoles)) {
+            return res.status(403).json({ message: 'Only students can check out using attendance codes' });
+        }
+
+        if (String(req.user.id) !== String(studentId)) {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
         // Find session
-        const session = await Session.findOne({
-            where: { classId, expiresAt: { [Op.gt]: new Date() } }
-        });
+        const session = await findActiveSessionForClass(classId, 'checkout_open');
 
-        if (!session || session.status !== 'checkout_open') {
+
+        if (!session) {
             return res.status(400).json({ message: 'Check-out is not currently open' });
         }
 
-        const classRow = await findClassForSession(classId);
-        if (!classRow) {
-            return res.status(404).json({ message: 'Class not found' });
-        }
+        const canonicalClassId = session.classId || classId;
 
         const student = await User.findByPk(studentId);
         if (!student || !['student', 'student_rep'].includes(student.role)) {
-            return res.status(404).json({ message: 'Student not found' });
+            return res.status(403).json({ message: 'Please sign in as a student account' });
+        }
+
+        const resolvedClass = await resolveEligibleClassForStudent(canonicalClassId, student);
+        const classRow = resolvedClass && resolvedClass.classRow;
+        if (!classRow) {
+            return res.status(404).json({ message: 'Class not found' });
         }
 
         const eligibility = studentEligibleForClass(student, classRow);
@@ -1285,11 +1717,38 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
         }
 
         // Update or create attendance
-        let attendance = attendanceId ? 
-            await Attendance.findByPk(attendanceId) : 
-            await Attendance.findOne({
-                where: { classId, userId: studentId, date: { [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)) } }
+        let attendance = null;
+        if (attendanceId) {
+            const byId = await Attendance.findByPk(attendanceId);
+            if (byId && String(byId.userId) === String(studentId)
+                && parseCourseCode(byId.classId) === parseCourseCode(canonicalClassId)) {
+                attendance = byId;
+            }
+        }
+
+        if (!attendance) {
+            attendance = await Attendance.findOne({
+                where: {
+                    userId: studentId,
+                    classId: { [Op.like]: `${parseCourseCode(canonicalClassId)}%` },
+                    date: getLocalDateString(),
+                    checkedInAt: { [Op.ne]: null },
+                    checkedOutAt: null
+                },
+                order: [['checkedInAt', 'DESC']]
             });
+        }
+
+        if (!attendance) {
+            attendance = await Attendance.findOne({
+                where: {
+                    userId: studentId,
+                    classId: { [Op.like]: `${parseCourseCode(canonicalClassId)}%` },
+                    date: getLocalDateString()
+                },
+                order: [['checkedInAt', 'DESC']]
+            });
+        }
 
         if (!attendance) {
             return res.status(400).json({
@@ -1309,6 +1768,24 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
         attendance.method = attendance.method || 'checkin_checkout';
         await attendance.save();
 
+        // Defensive cleanup: close any duplicate open rows for the same student/course/day.
+        await Attendance.update(
+            {
+                checkedOutAt: attendance.checkedOutAt,
+                status: 'present',
+                method: 'checkin_checkout'
+            },
+            {
+                where: {
+                    userId: studentId,
+                    classId: { [Op.like]: `${parseCourseCode(canonicalClassId)}%` },
+                    date: getLocalDateString(),
+                    checkedInAt: { [Op.ne]: null },
+                    checkedOutAt: null
+                }
+            }
+        );
+
         res.json({
             message: 'Attendance successfully recorded',
             attendanceId: attendance.id,
@@ -1318,6 +1795,200 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
     } catch (err) {
         console.error('Check-out validation error:', err);
         res.status(500).json({ message: 'Error validating check-out' });
+    }
+});
+
+/**
+ * GET /api/attendance/active-sessions
+ * Student-facing list of currently open attendance sessions for the logged-in user.
+ */
+router.get('/active-sessions', async (req, res) => {
+    try {
+        const debugMode = String(req.query.debug || '') === '1';
+        if (!codeValidationRoles.has(req.user.role)) {
+            return res.status(403).json({ message: 'Please sign in as a student account' });
+        }
+
+        const student = await User.findByPk(req.user.id);
+        if (!student || !['student', 'student_rep'].includes(String(student.role || ''))) {
+            return res.status(403).json({ message: 'Please sign in as a student account' });
+        }
+
+        const activeSessions = await Session.findAll({
+            where: {
+                expiresAt: { [Op.gt]: new Date() },
+                status: { [Op.in]: ['checkin_open', 'checkout_open'] }
+            },
+            order: [['updatedAt', 'DESC']]
+        });
+
+        const debug = {
+            student: {
+                id: student.id,
+                role: student.role,
+                program: student.program,
+                year: student.year
+            },
+            activeSessionCount: activeSessions.length,
+            includedSessionCount: 0,
+            excludedByReason: {
+                classRowIneligible: 0,
+                missingCourseCodeIdentity: 0,
+                fallbackNoEligibleCandidate: 0,
+                identityProgramYearMismatch: 0
+            }
+        };
+
+        const sessions = [];
+        for (const session of activeSessions) {
+            const classRow = await findClassForSession(session.classId);
+            if (classRow) {
+                const eligibility = studentEligibleForClass(student, classRow);
+                if (eligibility.ok) {
+                    sessions.push({
+                        sessionId: session.id,
+                        status: session.status,
+                        classId: session.classId,
+                        code: classRow.Course_Code,
+                        name: classRow.Course_Name,
+                        day: classRow.Day,
+                        time: `${classRow.From_Time} - ${classRow.To_Time}`,
+                        room: classRow.Venue,
+                        lecturer: classRow.Lecturer,
+                        program: classRow.Program,
+                        year: classRow.Year_Semester
+                    });
+                    debug.includedSessionCount += 1;
+                    continue;
+                }
+                debug.excludedByReason.classRowIneligible += 1;
+                // Fall through and try other rows with the same course code/identity.
+            }
+
+            const identity = parseClassIdentity(session.classId);
+            if (!identity.courseCode) {
+                debug.excludedByReason.missingCourseCodeIdentity += 1;
+                continue;
+            }
+
+            const fallbackCandidates = await Class.findAll({
+                where: {
+                    Course_Code: identity.courseCode
+                }
+            });
+
+            let matchedFallback = false;
+            const strictCandidates = fallbackCandidates.filter((candidate) => {
+                if (identity.day && candidate.Day && candidate.Day !== identity.day) return false;
+                if (identity.fromTime && candidate.From_Time && candidate.From_Time !== identity.fromTime) return false;
+                return true;
+            });
+
+            const relaxedCandidates = strictCandidates.length ? strictCandidates : fallbackCandidates;
+
+            for (const candidate of relaxedCandidates) {
+                const fallbackEligibility = studentEligibleForClass(student, candidate);
+                if (!fallbackEligibility.ok) continue;
+
+                sessions.push({
+                    sessionId: session.id,
+                    status: session.status,
+                    classId: session.classId,
+                    code: candidate.Course_Code || identity.courseCode,
+                    name: candidate.Course_Name || 'Active lesson',
+                    day: candidate.Day || identity.day || 'Today',
+                    time: candidate.From_Time && candidate.To_Time ? `${candidate.From_Time} - ${candidate.To_Time}` : (identity.fromTime ? `${identity.fromTime} -` : ''),
+                    room: candidate.Venue || '',
+                    lecturer: candidate.Lecturer || '',
+                    program: candidate.Program || student.program || '',
+                    year: candidate.Year_Semester || student.year || ''
+                });
+                matchedFallback = true;
+                break;
+            }
+
+            if (matchedFallback) {
+                debug.includedSessionCount += 1;
+                continue;
+            }
+
+            debug.excludedByReason.fallbackNoEligibleCandidate += 1;
+
+            const programMatch = !identity.programKey || programKeysCompatible(student.program, identity.programKey);
+            const yearMatch = !identity.yearKey || yearKeysCompatible(`y${student.year}`, identity.yearKey);
+            if (!programMatch || !yearMatch) {
+                debug.excludedByReason.identityProgramYearMismatch += 1;
+                continue;
+            }
+
+            sessions.push({
+                sessionId: session.id,
+                status: session.status,
+                classId: session.classId,
+                code: identity.courseCode,
+                name: 'Active lesson',
+                day: identity.day || 'Today',
+                time: identity.fromTime ? `${identity.fromTime} -` : '',
+                room: '',
+                lecturer: '',
+                program: student.program || '',
+                year: student.year || ''
+            });
+            debug.includedSessionCount += 1;
+        }
+
+        if (debugMode) {
+            return res.json({ sessions, debug });
+        }
+        return res.json({ sessions });
+    } catch (err) {
+        console.error('Error fetching active attendance sessions:', err);
+        return res.status(500).json({ message: 'Error fetching active attendance sessions' });
+    }
+});
+
+/**
+ * GET /api/attendance/lecturer-active-sessions
+ * Lecturer/admin view of currently active check-in/check-out sessions.
+ */
+router.get('/lecturer-active-sessions', requireRoles(canManageAttendanceRoles), async (req, res) => {
+    try {
+        const activeSessions = await Session.findAll({
+            where: {
+                expiresAt: { [Op.gt]: new Date() },
+                status: { [Op.in]: ['checkin_open', 'checkout_open'] }
+            },
+            order: [['updatedAt', 'DESC']]
+        });
+
+        const sessions = [];
+        for (const session of activeSessions) {
+            const classRow = await findClassForSession(session.classId);
+            if (!classRow) continue;
+
+            if (req.user.role === 'lecturer' && String(classRow.LecturerId || '') !== String(req.user.id)) {
+                continue;
+            }
+
+            sessions.push({
+                sessionId: session.id,
+                status: session.status,
+                classId: session.classId,
+                code: classRow.Course_Code,
+                name: classRow.Course_Name,
+                day: classRow.Day,
+                time: `${classRow.From_Time} - ${classRow.To_Time}`,
+                room: classRow.Venue,
+                lecturer: classRow.Lecturer,
+                expiresAt: session.expiresAt,
+                updatedAt: session.updatedAt
+            });
+        }
+
+        return res.json({ sessions });
+    } catch (err) {
+        console.error('Error fetching lecturer active sessions:', err);
+        return res.status(500).json({ message: 'Error fetching lecturer active sessions' });
     }
 });
 

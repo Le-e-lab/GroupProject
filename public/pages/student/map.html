@@ -1469,7 +1469,11 @@
             }).addTo(map);
         }
 
-        function logout() {
+        async function logout() {
+            if (window.API && typeof API.logout === 'function') {
+                await API.logout();
+                return;
+            }
             sessionStorage.removeItem('upath_user');
             window.location.href = '../../pages/auth.html';
         }

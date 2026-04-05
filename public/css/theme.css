@@ -344,6 +344,11 @@ body {
   transform: translateY(-1px);
 }
 
+/* Sign-out is profile-only to reduce accidental role/session switches from navbars. */
+.navbar .navbar-logout {
+  display: none !important;
+}
+
 /* =========================================
    PAGE LAYOUT
    ========================================= */
@@ -460,6 +465,26 @@ body {
 }
 
 @media (max-width: 1024px) {
+  .navbar {
+    padding: 0 16px;
+  }
+
+  .navbar-brand {
+    margin-right: 20px;
+  }
+
+  .navbar-link {
+    gap: 6px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .navbar-role {
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    margin-left: 6px;
+  }
+
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -490,6 +515,7 @@ body {
   .navbar {
     padding: 0 16px;
     justify-content: space-between;
+    position: fixed;
   }
 
   .navbar-brand {
@@ -501,27 +527,38 @@ body {
   }
 
   .navbar-nav {
-    display: none; /* Hidden by default on mobile */
     position: absolute;
     top: 64px;
     left: 0;
     right: 0;
     background: var(--surface);
-    flex-direction: column;
-    padding: 16px;
     border-bottom: 1px solid var(--border);
     box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0;
+    margin-left: 0;
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+    z-index: 99;
+    justify-content: flex-start;
   }
 
   .navbar-nav.active {
-    display: flex;
-    animation: fadeIn 0.3s ease;
+    max-height: 320px;
+    padding: 12px 16px;
+    overflow-y: auto;
   }
 
   .navbar-link {
     width: 100%;
-    padding: 12px;
+    min-height: 42px;
+    padding: 10px 12px;
     border-radius: var(--radius);
+    touch-action: manipulation;
   }
 
   .navbar-link.active::after {
@@ -533,7 +570,23 @@ body {
   }
 
   .navbar-actions {
-    display: none; /* Hide desktop actions, maybe move to menu or keep simple */
+    display: flex;
+    margin-left: 8px;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 101;
+  }
+
+  .navbar-logout {
+    display: none;
+  }
+
+  .navbar-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
   }
 
   /* Show mobile toggle */

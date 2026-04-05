@@ -269,7 +269,7 @@
           Invalid credentials. Please try again.
         </div>
 
-        <form id="loginForm" onsubmit="return handleLogin(event)">
+        <form id="loginForm">
           <div class="form-group">
             <label class="form-label">Student / Staff ID</label>
             <input
@@ -313,6 +313,8 @@
     <script src="../js/api.js"></script>
     <script src="../js/toast.js"></script>
     <script>
+      let isSubmitting = false;
+
       function togglePassword() {
         const input = document.getElementById("password");
         const toggle = document.querySelector(".password-toggle");
@@ -330,6 +332,9 @@
           e.preventDefault();
           e.stopPropagation();
         }
+
+        if (isSubmitting) return false;
+        isSubmitting = true;
 
         const studentId = document.getElementById("studentId").value.trim();
         const password = document.getElementById("password").value;
@@ -350,12 +355,18 @@
 
             setTimeout(() => {
               const queryParams = window.location.search; // Preserve ?attendance_code=...
+              const params = new URLSearchParams(queryParams);
+              const hasClassSpecificAttendance = params.has('class') && (params.has('code') || params.has('attendance_code'));
               if (result.user.role === "admin") {
                 window.location.href = "/pages/admin/dashboard.html";
               } else if (result.user.role === "lecturer") {
                 window.location.href = "/lecturer_dashboard.html" + queryParams; 
               } else {
-                window.location.href = "/dashboard.html" + queryParams; 
+                if (hasClassSpecificAttendance) {
+                  window.location.href = "/pages/student/enter_code.html" + queryParams;
+                } else {
+                  window.location.href = "/dashboard.html" + queryParams;
+                }
               }
             }, 500); // Short delay to see success toast
           } else {
@@ -370,16 +381,31 @@
           Toast.error("An unexpected error occurred");
           submitBtn.textContent = "Sign In";
           submitBtn.disabled = false;
+        } finally {
+          isSubmitting = false;
         }
 
         return false;
       }
 
-      // Extra guard for mobile browsers: ensure submit is always JS-handled.
       document.addEventListener("DOMContentLoaded", () => {
         const form = document.getElementById("loginForm");
-        if (!form) return;
-        form.addEventListener("submit", handleLogin);
+        if (form) {
+          form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            handleLogin(event);
+          });
+        }
+      });
+
+      window.addEventListener("pageshow", () => {
+        isSubmitting = false;
+        const submitBtn = document.getElementById("submitBtn");
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Sign In";
+        }
       });
     </script>
   </body>

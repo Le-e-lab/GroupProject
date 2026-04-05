@@ -68,6 +68,20 @@ Notification clear on student notifications page now uses a two-step in-app toas
 Notification join action now uses toast feedback and URL extraction instead of browser alert.
 Admin map tab now has full-height sizing and refresh logic on tab open.
 Manual attendance clear now preserves already checked-in students and prevents re-saving locked check-ins.
+Attendance code verification now supports class ID variants (exact and composite) so student enter-code works across all lecturer/session ID formats.
+Today check-in exports now include records by local date plus timestamp fallback (`checkedInAt`/`checkedOutAt`) to avoid timezone-related missing recent check-ins.
+Student enter-code now distinguishes check-in vs check-out completion and shows explicit checkout completion or verification-required feedback.
+Lecturer QR checkout now uses a custom in-app confirmation modal and in-app notifications instead of browser-native confirm/alert dialogs.
+Dashboard active check-in card now prioritizes actual check-in time-of-day display from attendance records.
+Active sessions now support unscheduled fallback display using generic Active lesson labels when timetable metadata is missing.
+QR session refresh now silently rotates codes without repeated checkout notifications; notifications appear on actual mode switch to checkout.
+Lecturer dashboard quick actions now resolve to a real class context (current/next/first class) before opening QR or manual attendance pages.
+Lecturer QR page no longer defaults to CS101 when class parameters are missing and now redirects safely to My Classes.
+Manual attendance now honors incoming class query parameters so lecturers land on the intended class.
+Manual attendance student metrics now use real class session totals without hardcoded minimum floors, so completed classes progress naturally (for example, 7/7 then 8/8).
+Manual attendance class scoping now returns an empty roster when an explicit class variant has no matching cohort entries, preventing cross-cohort student leakage.
+Temporary debug strips were removed from student enter-code and lecturer QR pages after stabilization.
+Added dev utility script `server/scripts/set_student_240101_test_attendance.js` to reset student 240101 to a predictable test profile (~37% for NCSC312 class-scoped checks).
 
 ## Current Risks
 

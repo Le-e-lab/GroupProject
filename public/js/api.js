@@ -435,16 +435,27 @@ const API = {
         }
     },
 
-    async getAttendanceStudents(classCode) {
-        return this.get(`/api/attendance/students/${encodeURIComponent(classCode)}`);
+    async getAttendanceStudents(classCode, options = {}) {
+        const params = new URLSearchParams();
+        if (options.classId) params.set('classId', options.classId);
+        const suffix = params.toString() ? `?${params.toString()}` : '';
+        return this.get(`/api/attendance/students/${encodeURIComponent(classCode)}${suffix}`);
     },
 
-    async getTodayCheckInsByClass(classCode) {
-        return this.get(`/api/attendance/today-by-class/${encodeURIComponent(classCode)}`);
+    async getTodayCheckInsByClass(classCode, options = {}) {
+        const params = new URLSearchParams();
+        if (options.classId) params.set('classId', options.classId);
+        if (options.sources) params.set('sources', options.sources);
+        if (options.state) params.set('state', options.state);
+        const suffix = params.toString() ? `?${params.toString()}` : '';
+        return this.get(`/api/attendance/today-by-class/${encodeURIComponent(classCode)}${suffix}`);
     },
 
-    async exportRegisteredStudents(classCode) {
-        const response = await fetch(`${this.baseUrl}/attendance/students/${encodeURIComponent(classCode)}/export`, {
+    async exportRegisteredStudents(classCode, options = {}) {
+        const params = new URLSearchParams();
+        if (options.classId) params.set('classId', options.classId);
+        const suffix = params.toString() ? `?${params.toString()}` : '';
+        const response = await fetch(`${this.baseUrl}/attendance/students/${encodeURIComponent(classCode)}/export${suffix}`, {
             credentials: 'include'
         });
         if (!response.ok) {
@@ -454,8 +465,12 @@ const API = {
         return response.blob();
     },
 
-    async exportTodayCheckIns(classCode) {
-        const response = await fetch(`${this.baseUrl}/attendance/today-by-class/${encodeURIComponent(classCode)}/export`, {
+    async exportTodayCheckIns(classCode, options = {}) {
+        const params = new URLSearchParams();
+        if (options.classId) params.set('classId', options.classId);
+        if (options.sources) params.set('sources', options.sources);
+        const suffix = params.toString() ? `?${params.toString()}` : '';
+        const response = await fetch(`${this.baseUrl}/attendance/today-by-class/${encodeURIComponent(classCode)}/export${suffix}`, {
             credentials: 'include'
         });
         if (!response.ok) {
@@ -509,9 +524,28 @@ const API = {
         return response.json();
     },
 
+    async getActiveAttendanceSessions() {
+        const response = await fetch(`${this.baseUrl}/attendance/active-sessions?ts=${Date.now()}`, {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        return this.handleResponse(response);
+    },
+
+    async getLecturerActiveSessions() {
+        const response = await fetch(`${this.baseUrl}/attendance/lecturer-active-sessions?ts=${Date.now()}`, {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        return this.handleResponse(response);
+    },
+
     async validateCheckInCode(classId, code) {
         const user = await this.getActiveUser();
         if (!user) return { error: 'Not logged in' };
+        if (!['student', 'student_rep'].includes(String(user.role || ''))) {
+            return { message: 'Please sign in as a student account', error: 'forbidden' };
+        }
 
         const response = await fetch(`${this.baseUrl}/attendance/validate-checkin`, {
             method: 'POST',
@@ -525,6 +559,9 @@ const API = {
     async validateCheckOutCode(classId, code, attendanceId = null) {
         const user = await this.getActiveUser();
         if (!user) return { error: 'Not logged in' };
+        if (!['student', 'student_rep'].includes(String(user.role || ''))) {
+            return { message: 'Please sign in as a student account', error: 'forbidden' };
+        }
 
         const response = await fetch(`${this.baseUrl}/attendance/validate-checkout`, {
             method: 'POST',
@@ -561,22 +598,22 @@ const API = {
     },
 
     async validateSessionCode(classId, code, userLat = null, userLon = null) {
-        const user = this.getCurrentUser();
+        const user = await this.getActiveUser();
         if (!user) return { error: 'Not logged in' };
+        if (!['student', 'student_rep'].includes(String(user.role || ''))) {
+            return { message: 'Please sign in as a student account', error: 'forbidden' };
+        }
 
         try {
-            const response = await fetch(`${this.baseUrl}/attendance/validate-code`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    classId, 
-                    studentId: user.id,
-                    code,
-                    userLat,
-                    userLon
-                })
-            });
-            return response.json();
+            let result = await this.validateCheckInCode(classId, code);
+
+            if (result && result.message && /check-in is not currently open/i.test(result.message)) {
+                result = await this.validateCheckOutCode(classId, code, result.attendanceId || null);
+            } else if (result && result.message && /check-out is not currently open/i.test(result.message)) {
+                result = await this.validateCheckInCode(classId, code);
+            }
+
+            return result;
         } catch (e) {
              return { error: 'Connection failed' };
         }
@@ -675,14 +712,26 @@ const API = {
 
     async getTodayAttendance(studentId) {
         try {
+            const data = await this.getTodayAttendanceState(studentId);
+            return data.presentClassIds || [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    async getTodayAttendanceState(studentId) {
+        try {
             const res = await fetch(`${this.baseUrl}/attendance/today/${studentId}`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
-                return data.presentClassIds || [];
+                return {
+                    presentClassIds: data.presentClassIds || [],
+                    activeCheckIn: data.activeCheckIn || null
+                };
             }
-            return [];
+            return { presentClassIds: [], activeCheckIn: null };
         } catch (e) {
-            return [];
+            return { presentClassIds: [], activeCheckIn: null };
         }
     },
 
@@ -791,7 +840,20 @@ const API = {
         };
     },
 
-    async logout() { try { await fetch(this.baseUrl + '/auth/logout', { method: 'POST', credentials: 'include' }); } catch (e) { } sessionStorage.removeItem('upath_user'); window.location.href = '../../pages/auth.html'; },
+    async logout() {
+        try {
+            await fetch(this.baseUrl + '/auth/logout', { method: 'POST', credentials: 'include' });
+        } catch (e) {
+            console.warn('[API] Logout request failed, clearing local session anyway.', e);
+        }
+
+        try {
+            this.clearCache();
+        } catch (_) {}
+
+        sessionStorage.removeItem('upath_user');
+        window.location.replace('/pages/auth.html');
+    },
 
     getCurrentTime() {
         return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });

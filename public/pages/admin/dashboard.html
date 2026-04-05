@@ -508,10 +508,65 @@
     </div>
 
     <script src="../../js/api.js?v=2"></script>
+    <script src="../../js/toast.js"></script>
     <script src="../../js/i18n.js"></script>
     <script src="../../js/ai-assistant.js?v=3"></script>
     <script>
         let allUsers = [];
+
+        function adminNotify(message, type = 'info') {
+            const safe = String(message || '').trim();
+            if (!safe) return;
+            if (window.Toast && typeof Toast[type] === 'function') {
+                Toast[type](safe);
+                return;
+            }
+            console.log(`[${type.toUpperCase()}] ${safe}`);
+        }
+
+        function adminConfirm(message, title = 'Confirm Action') {
+            return new Promise((resolve) => {
+                const overlay = document.createElement('div');
+                overlay.style.position = 'fixed';
+                overlay.style.inset = '0';
+                overlay.style.background = 'rgba(0,0,0,0.45)';
+                overlay.style.display = 'flex';
+                overlay.style.alignItems = 'center';
+                overlay.style.justifyContent = 'center';
+                overlay.style.zIndex = '10050';
+
+                const dialog = document.createElement('div');
+                dialog.style.width = 'min(460px, 92vw)';
+                dialog.style.background = 'var(--surface)';
+                dialog.style.border = '1px solid var(--border)';
+                dialog.style.borderRadius = '12px';
+                dialog.style.padding = '18px';
+                dialog.style.boxShadow = '0 16px 38px rgba(0,0,0,0.25)';
+                dialog.innerHTML = `
+                    <h3 style="margin:0 0 10px 0; font-size:1rem;">${escapeHtml(title)}</h3>
+                    <p style="margin:0 0 16px 0; color:var(--text-muted); white-space:pre-wrap;">${escapeHtml(String(message || ''))}</p>
+                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                        <button id="adminConfirmCancel" class="btn btn-secondary" type="button">Cancel</button>
+                        <button id="adminConfirmOk" class="btn btn-danger" type="button">Confirm</button>
+                    </div>
+                `;
+
+                overlay.appendChild(dialog);
+                document.body.appendChild(overlay);
+
+                const close = (value) => {
+                    overlay.remove();
+                    resolve(value);
+                };
+
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) close(false);
+                });
+
+                dialog.querySelector('#adminConfirmCancel').addEventListener('click', () => close(false));
+                dialog.querySelector('#adminConfirmOk').addEventListener('click', () => close(true));
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             const userStr = sessionStorage.getItem('upath_user');
@@ -646,21 +701,21 @@
 
         async function changeUserRole(userId, newRole) {
             if (!newRole) return;
-            if (!confirm(`Change user ${userId} to ${newRole}?`)) return;
+            if (!await adminConfirm(`Change user ${userId} to ${newRole}?`, 'Role Update')) return;
             try {
                 const res = await API.put(`/api/users/${userId}/role`, { role: newRole });
-                if (res.success) { alert('✅ ' + res.message); loadUsers(); loadStats(); }
-                else alert('❌ ' + (res.message || 'Failed'));
-            } catch(e) { alert('❌ Error'); }
+                if (res.success) { adminNotify(res.message || 'Role updated.', 'success'); loadUsers(); loadStats(); }
+                else adminNotify(res.message || 'Failed to update role.', 'error');
+            } catch(e) { adminNotify('Error updating role.', 'error'); }
         }
 
         async function deleteUser(userId) {
-            if (!confirm(`Permanently delete user ${userId}? This cannot be undone.`)) return;
+            if (!await adminConfirm(`Permanently delete user ${userId}? This cannot be undone.`, 'Delete User')) return;
             try {
                 const res = await API.delete(`/api/users/${userId}`);
-                if (res.success) { alert('✅ User deleted'); loadUsers(); loadStats(); }
-                else alert('❌ ' + (res.message || 'Failed'));
-            } catch(e) { alert('❌ Error'); }
+                if (res.success) { adminNotify('User deleted successfully.', 'success'); loadUsers(); loadStats(); loadStudentDuplicates(); }
+                else adminNotify(res.message || 'Failed to delete user.', 'error');
+            } catch(e) { adminNotify('Error deleting user.', 'error'); }
         }
 
         async function loadFilterData() {
@@ -758,13 +813,13 @@
             try {
                 const res = await API.post('/api/admin/create-user', payload);
                 if (res.success) {
-                    alert(`✅ User ${res.user.fullName} created as ${res.user.role}`);
+                    adminNotify(`User ${res.user.fullName} created as ${res.user.role}.`, 'success');
                     document.getElementById('createUserForm').reset();
                     loadStats();
                 } else {
-                    alert('❌ ' + (res.message || 'Failed to create user'));
+                    adminNotify(res.message || 'Failed to create user.', 'error');
                 }
-            } catch(e) { alert('❌ Error creating user'); }
+            } catch(e) { adminNotify('Error creating user.', 'error'); }
         }
 
         async function loadLecturerDuplicates() {
@@ -838,17 +893,17 @@
         async function mergeLecturerGroup(targetId, selectId) {
             const select = document.getElementById(selectId);
             if (!select || !select.value) {
-                alert('❌ Select a source lecturer first.');
+                adminNotify('Select a source lecturer first.', 'error');
                 return;
             }
 
             const sourceId = select.value;
             if (sourceId === targetId) {
-                alert('❌ Source and target cannot be the same.');
+                adminNotify('Source and target cannot be the same.', 'error');
                 return;
             }
 
-            if (!confirm(`Merge lecturer ${sourceId} into ${targetId}?\n\nThis rewires timetable, sessions and announcements.`)) {
+            if (!await adminConfirm(`Merge lecturer ${sourceId} into ${targetId}?\n\nThis rewires timetable, sessions and announcements.`, 'Merge Lecturer Accounts')) {
                 return;
             }
 
@@ -859,14 +914,14 @@
                     deleteSource: true
                 });
 
-                alert(`✅ ${result.message}`);
+                adminNotify(result.message || 'Merge completed.', 'success');
                 loadLecturerDuplicates();
                 loadUsers();
                 loadStats();
                 loadTimetable();
             } catch (err) {
                 console.error('Merge error:', err);
-                alert('❌ Merge failed. Please review server logs and retry.');
+                adminNotify('Merge failed. Please review server logs and retry.', 'error');
             }
         }
 
@@ -1079,24 +1134,24 @@
 
             const file = document.getElementById('ttFile').files[0];
             if (!file) {
-                alert('❌ Please select a file first');
+                adminNotify('Please select a file first.', 'error');
                 return;
             }
 
             // Validate file size (5 MB)
             if (file.size > 5 * 1024 * 1024) {
-                alert('❌ File size exceeds 5 MB limit');
+                adminNotify('File size exceeds 5 MB limit.', 'error');
                 return;
             }
 
             // Confirm action
-            if (!confirm('⚠️ This will replace the entire timetable. Are you sure you want to proceed?\n\nClick OK to continue.')) {
+            if (!await adminConfirm('This will replace the entire timetable. Are you sure you want to proceed?', 'Upload Timetable')) {
                 return;
             }
 
             const resetAttendance = document.getElementById('resetAttendance').checked;
             if (resetAttendance) {
-                if (!confirm('⚠️ You have selected to reset attendance records. This cannot be undone!\n\nClick OK to proceed with BOTH timetable upload AND attendance reset.')) {
+                if (!await adminConfirm('You selected attendance reset. This cannot be undone. Proceed with BOTH timetable upload and attendance reset?', 'Confirm Attendance Reset')) {
                     return;
                 }
             }
@@ -1145,7 +1200,7 @@
                 console.error('Upload error:', err);
                 document.getElementById('uploadProgress').style.display = 'none';
                 submitBtn.disabled = false;
-                alert('❌ Upload failed: ' + err.message);
+                adminNotify('Upload failed: ' + err.message, 'error');
             }
         }
 
@@ -1156,7 +1211,7 @@
         async function previewTimetable() {
             const file = document.getElementById('ttFile').files[0];
             if (!file) {
-                alert('❌ Select a file to preview first.');
+                adminNotify('Select a file to preview first.', 'error');
                 return;
             }
 
@@ -1226,7 +1281,7 @@
                 section.style.display = 'block';
             } catch (err) {
                 console.error('Preview error:', err);
-                alert('❌ Preview failed.');
+                adminNotify('Preview failed.', 'error');
             }
         }
 
@@ -1394,17 +1449,17 @@
             const select = document.getElementById('backupSelect');
             const backupId = select ? select.value : '';
             if (!backupId) {
-                alert('❌ Select a backup first.');
+                adminNotify('Select a backup first.', 'error');
                 return;
             }
 
-            if (!confirm(`⚠️ Restore timetable from backup ${backupId}?\n\nThis will replace the current timetable.`)) {
+            if (!await adminConfirm(`Restore timetable from backup ${backupId}? This will replace the current timetable.`, 'Restore Backup')) {
                 return;
             }
 
             try {
                 const result = await API.post(`/api/admin/timetable/rollback/${encodeURIComponent(backupId)}`, {});
-                alert(`✅ ${result.message}`);
+                adminNotify(result.message || 'Rollback completed.', 'success');
                 loadStats();
                 checkUploadStatus();
                 loadTimetable();
@@ -1412,7 +1467,7 @@
                 loadBackups();
             } catch (err) {
                 console.error('Rollback error:', err);
-                alert('❌ Rollback failed. Check server logs for details.');
+                adminNotify('Rollback failed. Check server logs for details.', 'error');
             }
         }
 
@@ -1438,7 +1493,7 @@
             const prompt = promptInput.value.trim();
             
             if (!prompt) {
-                alert('Please enter a prompt');
+                adminNotify('Please enter a prompt.', 'warning');
                 return;
             }
 
@@ -1581,10 +1636,13 @@ Usage:
         }
 
         function clearAIChat() {
-            if (!confirm('Clear all chat history?')) return;
-            document.getElementById('aiChatBox').innerHTML = '<p style="color: var(--text-muted);">Conversation cleared.</p>';
-            aiChatHistory = [];
-            document.getElementById('aiPromptInput').value = '';
+            adminConfirm('Clear all chat history?', 'Clear AI Chat').then((confirmed) => {
+                if (!confirmed) return;
+                document.getElementById('aiChatBox').innerHTML = '<p style="color: var(--text-muted);">Conversation cleared.</p>';
+                aiChatHistory = [];
+                document.getElementById('aiPromptInput').value = '';
+                adminNotify('AI chat history cleared.', 'success');
+            });
         }
 
     </script>
