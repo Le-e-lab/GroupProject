@@ -118,13 +118,33 @@ function isFinalizedAttendance(record) {
 function parseCourseCode(classId) {
     const safe = String(classId || '').trim();
     if (!safe) return '';
+    if (safe.includes('--')) return safe.split('--')[0].trim();
     return safe.split('-')[0].trim();
+}
+
+function normalizeKey(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
 }
 
 function parseClassIdentity(classId) {
     const safe = String(classId || '').trim();
     if (!safe) {
-        return { courseCode: '', day: '', fromTime: '' };
+        return { courseCode: '', day: '', fromTime: '', programKey: '', yearKey: '' };
+    }
+
+    if (safe.includes('--')) {
+        const parts = safe.split('--');
+        return {
+            courseCode: (parts[0] || '').trim(),
+            day: (parts[1] || '').trim(),
+            fromTime: (parts[2] || '').trim(),
+            programKey: (parts[3] || '').trim(),
+            yearKey: (parts[4] || '').trim()
+        };
     }
 
     const parts = safe.split('-');
@@ -132,10 +152,10 @@ function parseClassIdentity(classId) {
         const courseCode = parts[0].trim();
         const fromTime = parts[parts.length - 1].trim();
         const day = parts.slice(1, parts.length - 1).join('-').trim();
-        return { courseCode, day, fromTime };
+        return { courseCode, day, fromTime, programKey: '', yearKey: '' };
     }
 
-    return { courseCode: parseCourseCode(safe), day: '', fromTime: '' };
+    return { courseCode: parseCourseCode(safe), day: '', fromTime: '', programKey: '', yearKey: '' };
 }
 
 function lecturerNameTerms(user) {
@@ -155,7 +175,7 @@ function belongsToLecturer(classRow, user) {
 }
 
 async function findClassForSession(classId, user = null) {
-    const { courseCode, day, fromTime } = parseClassIdentity(classId);
+    const { courseCode, day, fromTime, programKey, yearKey } = parseClassIdentity(classId);
     if (!courseCode) return null;
 
     const isLecturer = user && user.role === 'lecturer';
@@ -165,6 +185,13 @@ async function findClassForSession(classId, user = null) {
         whereBase.From_Time = fromTime;
     }
 
+    const candidateMatchesIdentity = (row) => {
+        if (!row) return false;
+        if (programKey && normalizeKey(row.Program) !== programKey) return false;
+        if (yearKey && normalizeKey(row.Year_Semester) !== yearKey) return false;
+        return true;
+    };
+
     if (isLecturer) {
         const terms = lecturerNameTerms(user);
         const ownerFilters = [{ LecturerId: String(user.id) }];
@@ -172,19 +199,19 @@ async function findClassForSession(classId, user = null) {
             ownerFilters.push({ Lecturer: { [Op.like]: `%${term}%` } });
         }
 
-        const owned = await Class.findOne({
+        const ownedRows = await Class.findAll({
             where: {
                 ...whereBase,
                 [Op.or]: ownerFilters
             }
         });
+        const owned = ownedRows.find(candidateMatchesIdentity) || ownedRows[0];
         if (owned) return owned;
     }
 
     if (day && fromTime) {
-        const exactComposite = await Class.findOne({
-            where: whereBase
-        });
+        const compositeRows = await Class.findAll({ where: whereBase });
+        const exactComposite = compositeRows.find(candidateMatchesIdentity) || compositeRows[0];
         if (exactComposite) return exactComposite;
         return null;
     }

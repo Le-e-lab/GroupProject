@@ -9,6 +9,58 @@ router.use(authMiddleware);
 const CLASS_CACHE_TTL_MS = 60 * 1000;
 const classCache = new Map();
 
+function normalizeKey(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function buildClassId(row) {
+    const course = String(row.Course_Code || '').trim();
+    const day = String(row.Day || '').trim();
+    const from = String(row.From_Time || '').trim();
+    const programKey = normalizeKey(row.Program || 'unknown_program') || 'unknown_program';
+    const yearKey = normalizeKey(row.Year_Semester || 'unknown_year') || 'unknown_year';
+    return `${course}--${day}--${from}--${programKey}--${yearKey}`;
+}
+
+function parseClassId(classId) {
+    const raw = String(classId || '').trim();
+    if (!raw) return null;
+
+    if (raw.includes('--')) {
+        const parts = raw.split('--');
+        return {
+            courseCode: parts[0] || '',
+            day: parts[1] || '',
+            fromTime: parts[2] || '',
+            programKey: parts[3] || '',
+            yearKey: parts[4] || ''
+        };
+    }
+
+    const legacy = raw.split('-');
+    if (legacy.length >= 3) {
+        return {
+            courseCode: legacy[0] || '',
+            day: legacy[1] || '',
+            fromTime: legacy[2] || '',
+            programKey: '',
+            yearKey: ''
+        };
+    }
+
+    return {
+        courseCode: raw,
+        day: '',
+        fromTime: '',
+        programKey: '',
+        yearKey: ''
+    };
+}
+
 function getCache(key) {
     const entry = classCache.get(key);
     if (!entry) return null;
@@ -84,7 +136,7 @@ router.get('/', async (req, res) => {
         // Deduplicate: Ensure we only send one instance of a class per schedule block
         const seen = new Set();
         const uniqueClasses = validClasses.filter(c => {
-            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}`;
+            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}-${normalizeKey(c.Program)}-${normalizeKey(c.Year_Semester)}`;
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
@@ -94,7 +146,7 @@ router.get('/', async (req, res) => {
         
         // Transform to Frontend Format
         const formatted = uniqueClasses.map(c => ({
-            id: `${c.Course_Code}-${c.Day}-${c.From_Time}`, // Composite ID
+            id: buildClassId(c), // Composite ID (program/year aware)
             code: c.Course_Code,
             name: c.Course_Name,
             year: parseInt(c.Year_Semester?.substring(1,2)) || 1,
@@ -184,7 +236,7 @@ router.get('/lecturer/:id', async (req, res) => {
         // if multiple conditions match (e.g. full name AND surname both match)
         const seen = new Set();
         const uniqueClasses = classes.filter(c => {
-            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}`.toLowerCase();
+            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}-${normalizeKey(c.Program)}-${normalizeKey(c.Year_Semester)}`.toLowerCase();
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
@@ -192,7 +244,7 @@ router.get('/lecturer/:id', async (req, res) => {
         
         // Transform
         const formatted = uniqueClasses.map(c => ({
-            id: `${c.Course_Code}-${c.Day}-${c.From_Time}`,
+            id: buildClassId(c),
             code: c.Course_Code,
             name: c.Course_Name,
             year: parseInt(c.Year_Semester?.substring(1,2)) || 1,
@@ -278,18 +330,31 @@ router.put('/:id', async (req, res) => {
         const classId = req.params.id;
         const { day, time, room } = req.body;
 
-        const [courseCode, currentDay, currentFromTime] = String(classId).split('-');
-        if (!courseCode || !currentDay || !currentFromTime) {
+        const parsed = parseClassId(classId);
+        if (!parsed || !parsed.courseCode || !parsed.day || !parsed.fromTime) {
             return res.status(400).json({ message: 'Invalid class id format' });
         }
 
-        const classObj = await Class.findOne({
-            where: {
-                Course_Code: courseCode,
-                Day: currentDay,
-                From_Time: currentFromTime
-            }
-        });
+        const whereClause = {
+            Course_Code: parsed.courseCode,
+            Day: parsed.day,
+            From_Time: parsed.fromTime
+        };
+
+        if (parsed.programKey) {
+            whereClause.Program = { [Op.like]: `%` };
+        }
+
+        if (parsed.yearKey) {
+            whereClause.Year_Semester = { [Op.like]: `%` };
+        }
+
+        const candidates = await Class.findAll({ where: whereClause });
+        const classObj = candidates.find((row) => {
+            if (parsed.programKey && normalizeKey(row.Program) !== parsed.programKey) return false;
+            if (parsed.yearKey && normalizeKey(row.Year_Semester) !== parsed.yearKey) return false;
+            return true;
+        }) || candidates[0];
         
         if (!classObj) {
             return res.status(404).json({ message: 'Class not found' });
