@@ -493,6 +493,7 @@
         "Saturday",
       ];
       let userYear = 2; // Default to Y2
+      let dashboardUser = null;
       let dashboardRefreshInFlight = false;
       window.AI_ASSISTANT_CONTEXT = { page: 'student-dashboard' };
 
@@ -515,6 +516,24 @@
         return 'en-US';
       }
 
+      async function getDashboardUser() {
+        try {
+          const profile = await API.getCurrentUserProfile();
+          const user = profile && (profile.user || profile);
+          if (user && user.id) {
+            dashboardUser = user;
+            sessionStorage.setItem('upath_user', JSON.stringify(user));
+            return user;
+          }
+        } catch (error) {
+          console.warn('[Dashboard] Failed to refresh user profile, falling back to session cache.', error);
+        }
+
+        const cachedUser = API.getCurrentUser();
+        dashboardUser = cachedUser;
+        return cachedUser;
+      }
+
       /**
        * LOAD USER DATA (Critical Path)
        * ------------------------------
@@ -529,7 +548,7 @@
        * This prevents the "Show All Classes" bug by ensuring the filter variable (program) always exists.
        */
       async function loadUserData() {
-        let user = API.getCurrentUser();
+        let user = await getDashboardUser();
         const repairAttemptKey = "upath_profile_repair_attempted";
 
         // BLOCKING REPAIR: If user exists but has no program (and is student), DO NOT PROCEED.
@@ -761,7 +780,7 @@
         const currentHour = now.getHours();
 
         // Get classes from API (Pass Year and Program for strict server-side filtering)
-        const user = API.getCurrentUser();
+        const user = dashboardUser || await getDashboardUser();
 
         // If user data is incomplete (no program), we might get empty results, which is better than wrong results.
         // But usually loadUserData() ensures we have it.
