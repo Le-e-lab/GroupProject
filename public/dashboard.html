@@ -675,6 +675,7 @@
               repBtn.innerHTML = '🎓 Open Rep Console';
               repBtn.style.marginTop = '12px';
               repBtn.style.display = 'inline-block';
+              repBtn.style.whiteSpace = 'nowrap';
               headerActions.appendChild(repBtn);
             }
           }
@@ -820,7 +821,7 @@
                 // 'dashboard.html' passes 'c.id' (composite) to 'openAttendanceModal'.
                 // So the Set should contain composite IDs.
                 const presentSet = new Set(presentIds);
-                markedCount = todayClasses.filter(c => presentSet.has(c.id)).length;
+                markedCount = todayClasses.filter(c => presentSet.has(c.id) || presentSet.has(c.code)).length;
             }
         } catch (e) {
             console.error("Error fetching today's attendance:", e);

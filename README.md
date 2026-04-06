@@ -148,6 +148,7 @@ Use the generated HTTPS URL in your phone browser.
 - Attendance is finalized only when a student successfully completes both check-in and check-out.
 - Manual lecturer attendance remains available for edge cases.
 - Daily attendance exports include check-in and check-out timestamps.
+- Buddy-signing detection flags shared device/IP patterns for lecturers and exports so suspicious multi-account use is easier to review.
 - Lecturers can only open/close check-in sessions for classes they are assigned to.
 - Student check-in/check-out is rejected for classes outside the student program/year cohort.
 - Checkout finalization closes same-day duplicate open attendance rows for the same course to keep active-state views consistent.
@@ -155,6 +156,23 @@ Use the generated HTTPS URL in your phone browser.
 - Manual attendance now requires a specific class variant ID (composite `classId`), so cross-cohort students are not mixed by course code alone.
 - Lecturer manual attendance can also load course-wide cohorts (across the lecturer's owned variants) while still saving each student against the correct cohort variant.
 - Admin dashboard actions now use in-app UI notifications instead of browser alerts.
+
+## Presentation Q&A
+
+### Q1: How do you prevent fake attendance?
+Attendance is only completed after both check-in and check-out are valid. The backend also enforces role checks, class ownership, and cohort eligibility before saving attendance.
+
+### Q2: What happens if a student checks in but forgets to check out?
+The record stays incomplete until checkout. Lecturers can still close sessions and use manual attendance override for approved edge cases.
+
+### Q3: How do you stop students from being mixed across different lecturer groups?
+The system uses composite class IDs and class-scoped filtering, so course-code-only matches do not merge separate class variants.
+
+### Q4: How do lecturers see suspicious shared-device attendance?
+Buddy-signing detection flags repeated device/IP usage across multiple accounts and surfaces the warning in lecturer manual attendance and exports.
+
+### Q5: What is the fallback if verification fails?
+Students are directed to lecturer-managed manual attendance override, which keeps the attendance workflow intact for legitimate edge cases.
 
 ## Smoke Tests
 

@@ -86,14 +86,16 @@ Role checks are enforced on the backend for privileged actions.
 - **Endpoint**: `POST /attendance/validate-checkin`
 - **Access**: authenticated student/rep for own account
 - **Body**: `{ classId, studentId, code }`
-- **Response**: `{ attendanceId, requiresVerification, nextStep }`
+- **Response**: `{ message, attendanceId, requiresVerification, nextStep, success, resultCode, attendanceComplete, expectedAction, checkedInAt, checkedOutAt }`
+- **Common `resultCode` values**: `checkin_recorded`, `already_completed`, `session_checkout_open`, `checkin_not_open`
 
 ### Validate Check-Out
 
 - **Endpoint**: `POST /attendance/validate-checkout`
 - **Access**: authenticated student/rep for own account
 - **Body**: `{ classId, studentId, code, attendanceId? }`
-- **Response**: `{ attendanceId, checkedInAt, checkedOutAt }`
+- **Response**: `{ message, attendanceId, checkedInAt, checkedOutAt, success, resultCode, attendanceComplete, expectedAction }`
+- **Common `resultCode` values**: `checkout_recorded`, `verification_required`, `session_checkin_open`, `checkout_not_open`, `checkin_missing`
 
 ### Get Today's Attendance By Course
 
@@ -104,7 +106,14 @@ Role checks are enforced on the backend for privileged actions.
   - If `lecturer` omits `classId`, backend returns course-wide results across that lecturer's owned course variants only.
   - `sources` (optional): use `automated` to include only `totp`, `qr`, `checkin_checkout`
   - `state` (optional): use `active` to return only currently checked-in rows (`checkedOutAt = null`)
-- **Response**: `{ checkedInStudents: [ { userId, method, status, checkedInAt, checkedOutAt } ] }`
+- **Response**: `{ checkedInStudents: [ { userId, method, status, checkedInAt, checkedOutAt, buddyFlag?, buddyFlagReason? } ] }`
+
+### Get Student Today Attendance State
+
+- **Endpoint**: `GET /attendance/today/:id`
+- **Access**: authenticated student/rep for own account
+- **Response**: `{ presentClassIds: string[], activeCheckIn: { classId, checkedInAt, code, name, time, room } | null }`
+- **Notes**: finalized checkouts remain in `presentClassIds` so the dashboard can mark the class as present after checkout.
 
 ### Get Course Roster For Attendance
 
@@ -202,4 +211,4 @@ Role checks are enforced on the backend for privileged actions.
 - **Endpoint**: `GET /attendance/today-by-class/:courseCode/export`
 - **Access**: `lecturer`, `admin`, `student_rep`
 - **CSV Columns**:
-  `Date,CourseCode,CourseName,StudentId,FullName,Program,Year,Method,CheckInTime,CheckOutTime,Completion`
+  `Date,CourseCode,CourseName,StudentId,FullName,Program,Year,Method,CheckInTime,CheckOutTime,Completion,BuddyFlag,BuddyReason`

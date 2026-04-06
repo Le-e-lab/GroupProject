@@ -68,7 +68,7 @@ const Toast = {
             if (progress) progress.style.animationPlayState = 'running';
             // Restart timer logic would be complex here, so simpler to just let it dismiss or stay
             // For simplicity, we'll just re-set a short timeout to dismiss
-            setTimeout(() => this.dismiss(toast), 1000); 
+            setTimeout(() => this.dismiss(toast), 2000); 
         };
 
         this.container.appendChild(toast);

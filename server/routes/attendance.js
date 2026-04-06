@@ -221,6 +221,161 @@ function startOfLocalDay(date = new Date()) {
     return start;
 }
 
+function normalizeNetworkValue(value) {
+    return String(value || '').trim();
+}
+
+function mergeBuddyReason(byUser, userId, reason) {
+    if (!byUser.has(userId)) {
+        byUser.set(userId, { flagged: false, reasons: [] });
+    }
+    const entry = byUser.get(userId);
+    entry.flagged = true;
+    if (!entry.reasons.includes(reason)) {
+        entry.reasons.push(reason);
+    }
+}
+
+function applySharedKeyFlags(byUser, keyMap, label) {
+    for (const [key, userIds] of keyMap.entries()) {
+        if (userIds.size < 2) continue;
+        const reason = `Shared ${label} detected (${userIds.size} accounts) [${key}]`;
+        for (const userId of userIds) {
+            mergeBuddyReason(byUser, userId, reason);
+        }
+    }
+}
+
+async function buildBuddyFlagMapFromRecords(records) {
+    const byUser = new Map();
+    const seenFromAttendance = {
+        device: new Map(),
+        ip: new Map()
+    };
+
+    const addKey = (kind, key, userId) => {
+        const normalizedKey = normalizeNetworkValue(key);
+        if (!normalizedKey) return;
+        if (!seenFromAttendance[kind].has(normalizedKey)) {
+            seenFromAttendance[kind].set(normalizedKey, new Set());
+        }
+        seenFromAttendance[kind].get(normalizedKey).add(String(userId));
+    };
+
+    for (const record of records || []) {
+        const userId = String(record.userId || '').trim();
+        if (!userId) continue;
+        addKey('device', record.checkInDeviceId, userId);
+        addKey('ip', record.checkInIp, userId);
+    }
+
+    applySharedKeyFlags(byUser, seenFromAttendance.device, 'device');
+    applySharedKeyFlags(byUser, seenFromAttendance.ip, 'IP');
+
+    const userIds = Array.from(new Set((records || []).map((r) => String(r.userId || '').trim()).filter(Boolean)));
+    if (userIds.length) {
+        const deviceSessions = await DeviceSession.findAll({
+            where: {
+                userId: { [Op.in]: userIds }
+            },
+            attributes: ['userId', 'deviceId', 'lastIp']
+        });
+
+        const seenFromSessions = {
+            device: new Map(),
+            ip: new Map()
+        };
+
+        const addSessionKey = (kind, key, userId) => {
+            const normalized = normalizeNetworkValue(key);
+            if (!normalized) return;
+            if (!seenFromSessions[kind].has(normalized)) {
+                seenFromSessions[kind].set(normalized, new Set());
+            }
+            seenFromSessions[kind].get(normalized).add(String(userId));
+        };
+
+        for (const row of deviceSessions) {
+            addSessionKey('device', row.deviceId, row.userId);
+            addSessionKey('ip', row.lastIp, row.userId);
+        }
+
+        applySharedKeyFlags(byUser, seenFromSessions.device, 'device');
+        applySharedKeyFlags(byUser, seenFromSessions.ip, 'IP');
+    }
+
+    return byUser;
+}
+
+async function updateBuddyFlagsForCourse(courseCode, dateValue) {
+    const records = await Attendance.findAll({
+        where: {
+            classId: { [Op.like]: `${courseCode}%` },
+            date: dateValue,
+            checkedInAt: { [Op.ne]: null }
+        },
+        attributes: ['id', 'userId', 'checkInDeviceId', 'checkInIp']
+    });
+
+    const buddyMap = await buildBuddyFlagMapFromRecords(records);
+
+    for (const record of records) {
+        const key = String(record.userId || '');
+        const entry = buddyMap.get(key);
+        const nextFlag = !!(entry && entry.flagged);
+        const nextReason = entry && entry.reasons && entry.reasons.length
+            ? entry.reasons.join(' | ')
+            : null;
+
+        await Attendance.update(
+            {
+                buddyFlag: nextFlag,
+                buddyFlagReason: nextReason
+            },
+            {
+                where: { id: record.id }
+            }
+        );
+    }
+
+    return buddyMap;
+}
+
+async function maybeNotifyLecturerBuddySigning(classRow, courseCode, dateValue, buddyMap) {
+    if (!classRow || !buddyMap || buddyMap.size === 0) return;
+
+    const flaggedUsers = Array.from(buddyMap.entries())
+        .filter(([, value]) => value && value.flagged)
+        .map(([userId]) => userId);
+
+    if (flaggedUsers.length < 2) return;
+
+    const token = `[BUDDY-FLAG:${courseCode}:${dateValue}]`;
+    const existing = await Announcement.findOne({
+        where: {
+            lecturerId: String(classRow.LecturerId || ''),
+            courseCode: String(courseCode || ''),
+            message: { [Op.like]: `%${token}%` }
+        },
+        order: [['timestamp', 'DESC']]
+    });
+
+    if (existing) return;
+
+    const sample = flaggedUsers.slice(0, 5).join(', ');
+    const suffix = flaggedUsers.length > 5 ? ` (+${flaggedUsers.length - 5} more)` : '';
+    await Announcement.create({
+        lecturerId: String(classRow.LecturerId || ''),
+        lecturerName: String(classRow.Lecturer || 'Lecturer'),
+        courseCode: String(courseCode || ''),
+        courseName: String(classRow.Course_Name || courseCode || 'Class'),
+        year: extractYearNumber(classRow.Year_Semester) || null,
+        program: String(classRow.Program || ''),
+        type: 'info',
+        message: `Potential buddy-signing detected for ${courseCode}. Accounts sharing device/IP: ${sample}${suffix}. ${token}`
+    });
+}
+
 function classIdentityCompatible(requestedClassId, sessionClassId) {
     const requested = parseClassIdentity(requestedClassId);
     const sessionIdentity = parseClassIdentity(sessionClassId);
@@ -1060,7 +1215,7 @@ router.get('/today-by-class/:courseCode', requireRoles(canViewClassAttendanceRol
                     { checkedInAt: { [Op.ne]: null } }
                 ]
             },
-            attributes: ['classId', 'userId', 'method', 'date', 'checkedInAt', 'checkedOutAt', 'status']
+            attributes: ['classId', 'userId', 'method', 'date', 'checkedInAt', 'checkedOutAt', 'status', 'checkInDeviceId', 'checkInIp', 'buddyFlag', 'buddyFlagReason']
         });
 
         let filtered = records;
@@ -1087,6 +1242,8 @@ router.get('/today-by-class/:courseCode', requireRoles(canViewClassAttendanceRol
             filtered = filtered.filter((r) => !!r.checkedOutAt);
         }
 
+        const buddyMap = await buildBuddyFlagMapFromRecords(filtered);
+
         // Deduplicate by userId, keeping the latest check-in row per student.
         const checkedIn = {};
         filtered.forEach(r => {
@@ -1099,7 +1256,9 @@ router.get('/today-by-class/:courseCode', requireRoles(canViewClassAttendanceRol
                     method: r.method,
                     status: r.status,
                     checkedInAt: r.checkedInAt,
-                    checkedOutAt: r.checkedOutAt
+                    checkedOutAt: r.checkedOutAt,
+                    buddyFlag: !!(buddyMap.get(String(r.userId || '')) && buddyMap.get(String(r.userId || '')).flagged),
+                    buddyFlagReason: (buddyMap.get(String(r.userId || '')) && buddyMap.get(String(r.userId || '')).reasons || []).join(' | ') || null
                 };
             }
         });
@@ -1264,7 +1423,7 @@ router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttend
             .sort((a, b) => String(a.userId || '').localeCompare(String(b.userId || '')));
 
         const studentMap = new Map(students.map((student) => [String(student.id), student]));
-        const rows = ['Date,CourseCode,CourseName,StudentId,FullName,Program,Year,Method,CheckInTime,CheckOutTime,Completion'];
+        const rows = ['Date,CourseCode,CourseName,StudentId,FullName,Program,Year,Method,CheckInTime,CheckOutTime,Completion,BuddyFlag,BuddyReason'];
 
         for (const record of exportRecords) {
             let student = studentMap.get(String(record.userId));
@@ -1282,6 +1441,11 @@ router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttend
             const checkInTime = formatCsvDateTime(record.checkedInAt);
             const checkOutTime = formatCsvDateTime(record.checkedOutAt);
             const completion = isAttendanceComplete(record) ? 'complete' : 'incomplete';
+            const buddyEntry = buddyMap.get(String(record.userId || ''));
+            const buddyFlag = buddyEntry && buddyEntry.flagged ? 'yes' : 'no';
+            const buddyReason = buddyEntry && buddyEntry.reasons && buddyEntry.reasons.length
+                ? `"${buddyEntry.reasons.join(' | ').replace(/"/g, '""')}"`
+                : '""';
             rows.push([
                 record.date,
                 courseCode,
@@ -1293,7 +1457,9 @@ router.get('/today-by-class/:courseCode/export', requireRoles(canViewClassAttend
                 record.method || 'manual',
                 checkInTime,
                 checkOutTime,
-                completion
+                completion,
+                buddyFlag,
+                buddyReason
             ].join(','));
         }
 
@@ -1573,6 +1739,7 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
         // Check device
         const deviceInfo = getDeviceInfo(req);
         const deviceId = generateDeviceId(deviceInfo.userAgent, deviceInfo.ip);
+        const checkInIp = normalizeNetworkValue(deviceInfo.ip);
 
         let device = await DeviceSession.findOne({
             where: { userId: studentId, deviceId }
@@ -1640,6 +1807,8 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
             existing.checkedInAt = existing.checkedInAt || new Date();
             existing.method = existing.method || 'checkin_checkout';
             existing.status = existing.status === 'present' ? 'present' : 'absent';
+            existing.checkInDeviceId = existing.checkInDeviceId || deviceId;
+            existing.checkInIp = existing.checkInIp || checkInIp;
             await existing.save();
             attendance = existing;
         } else {
@@ -1649,9 +1818,29 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
                 date: getLocalDateString(),
                 status: 'absent',
                 method: 'checkin_checkout',
-                checkedInAt: new Date()
+                checkedInAt: new Date(),
+                checkInDeviceId: deviceId,
+                checkInIp
             });
         }
+
+        attendance.checkInDeviceId = attendance.checkInDeviceId || deviceId;
+        attendance.checkInIp = attendance.checkInIp || checkInIp;
+        await attendance.save();
+        await Attendance.update(
+            {
+                checkInDeviceId: attendance.checkInDeviceId,
+                checkInIp: attendance.checkInIp
+            },
+            {
+                where: { id: attendance.id }
+            }
+        );
+
+        const todayLocal = getLocalDateString();
+        const courseCode = parseCourseCode(canonicalClassId);
+        const buddyMap = await updateBuddyFlagsForCourse(courseCode, todayLocal);
+        await maybeNotifyLecturerBuddySigning(classRow, courseCode, todayLocal, buddyMap);
 
         res.json({
             message: 'Check-in recorded',
@@ -1828,14 +2017,34 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
         attendance.checkedOutAt = new Date();
         attendance.status = 'present';
         attendance.method = attendance.method || 'checkin_checkout';
+        attendance.checkOutDeviceId = deviceId;
+        attendance.checkOutIp = normalizeNetworkValue(deviceInfo.ip);
+        attendance.checkInDeviceId = attendance.checkInDeviceId || deviceId;
+        attendance.checkInIp = attendance.checkInIp || normalizeNetworkValue(deviceInfo.ip);
         await attendance.save();
+        await Attendance.update(
+            {
+                checkedOutAt: attendance.checkedOutAt,
+                status: attendance.status,
+                method: attendance.method,
+                checkOutDeviceId: attendance.checkOutDeviceId,
+                checkOutIp: attendance.checkOutIp,
+                checkInDeviceId: attendance.checkInDeviceId,
+                checkInIp: attendance.checkInIp
+            },
+            {
+                where: { id: attendance.id }
+            }
+        );
 
         // Defensive cleanup: close any duplicate open rows for the same student/course/day.
         await Attendance.update(
             {
                 checkedOutAt: attendance.checkedOutAt,
                 status: 'present',
-                method: 'checkin_checkout'
+                method: 'checkin_checkout',
+                checkOutDeviceId: deviceId,
+                checkOutIp: normalizeNetworkValue(deviceInfo.ip)
             },
             {
                 where: {

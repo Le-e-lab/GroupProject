@@ -259,10 +259,15 @@
                 let checkedInSet = new Set();
                 let checkedOutSet = new Set();
                 let checkedInMethods = {};
+                let buddyFlags = {};
                 checkedInStudentRecords = {};
                 (checkedInData.checkedInStudents || []).forEach(c => {
                     checkedInSet.add(c.userId);
                     checkedInMethods[c.userId] = c.method || 'unknown';
+                    buddyFlags[c.userId] = {
+                        flagged: !!c.buddyFlag,
+                        reason: c.buddyFlagReason || ''
+                    };
                     checkedInStudentRecords[c.userId] = c;
                     if (c.checkedOutAt) {
                         checkedOutSet.add(c.userId);
@@ -321,6 +326,7 @@
                     const isCheckedOut = checkedOutSet.has(s.id);
                     const isActiveOnly = isCheckedIn && !isCheckedOut;
                     const method = checkedInMethods[s.id];
+                    const buddy = buddyFlags[s.id] || { flagged: false, reason: '' };
                     const methodLabel = method === 'totp' ? 'TOTP Code' : method === 'qr' ? 'QR Scan' : method === 'manual' ? 'Manual' : 'Check-in/Check-out';
                     
                     // Check-in badge
@@ -330,6 +336,10 @@
                     } else if (isActiveOnly) {
                         checkinBadge = `<span style="font-size:0.65rem; background:#F59E0B; color:white; padding:3px 8px; border-radius:10px; margin-left:8px; font-weight:600;">⚠ Checked In • Awaiting Checkout</span>`;
                     }
+
+                    const buddyBadge = buddy.flagged
+                        ? `<span title="${String(buddy.reason || '').replace(/"/g, '&quot;')}" style="font-size:0.6rem; background:#FEE2E2; color:#B91C1C; padding:2px 6px; border-radius:4px; margin-left:8px;">⚠ Buddy-Signing Risk</span>`
+                        : '';
                     
                     // Risk badge
                     let badge = '';
@@ -347,7 +357,7 @@
                     <div class="list-item" style="cursor: pointer; display:flex; align-items:center; ${isCheckedOut ? 'background: #F0FDF4; border-left: 3px solid #059669;' : (isActiveOnly ? 'background: #FFFBEB; border-left: 3px solid #F59E0B;' : '')}">
                         <input type="checkbox" value="${s.id}" ${isCheckedOut ? 'checked data-locked="true"' : (isActiveOnly ? 'data-locked="true" disabled' : '')} style="width: 20px; height: 20px; accent-color: var(--primary);">
                         <div class="list-item-content" style="flex:1; margin-left:12px;">
-                            <div class="list-item-title">${s.fullName} ${checkinBadge} ${badge}</div>
+                            <div class="list-item-title">${s.fullName} ${checkinBadge} ${buddyBadge} ${badge}</div>
                             <div class="list-item-subtitle">${s.id} • ${s.attended}/${s.total} sessions</div>
                         </div>
                         <button class="btn btn-sm btn-secondary" onclick="showStudentDetails('${s.id}', '${methodLabel}', ${isCheckedOut}, ${isActiveOnly})" style="font-size:0.7rem; padding:4px 8px;">Details</button>
@@ -437,13 +447,17 @@
         function showStudentDetails(studentId, methodLabel, isCheckedOut, isActiveOnly = false) {
             const s = studentLookup[studentId];
             if (!s) return;
+            const todayRecord = checkedInStudentRecords[studentId] || null;
             let todayStatus = 'Today: Not checked in';
             if (isCheckedOut) {
                 todayStatus = `Today: Checkout complete via ${methodLabel}`;
             } else if (isActiveOnly) {
                 todayStatus = `Today: Checked in via ${methodLabel} (checkout pending)`;
             }
-            const details = `ID: ${s.id}\nProgram: ${s.program || 'N/A'}\nYear: ${s.year || 'N/A'}\nAttendance: ${s.attended}/${s.total} (${s.percentage}%)\n${todayStatus}`;
+            const buddyStatus = todayRecord && todayRecord.buddyFlag
+                ? `\nBuddy-Signing Risk: YES\nReason: ${todayRecord.buddyFlagReason || 'Shared device/IP pattern detected'}`
+                : '';
+            const details = `ID: ${s.id}\nProgram: ${s.program || 'N/A'}\nYear: ${s.year || 'N/A'}\nAttendance: ${s.attended}/${s.total} (${s.percentage}%)\n${todayStatus}${buddyStatus}`;
             showNotificationModal('success', s.fullName, details);
         }
 
@@ -485,7 +499,7 @@
             }
 
             const rows = [
-                ['Date', 'CourseCode', 'CourseName', 'StudentId', 'FullName', 'Program', 'Year', 'Method', 'CheckInTime', 'CheckOutTime', 'Completion']
+                ['Date', 'CourseCode', 'CourseName', 'StudentId', 'FullName', 'Program', 'Year', 'Method', 'CheckInTime', 'CheckOutTime', 'Completion', 'BuddyFlag', 'BuddyReason']
             ];
             const records = Object.values(checkedInStudentRecords || {});
 
@@ -507,7 +521,9 @@
                     `"${String(record.method || 'unknown').replace(/"/g, '""')}"`,
                     checkedInAt,
                     checkedOutAt,
-                    record.checkedOutAt ? 'Complete' : 'Active'
+                    record.checkedOutAt ? 'Complete' : 'Active',
+                    record.buddyFlag ? 'Yes' : 'No',
+                    `"${String(record.buddyFlagReason || '').replace(/"/g, '""')}"`
                 ].join(','));
             });
 

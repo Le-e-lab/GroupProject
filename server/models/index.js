@@ -73,7 +73,14 @@ const Attendance = sequelize.define('Attendance', {
     checkedOutAt: { type: DataTypes.DATE, allowNull: true },
     // Identity verification
     verificationMethod: { type: DataTypes.ENUM('biometric', 'face_id', 'manual', 'legacy'), defaultValue: 'legacy' },
-    verifiedAt: { type: DataTypes.DATE, allowNull: true }
+    verifiedAt: { type: DataTypes.DATE, allowNull: true },
+    // Device/IP traceability for buddy-signing detection
+    checkInDeviceId: { type: DataTypes.STRING, allowNull: true },
+    checkInIp: { type: DataTypes.STRING, allowNull: true },
+    checkOutDeviceId: { type: DataTypes.STRING, allowNull: true },
+    checkOutIp: { type: DataTypes.STRING, allowNull: true },
+    buddyFlag: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    buddyFlagReason: { type: DataTypes.STRING, allowNull: true }
 });
 
 // 4. Session Model (Extended for Check-in/Check-out)

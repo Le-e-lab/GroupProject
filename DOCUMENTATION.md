@@ -46,6 +46,8 @@
 - Via six-digit code (`enter_code.html`): student enters the code and uses `POST /api/attendance/validate-checkin` or `POST /api/attendance/validate-checkout`.
 - Via QR scan (`scan_qr.html`): student scans QR using rear camera (HTTPS or Ngrok needed on mobile).
 - Attendance is only complete after both check-in and check-out are valid.
+- The dashboard refreshes the day-state after checkout so the Marked Present overview and class cards stay aligned.
+- Buddy-signing detection watches for shared device/IP patterns and surfaces lecturer warnings when multiple accounts use the same device fingerprint.
 
 ### C. Analytics
 
@@ -63,6 +65,15 @@
 7. If live web evidence is unavailable in context, the assistant returns a search plan instead of inventing facts.
 
 ### E. Language Preference (English/French/Portuguese)
+
+## 7. Attendance Lifecycle Notes
+
+- Check-in and check-out now use explicit machine-readable result codes so the frontend can distinguish active, incomplete, and completed attendance without parsing message text.
+- Student dashboard attendance badges use the same ID-or-course-code matching rule as the class list, which keeps the Marked Present count and class cards in sync.
+- Lecturer manual attendance supports course-wide review while still saving to the correct class variant.
+- Buddy-signing warnings are stored with attendance rows and included in lecturer review/export flows.
+
+---
 
 1. App auto-detects browser language on first load.
 2. User may override language in profile.
@@ -143,7 +154,7 @@ node server/scripts/seed_attendance.js
 
 ---
 
-## 7. New API Endpoints
+## 8. New API Endpoints
 
 - `POST /api/ai/assistant`: ask scoped AI assistant (auth required).
 - `GET /api/users/me`: fetch current user profile.
@@ -151,7 +162,7 @@ node server/scripts/seed_attendance.js
 
 ---
 
-## 8. Internationalization Notes
+## 9. Internationalization Notes
 
 - Supported languages: `en`, `fr`, `pt`.
 - Target users include multilingual student populations.

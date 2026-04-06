@@ -90,7 +90,27 @@ function setCache(key, value) {
 router.get('/', async (req, res) => {
     try {
         const { year, program, day } = req.query; // Added 'day' to destructuring
-        const cacheKey = `all:${year || ''}:${program || ''}:${day || ''}`;
+        const requesterRole = String((req.user && req.user.role) || '').toLowerCase();
+        const isStudentRequester = requesterRole === 'student' || requesterRole === 'student_rep';
+
+        let effectiveProgram = String(program || '').trim();
+        let effectiveYear = String(year || '').trim();
+
+        if (isStudentRequester) {
+            if (!effectiveProgram) {
+                effectiveProgram = String((req.user && req.user.program) || '').trim();
+            }
+            if (!effectiveYear && req.user && req.user.year) {
+                effectiveYear = String(req.user.year);
+            }
+
+            if (!effectiveProgram || !effectiveYear) {
+                // Fail closed for students with incomplete profiles to avoid leaking unrelated classes.
+                return res.json([]);
+            }
+        }
+
+        const cacheKey = `all:${requesterRole}:${String((req.user && req.user.id) || '')}:${effectiveYear || ''}:${effectiveProgram || ''}:${day || ''}`;
         const cached = getCache(cacheKey);
         if (cached) {
             return res.json(cached);
@@ -99,13 +119,13 @@ router.get('/', async (req, res) => {
         const whereClause = {};
 
         
-           const requestedProgram = String(program || '').trim();
+        const requestedProgram = String(effectiveProgram || '').trim();
         
-        if (year) {
+        if (effectiveYear) {
             // DB has "Year_Semester" e.g. "Y1 S2" or "All Years"
             whereClause.Year_Semester = { 
                 [Op.or]: [
-                    { [Op.like]: `Y${year}%` }, // Specific Year
+                    { [Op.like]: `Y${effectiveYear}%` }, // Specific Year
                     { [Op.like]: '%All%' }      // Shared across years
                 ]
             };
