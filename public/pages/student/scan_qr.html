@@ -131,6 +131,21 @@
         const preferredClassId = String(pageParams.get('class') || '').trim();
         const preferredAction = String(pageParams.get('action') || '').toLowerCase();
 
+        function resolveAction(result, fallbackAction = 'checkin') {
+            const action = String((result && result.expectedAction) || (result && result.nextStep) || fallbackAction || 'checkin').toLowerCase();
+            if (action.includes('checkout')) return 'checkout';
+            if (action.includes('verify')) return fallbackAction || 'checkin';
+            return 'checkin';
+        }
+
+        function isFinalAttendanceResult(result) {
+            return Boolean(result && (result.attendanceComplete === true || result.checkedOutAt || result.resultCode === 'checkout_recorded'));
+        }
+
+        function isCheckInRecorded(result) {
+            return Boolean(result && (result.resultCode === 'checkin_recorded' || result.checkedInAt || result.nextStep === 'await_checkout'));
+        }
+
         function updateManualEntryLinks(classId = '', action = '') {
             const targetClassId = String(classId || preferredClassId || '').trim();
             const targetAction = String(action || preferredAction || 'checkin').trim();
@@ -189,12 +204,12 @@
 
                 if (data && data.code && data.classId) {
                     updateManualEntryLinks(data.classId, data.action || preferredAction || 'checkin');
-                    await processAttendance(data.classId, data.code, data.action || 'checkin');
+                    await processAttendance(data.classId, data.code, data.action || preferredAction || 'checkin');
                 } else if (decodedText.startsWith('UPATH-')) {
                     const parts = decodedText.split('-');
                     if (parts.length >= 3) {
                         updateManualEntryLinks(parts[1], preferredAction || 'checkin');
-                        await processAttendance(parts[1], parts[2], 'checkin');
+                        await processAttendance(parts[1], parts[2], preferredAction || 'checkin');
                     } else {
                         Toast.error('Invalid QR Format');
                         setTimeout(() => location.reload(), 2000);
@@ -249,23 +264,28 @@
                  // Toast.warning("Location access missing");
             }
 
-            let result = action === 'checkout'
+            let activeAction = resolveAction({ expectedAction: action }, action);
+            let result = activeAction === 'checkout'
                 ? await API.validateCheckOutCode(classId, code)
                 : await API.validateCheckInCode(classId, code);
 
-            if (result && result.message && /check-in is not currently open/i.test(result.message)) {
+            if (result && result.resultCode === 'session_checkout_open') {
+                activeAction = 'checkout';
                 result = await API.validateCheckOutCode(classId, code);
-            } else if (result && result.message && /check-out is not currently open/i.test(result.message)) {
+            } else if (result && result.resultCode === 'session_checkin_open') {
+                activeAction = 'checkin';
                 result = await API.validateCheckInCode(classId, code);
             }
 
             if (result && result.requiresVerification) {
                 if (typeof Toast !== 'undefined') {
-                    Toast.success('Check-in recorded. Complete identity verification on Enter Code to finish setup.');
+                    Toast.success(activeAction === 'checkout'
+                        ? 'Check-out code accepted. Complete identity verification to finish attendance.'
+                        : 'Check-in recorded. Complete identity verification to continue.');
                 }
                 const params = new URLSearchParams();
                 params.set('class', classId);
-                params.set('action', action || 'checkin');
+                params.set('action', activeAction || 'checkin');
                 params.set('code', code);
                 params.set('verify', '1');
                 if (result.attendanceId) params.set('attendanceId', String(result.attendanceId));
@@ -274,9 +294,6 @@
                 }, 1200);
                 return;
             }
-            
-            const successMessage = result && result.message
-                && /(success|marked|check-in recorded|attendance successfully recorded|attendance already completed)/i.test(result.message);
 
             if (result && ((result.error && /forbidden/i.test(String(result.error))) || (result.message && /(forbidden|only students|sign in as a student)/i.test(result.message)))) {
                 if (typeof Toast !== 'undefined') {
@@ -288,8 +305,14 @@
                 return;
             }
 
-            if (successMessage) {
-                if (typeof Toast !== 'undefined') Toast.success('Attendance Marked Successfully!');
+            if (isFinalAttendanceResult(result)) {
+                if (typeof Toast !== 'undefined') Toast.success('Attendance complete!');
+                setTimeout(() => window.location.href = '../../dashboard.html', 1500);
+                return;
+            }
+
+            if (isCheckInRecorded(result)) {
+                if (typeof Toast !== 'undefined') Toast.success('Check-in recorded. Checkout still pending.');
                 setTimeout(() => window.location.href = '../../dashboard.html', 1500);
             } else {
                 if (typeof Toast !== 'undefined') Toast.error(result.message || 'Validation Failed');

@@ -313,23 +313,28 @@
         }
 
         function shouldTryAlternateFlow(result) {
-            const message = String((result && result.message) || '').toLowerCase();
-            return /check-(in|out) is not currently open/.test(message)
-                || /invalid or expired check-(in|out) code/.test(message);
+            return result && (
+                result.resultCode === 'session_checkin_open'
+                || result.resultCode === 'session_checkout_open'
+            );
         }
 
         function isCheckInSuccess(result) {
             if (!result) return false;
-            return result.success === true
+            return result.resultCode === 'checkin_recorded'
                 || Boolean(result.checkedInAt)
-                || (result.attendanceId && ['await_checkout', 'done'].includes(result.nextStep))
-                || /attendance already completed/i.test(String(result.message || ''));
+                || (result.attendanceId && result.expectedAction === 'checkout');
         }
 
         function isCheckOutSuccess(result) {
             if (!result) return false;
-            return Boolean(result.checkedOutAt)
-                || /attendance already completed/i.test(String(result.message || ''));
+            return result.resultCode === 'checkout_recorded'
+                || Boolean(result.checkedOutAt)
+                || result.attendanceComplete === true;
+        }
+
+        function isFinalAttendanceSuccess(result) {
+            return isCheckOutSuccess(result) || result.resultCode === 'already_completed';
         }
 
         async function validateByMode(mode, classId, code, attendanceId) {
@@ -703,7 +708,7 @@
                     .filter((candidateId) => candidateId !== classId)
                     .filter((candidateId) => extractCourseCode(candidateId) === extractCourseCode(classId));
 
-                if (result && result.message && /check-(in|out) is not currently open/i.test(result.message) && classCandidates.length) {
+                if (result && shouldTryAlternateFlow(result) && classCandidates.length) {
                     for (const candidateId of classCandidates) {
                         let candidateFlowMode = flowMode;
                         let candidateResult = await validateByMode(candidateFlowMode, candidateId, code, null);
@@ -744,10 +749,6 @@
                     }
                 }
 
-                const successMessage = flowMode === 'checkout'
-                    ? isCheckOutSuccess(result)
-                    : isCheckInSuccess(result);
-
                 if (result && ((result.error && /forbidden/i.test(String(result.error))) || (result.message && /(forbidden|only students|sign in as a student)/i.test(result.message)))) {
                     setStatus('Session/account mismatch. Sign out and sign in as the student account, then try again.', 'error');
                     setTimeout(() => {
@@ -756,7 +757,7 @@
                     return;
                 }
 
-                if (result && successMessage) {
+                if (result && isFinalAttendanceSuccess(result)) {
                     const completionMessage = flowMode === 'checkout'
                         ? (result.message || 'Check-out recorded successfully. Attendance is now complete.')
                         : (result.message || t('attendance.success', 'Attendance recorded successfully.'));
@@ -769,8 +770,22 @@
                     return;
                 }
 
-                if (result && result.message && /check-(in|out) is not currently open/i.test(result.message)) {
-                    setStatus(t('attendance.sessionNotOpen', 'Class is visible, but attendance for this session is not open yet. Refresh live classes and use the latest lecturer code.'), 'warning');
+                if (result && (result.resultCode === 'checkin_recorded' || result.checkedInAt || result.expectedAction === 'checkout')) {
+                    const pendingMessage = 'Check-in recorded. Checkout is still pending.';
+                    if (typeof Toast !== 'undefined') {
+                        Toast.success(pendingMessage);
+                    }
+                    setStatus(pendingMessage, 'success');
+                    document.getElementById('codeInput').value = '';
+                    setTimeout(() => window.location.href = '../../dashboard.html', 1500);
+                    return;
+                }
+
+                if (result && (result.resultCode === 'session_checkin_open' || result.resultCode === 'session_checkout_open')) {
+                    const sessionMessage = result.resultCode === 'session_checkout_open'
+                        ? t('attendance.checkoutOpen', 'Checkout is open. Enter the checkout code.')
+                        : t('attendance.checkinOpen', 'Check-in is open. Enter the check-in code.')
+                    setStatus(sessionMessage, 'info');
                     return;
                 }
 
@@ -958,7 +973,7 @@
                         verificationContext.attendanceId || null
                     );
 
-                    const checkoutDone = checkoutResult && (checkoutResult.checkedOutAt || /attendance already completed/i.test(String(checkoutResult.message || '')));
+                    const checkoutDone = checkoutResult && (checkoutResult.resultCode === 'checkout_recorded' || checkoutResult.checkedOutAt || checkoutResult.attendanceComplete === true);
                     if (!checkoutDone) {
                         throw new Error((checkoutResult && checkoutResult.message) || 'Checkout verification completed, but checkout code must be re-entered.');
                     }

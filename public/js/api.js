@@ -607,9 +607,9 @@ const API = {
         try {
             let result = await this.validateCheckInCode(classId, code);
 
-            if (result && result.message && /check-in is not currently open/i.test(result.message)) {
+            if (result && (result.resultCode === 'session_checkout_open' || result.expectedAction === 'checkout')) {
                 result = await this.validateCheckOutCode(classId, code, result.attendanceId || null);
-            } else if (result && result.message && /check-out is not currently open/i.test(result.message)) {
+            } else if (result && (result.resultCode === 'session_checkin_open' || result.expectedAction === 'checkin')) {
                 result = await this.validateCheckInCode(classId, code);
             }
 

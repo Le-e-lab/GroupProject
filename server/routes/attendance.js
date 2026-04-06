@@ -1526,7 +1526,24 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
         const session = await findActiveSessionForClass(classId, 'checkin_open');
 
         if (!session) {
-            return res.status(400).json({ message: 'Check-in is not currently open' });
+            const checkoutSession = await findActiveSessionForClass(classId, 'checkout_open');
+            if (checkoutSession) {
+                return res.status(409).json({
+                    message: 'Check-out is currently open',
+                    success: false,
+                    resultCode: 'session_checkout_open',
+                    expectedAction: 'checkout',
+                    sessionStatus: 'checkout_open',
+                    classId: checkoutSession.classId
+                });
+            }
+
+            return res.status(400).json({
+                message: 'Check-in is not currently open',
+                success: false,
+                resultCode: 'checkin_not_open',
+                expectedAction: 'checkin'
+            });
         }
 
         const canonicalClassId = session.classId || classId;
@@ -1611,7 +1628,13 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
                     message: 'Attendance already completed for this class',
                     attendanceId: existing.id,
                     requiresVerification: false,
-                    nextStep: 'done'
+                    nextStep: 'done',
+                    success: true,
+                    resultCode: 'already_completed',
+                    attendanceComplete: true,
+                    expectedAction: 'done',
+                    checkedInAt: existing.checkedInAt,
+                    checkedOutAt: existing.checkedOutAt
                 });
             }
             existing.checkedInAt = existing.checkedInAt || new Date();
@@ -1635,7 +1658,13 @@ router.post('/validate-checkin', attendanceAttemptLimiter, async (req, res) => {
             attendanceId: attendance.id,
             requiresVerification,
             deviceId: device.id,
-            nextStep: requiresVerification ? 'verify_identity' : 'await_checkout'
+            nextStep: requiresVerification ? 'verify_identity' : 'await_checkout',
+            success: true,
+            resultCode: 'checkin_recorded',
+            attendanceComplete: false,
+            expectedAction: requiresVerification ? 'verify_identity' : 'checkout',
+            checkedInAt: attendance.checkedInAt,
+            checkedOutAt: attendance.checkedOutAt || null
         });
     } catch (err) {
         console.error('Check-in validation error:', err);
@@ -1671,7 +1700,24 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
 
 
         if (!session) {
-            return res.status(400).json({ message: 'Check-out is not currently open' });
+            const checkinSession = await findActiveSessionForClass(classId, 'checkin_open');
+            if (checkinSession) {
+                return res.status(409).json({
+                    message: 'Check-in is currently open',
+                    success: false,
+                    resultCode: 'session_checkin_open',
+                    expectedAction: 'checkin',
+                    sessionStatus: 'checkin_open',
+                    classId: checkinSession.classId
+                });
+            }
+
+            return res.status(400).json({
+                message: 'Check-out is not currently open',
+                success: false,
+                resultCode: 'checkout_not_open',
+                expectedAction: 'checkout'
+            });
         }
 
         const canonicalClassId = session.classId || classId;
@@ -1705,14 +1751,24 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
         });
 
         if (!device) {
-            return res.status(403).json({ message: 'Device not recognized. Complete identity verification before check-out.' });
+            return res.status(403).json({
+                message: 'Device not recognized. Complete identity verification before check-out.',
+                success: false,
+                resultCode: 'verification_required',
+                expectedAction: 'verify_identity',
+                attendanceComplete: false
+            });
         }
 
         if (!device.isTrusted || device.requiresVerification) {
             return res.status(403).json({
                 message: 'Identity verification required before check-out.',
                 requiresVerification: true,
-                nextStep: 'verify_identity'
+                nextStep: 'verify_identity',
+                success: false,
+                resultCode: 'verification_required',
+                expectedAction: 'verify_identity',
+                attendanceComplete: false
             });
         }
 
@@ -1752,13 +1808,19 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
 
         if (!attendance) {
             return res.status(400).json({
-                message: 'Check-in record not found. Ask lecturer for manual attendance if needed.'
+                message: 'Check-in record not found. Ask lecturer for manual attendance if needed.',
+                success: false,
+                resultCode: 'checkin_missing',
+                expectedAction: 'checkin'
             });
         }
 
         if (!attendance.checkedInAt) {
             return res.status(400).json({
-                message: 'You must check in before checking out.'
+                message: 'You must check in before checking out.',
+                success: false,
+                resultCode: 'checkin_missing',
+                expectedAction: 'checkin'
             });
         }
 
@@ -1790,7 +1852,11 @@ router.post('/validate-checkout', attendanceAttemptLimiter, async (req, res) => 
             message: 'Attendance successfully recorded',
             attendanceId: attendance.id,
             checkedInAt: attendance.checkedInAt,
-            checkedOutAt: attendance.checkedOutAt
+            checkedOutAt: attendance.checkedOutAt,
+            success: true,
+            resultCode: 'checkout_recorded',
+            attendanceComplete: true,
+            expectedAction: 'done'
         });
     } catch (err) {
         console.error('Check-out validation error:', err);
