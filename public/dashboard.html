@@ -553,7 +553,7 @@
 
         // BLOCKING REPAIR: If user exists but has no program (and is student), DO NOT PROCEED.
         // This prevents the dashboard from loading with "undefined" filter, which causes empty or wrong data.
-        if (user && user.role === "student" && !user.program) {
+        if (user && ["student", "student_rep"].includes(String(user.role || "")) && !user.program) {
           console.warn(
             "[Dashboard] User data incomplete (Missing Program). Attempting repair...",
           );

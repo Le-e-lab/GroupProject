@@ -70,17 +70,51 @@ const API = {
 
     async delete(endpoint) { const res = await fetch(this.normalizeEndpoint(endpoint), { method: 'DELETE', credentials: 'include' }); return this.handleResponse(res); },
 
+    normalizeClassKey(value) {
+        return String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+    },
+
+    extractFromTime(value) {
+        const safe = String(value || '').trim();
+        if (!safe) return '';
+        if (safe.includes(' - ')) return safe.split(' - ')[0].trim();
+        return safe;
+    },
+
+    buildCompositeClassId(row) {
+        const code = String(row.code || row.Course_Code || '').trim();
+        const day = String(row.day || row.Day || '').trim();
+        const from = this.extractFromTime(row.time || row.Time || row.From_Time || '');
+        const programKey = this.normalizeClassKey(row.program || row.Program || 'unknown_program') || 'unknown_program';
+        const yearKey = this.normalizeClassKey(row.yearSemester || row.Year_Semester || row.year || row.Year || 'unknown_year') || 'unknown_year';
+        if (!code || !day || !from) return '';
+        return `${code}--${day}--${from}--${programKey}--${yearKey}`;
+    },
+
     /**
-     * DEDUPLICATION HELPER (Phase 2 - Fix duplicate classes)
-     * Ensures no duplicate classes are returned to frontend
-     * Uses composite key: code-day-time
+     * DEDUPLICATION HELPER
+     * Keep distinct class variants (program/year specific) while removing exact duplicates.
      */
     deduplicateClasses(classes) {
         if (!Array.isArray(classes)) return [];
         const seen = new Set();
         const unique = [];
         classes.forEach(c => {
-            const key = `${String(c.code || c.Course_Code || '').toLowerCase()}-${String(c.day || c.Day || '').toLowerCase()}-${String(c.time || c.Time || '').toLowerCase()}`;
+            const idKey = String(c.id || c.classId || '').trim().toLowerCase();
+            const key = idKey
+                ? `id:${idKey}`
+                : [
+                    String(c.code || c.Course_Code || '').trim().toLowerCase(),
+                    String(c.day || c.Day || '').trim().toLowerCase(),
+                    this.extractFromTime(c.time || c.Time || c.From_Time || '').toLowerCase(),
+                    this.normalizeClassKey(c.program || c.Program || ''),
+                    this.normalizeClassKey(c.yearSemester || c.Year_Semester || c.year || c.Year || ''),
+                    String(c.room || c.Venue || '').trim().toLowerCase()
+                ].join('|');
             if (!seen.has(key)) {
                 seen.add(key);
                 unique.push(c);
@@ -186,6 +220,7 @@ const API = {
                 // NORMALIZE: Map Server DB columns to Client Schema
                 classes = rawClasses.map(c => ({
                     ...c, // Keep originals
+                    id: c.id || this.buildCompositeClassId(c),
                     code: c.Course_Code || c.code,
                     name: c.Course_Name || c.name,
                     day: c.Day || c.day,
@@ -252,7 +287,7 @@ const API = {
                         ...c,
                         // Backend returns 'code', 'name', 'day', 'time', 'room' etc.
                         // Just ensure strict schema match if needed, or pass through
-                        id: c.id || `${c.code}-${c.day}-${c.time}`, // Ensure ID exists
+                        id: c.id || this.buildCompositeClassId(c) || `${c.code}-${c.day}-${c.time}-${c.program}-${c.year}`,
                         code: c.code || c.Course_Code,
                         name: c.name || c.Course_Name,
                         day: c.day || c.Day,
