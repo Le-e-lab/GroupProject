@@ -325,6 +325,14 @@
                 if (percent < 80) status = 'warning';
                 if (percent < 70) status = 'danger';
                 
+                // NEW: Build class details display
+                const classDetails = course.classDetails && course.classDetails.length > 0
+                    ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">Classes Attended:</div>
+                        ${course.classDetails.map(c => `<div style="font-size: 0.8rem; color: var(--text-muted); margin: 3px 0;">${c.displayName}</div>`).join('')}
+                      </div>`
+                    : '';
+                
                 html += `
                     <div class="course-card">
                         <div class="course-header">
@@ -341,6 +349,7 @@
                             <span>${course.attended}/${course.total} sessions attended</span>
                             <span>${course.total - course.attended} missed</span>
                         </div>
+                        ${classDetails}
                     </div>
                 `;
             });

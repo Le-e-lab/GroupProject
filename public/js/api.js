@@ -70,6 +70,26 @@ const API = {
 
     async delete(endpoint) { const res = await fetch(this.normalizeEndpoint(endpoint), { method: 'DELETE', credentials: 'include' }); return this.handleResponse(res); },
 
+    /**
+     * DEDUPLICATION HELPER (Phase 2 - Fix duplicate classes)
+     * Ensures no duplicate classes are returned to frontend
+     * Uses composite key: code-day-time
+     */
+    deduplicateClasses(classes) {
+        if (!Array.isArray(classes)) return [];
+        const seen = new Set();
+        const unique = [];
+        classes.forEach(c => {
+            const key = `${String(c.code || c.Course_Code || '').toLowerCase()}-${String(c.day || c.Day || '').toLowerCase()}-${String(c.time || c.Time || '').toLowerCase()}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                unique.push(c);
+            }
+        });
+        console.log(`[API] Deduplication: ${classes.length} -> ${unique.length} classes`);
+        return unique;
+    },
+
     async askAssistant(payload) {
         const res = await fetch('/api/ai/assistant', {
             method: 'POST',
@@ -228,7 +248,7 @@ const API = {
                 if (response.ok) {
                     const classes = await response.json();
                     // map to client schema (backend already returns formatted data, but let's be safe)
-                    return classes.map(c => ({
+                    const mapped = classes.map(c => ({
                         ...c,
                         // Backend returns 'code', 'name', 'day', 'time', 'room' etc.
                         // Just ensure strict schema match if needed, or pass through
@@ -242,6 +262,8 @@ const API = {
                         year: c.year || c.Year,
                         program: c.program || c.Program
                     }));
+                    // Apply client-side dedup as safety guard
+                    return this.deduplicateClasses(mapped);
                 }
 
                 throw new Error('Server Error');
@@ -251,7 +273,7 @@ const API = {
                 const allClasses = this.getLocalTimetable();
                 const user = this.getCurrentUser();
 
-                return allClasses.filter(c => {
+                const filtered = allClasses.filter(c => {
                      // A. Match by ID (if available)
                      if (c.lecturerId && String(c.lecturerId) === String(lecturerId)) return true;
                      if (c.LecturerId && String(c.LecturerId) === String(lecturerId)) return true;
@@ -263,6 +285,8 @@ const API = {
                      }
                      return false;
                 });
+                // Apply dedup to fallback results too
+                return this.deduplicateClasses(filtered);
             }
         });
     },

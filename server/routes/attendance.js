@@ -915,7 +915,7 @@ router.post('/bulk-mark', requireRoles(canManageAttendanceRoles), async (req, re
             ? req.body.students.map((id) => validator.escape(validator.trim(String(id || '')))).filter(Boolean)
             : [];
         const safeDate = req.body.date
-            ? validator.escape(validator.trim(String(req.body.date)))
+            ? validator.escape(validator.trim(String(req.body.date))).split('T')[0]
             : getLocalDateString();
 
         if (!classId) return res.status(400).json({ message: 'Class ID is required' });
@@ -994,7 +994,9 @@ router.post('/mark', requireRoles(canManageAttendanceRoles), async (req, res) =>
         classId = validator.escape(validator.trim(String(classId || '')));
         studentId = validator.escape(validator.trim(String(studentId || '')));
         status = validator.escape(validator.trim(String(status || 'present')));
-        const safeDate = date ? validator.escape(validator.trim(String(date))) : new Date().toISOString().split('T')[0];
+        const safeDate = date 
+            ? validator.escape(validator.trim(String(date))).split('T')[0]
+            : new Date().toISOString().split('T')[0];
 
         if (!classId || !studentId) {
             return res.status(400).json({ message: 'classId and studentId are required' });

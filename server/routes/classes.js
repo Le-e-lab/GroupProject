@@ -165,7 +165,7 @@ router.get('/', async (req, res) => {
         // Deduplicate: Ensure we only send one instance of a class per schedule block
         const seen = new Set();
         const uniqueClasses = cohortClasses.filter(c => {
-            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}-${normalizeKey(c.Program)}-${normalizeKey(c.Year_Semester)}`;
+            const key = `${String(c.Course_Code || '').trim().toLowerCase()}-${String(c.Day || '').trim().toLowerCase()}-${String(c.From_Time || '').trim().toLowerCase()}-${normalizeKey(c.Program)}-${normalizeKey(c.Year_Semester)}`;
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
@@ -265,7 +265,7 @@ router.get('/lecturer/:id', async (req, res) => {
         // if multiple conditions match (e.g. full name AND surname both match)
         const seen = new Set();
         const uniqueClasses = classes.filter(c => {
-            const key = `${c.Course_Code}-${c.Day}-${c.From_Time}-${normalizeKey(c.Program)}-${normalizeKey(c.Year_Semester)}`.toLowerCase();
+            const key = `${String(c.Course_Code || '').trim().toLowerCase()}-${String(c.Day || '').trim().toLowerCase()}-${String(c.From_Time || '').trim().toLowerCase()}-${normalizeKey(c.Program)}-${normalizeKey(c.Year_Semester)}`;
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
